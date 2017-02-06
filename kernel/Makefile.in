@@ -1,0 +1,22 @@
+ccflags-y += -Wno-declaration-after-statement
+
+KVER = @KVER@
+KTEST_DIR = @KTEST_DIR@
+KTEST_SRC = @KTEST_SRC@
+
+-include genrules.mk
+
+obj-m := ktest.o
+
+ktest-y := kbase.o nl.o kcheck.o
+
+KDIR   := /lib/modules/$(KVER)
+PWD    := $(shell pwd)
+
+module:
+	$(MAKE) -C $(KDIR)/build SUBDIRS=$(PWD) modules
+clean:
+	$(MAKE) -C $(KDIR)/build M=$(PWD) clean
+
+check: all
+install: all

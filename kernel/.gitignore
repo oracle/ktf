@@ -1,0 +1,5 @@
+.tmp_versions/
+Module.symvers
+modules.order
+sif_test.ko
+sif_test.mod.c

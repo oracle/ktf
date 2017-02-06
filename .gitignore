@@ -1,0 +1,16 @@
+Makefile
+Makefile.in
+autom4te.cache
+aclocal.m4
+configure
+config.log
+config.status
+.gdb_history
+.deps
+.libs
+libtool
+*.cmd
+*.o
+*.ko
+*.mk
+*.xml
