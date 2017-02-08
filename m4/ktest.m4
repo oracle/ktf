@@ -31,8 +31,8 @@ AS_IF([test -f $ktest_build/config.log],
 AC_SUBST([KTEST_DIR],[$ktest_src/kernel])
 AC_SUBST([KTEST_BDIR],[$ktest_build/kernel])
 
-KTEST_CFLAGS="-I$ktest_src/user"
-KTEST_LIBS="-L$ktest_build/user -lktest"
+KTEST_CFLAGS="-I$ktest_src/lib"
+KTEST_LIBS="-L$ktest_build/lib -lktest"
 
 AC_ARG_VAR([KTEST_CFLAGS],[Include files options needed for C/C++ user space program clients])
 AC_ARG_VAR([KTEST_LIBS],[Library options for tests accessing KTEST functionality])

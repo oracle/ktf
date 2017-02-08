@@ -60,6 +60,7 @@ AM_CONFIG_KTEST
 
 AC_CONFIG_FILES([Makefile
 		 kernel/Makefile
+		 lib/Makefile
 		 user/Makefile
 ])
 AC_OUTPUT
