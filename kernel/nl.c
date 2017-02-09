@@ -10,19 +10,46 @@
  * test framework.
  */
 
-
-/* family definition */
-static struct genl_family ktest_gnl_family = {
-	.id = GENL_ID_GENERATE,
-	.hdrsize = 0,
-	.name = "ktest",
-	.version = 1,
-	.maxattr = KTEST_A_MAX+4
-};
-
 /* Callback functions defined below */
 static int ktest_run(struct sk_buff *skb, struct genl_info *info);
 static int ktest_query(struct sk_buff *skb, struct genl_info *info);
+static int ktest_req(struct sk_buff *skb, struct genl_info *info);
+static int ktest_resp(struct sk_buff *skb, struct genl_info *info);
+
+/* operation definition */
+static struct genl_ops ktest_ops[] = {
+	{
+		.cmd = KTEST_C_REQ,
+		.flags = 0,
+		.policy = ktest_gnl_policy,
+		.doit = ktest_req,
+		.dumpit = NULL,
+	},
+	{
+		.cmd = KTEST_C_RESP,
+		.flags = 0,
+		.policy = ktest_gnl_policy,
+		.doit = ktest_resp,
+		.dumpit = NULL,
+	}
+};
+
+/* family definition */
+static struct genl_family ktest_gnl_family = {
+#if (KERNEL_VERSION(4, 10, 0) > LINUX_VERSION_CODE)
+	.id = GENL_ID_GENERATE,
+#else
+	.module = THIS_MODULE,
+#endif
+	.hdrsize = 0,
+	.name = "ktest",
+	.version = 1,
+	.maxattr = KTEST_A_MAX+4,
+#if (KERNEL_VERSION(3, 13, 7) < LINUX_VERSION_CODE)
+	.ops = ktest_ops,
+	.n_ops = ARRAY_SIZE(ktest_ops),
+#endif
+};
 
 /* handler, returns 0 on success, negative
  * values on failure
@@ -246,25 +273,6 @@ static int ktest_resp(struct sk_buff *skb, struct genl_info *info)
 	return 0;
 }
 
-/* operation definition */
-static struct genl_ops ktest_ops[] = {
-	{
-		.cmd = KTEST_C_REQ,
-		.flags = 0,
-		.policy = ktest_gnl_policy,
-		.doit = ktest_req,
-		.dumpit = NULL,
-	},
-	{
-		.cmd = KTEST_C_RESP,
-		.flags = 0,
-		.policy = ktest_gnl_policy,
-		.doit = ktest_resp,
-		.dumpit = NULL,
-	}
-};
-
-
 int ktest_nl_register(void)
 {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,13,7))
@@ -272,7 +280,7 @@ int ktest_nl_register(void)
 		&ktest_gnl_family,
 		ktest_ops, ARRAY_SIZE(ktest_ops));
 #else
-	int stat = genl_register_family_with_ops(&ktest_gnl_family, ktest_ops);
+	int stat = genl_register_family(&ktest_gnl_family);
 #endif
 	return stat;
 }
