@@ -1,14 +1,12 @@
 ccflags-y += -Wno-declaration-after-statement
 
 KVER = @KVER@
-KTEST_DIR = @KTEST_DIR@
-KTEST_SRC = @KTEST_SRC@
 
 -include genrules.mk
 
 obj-m := ktest.o
 
-ktest-y := kbase.o nl.o kcheck.o
+ktest-y := kbase.o nl.o ktest_map.o kcheck.o
 
 KDIR   := /lib/modules/$(KVER)
 PWD    := $(shell pwd)

@@ -52,14 +52,15 @@ AS_IF([ test x$KVER != x ],dnl
    	[AC_MSG_NOTICE("building against kernel version $KVER")],dnl
     	[AC_MSG_ERROR("Kernel version (KVER) not set")])
 
-AC_ARG_VAR([KTEST_DIR],[Kernel module source directory])
-AC_ARG_VAR([KTEST_SRC],[Source files used to build this module])
 AC_ARG_VAR([KVER],[Kernel version to use])
 
 AM_CONFIG_KTEST
+AM_KTEST_DIR([kernel])
+AM_KTEST_DIR([selftest])
 
 AC_CONFIG_FILES([Makefile
 		 kernel/Makefile
+		 selftest/Makefile
 		 lib/Makefile
 		 user/Makefile
 ])

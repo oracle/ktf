@@ -47,16 +47,27 @@ gtest_fail_msg="No gtest library - install gtest-devel"
 GTEST_LIB_CHECK([1.5.0],[echo -n ""],[AC_MSG_ERROR([$gtest_fail_msg])])
 
 KTEST_DIR="$srcdir/kernel"
-KTEST_SRC=`cd $KTEST_DIR && ls *.h *.c 2> /dev/null | tr '\n' ' '| sed 's/ \w*\.mod\.c|\w*version.c|\wversioninfo.h//'`
+KTEST_BDIR="`pwd`/kernel"
 
-rulepath="kernel"
+AC_SUBST([KTEST_DIR],[$KTEST_DIR])
+AC_SUBST([KTEST_BDIR],[$KTEST_BDIR])
+])
+
+AC_DEFUN([AM_KTEST_DIR],dnl Usage: AM_KTEST_DIR([subdir]) where subdir contains kernel test defs
+[
+
+TEST_DIR="$srcdir/$1"
+TEST_SRC=`cd $TEST_DIR && ls *.h *.c 2> /dev/null | tr '\n' ' '| sed 's/ \w*\.mod\.c|\w*version.c|\wversioninfo.h//'`
+
+
+rulepath="$1"
 rulefile="$rulepath/genrules.mk"
 
 mkdir -p $rulepath
 cat - > $rulefile <<EOF
 
-srcdir= \$(KTEST_DIR)
-src_links= \$(KTEST_SRC)
+srcdir= $TEST_DIR
+src_links= $TEST_SRC
 
 all: \$(src_links) module
 
@@ -64,7 +75,7 @@ install: all
 uninstall:
 	@rm -f \$(src_links)
 
-\$(src_links): %: \$(KTEST_DIR)/% Makefile
+\$(src_links): %: \$(srcdir)/% Makefile
 	@(test -e \$[]@ || ln -s \$< \$[]@)
 
 EOF

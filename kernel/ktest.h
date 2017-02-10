@@ -5,7 +5,7 @@
 #include "kcheck.h"
 
 struct test_dev {
-	struct list_head dev_list; /* Link into list of registered devices */
+	struct list_head dev_list; /* Link into list of registered contexts */
 	struct ib_device *ibdev;  /* Referenced device */
 	u8* vpci_base; /* Start of "our" vpci test CSR space */
 	char dma_space[4096];	/* 4K 'static' DMA test space.. */
