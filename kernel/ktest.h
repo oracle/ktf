@@ -151,9 +151,23 @@ extern ulong ktest_debug_mask;
 	do { \
 		if (unlikely((ktest_debug_mask) & (class)))	\
 			printk(KERN_INFO \
-				   "siftest pid [%d] " "%s: " format "\n", \
+				   "ktest pid [%d] " "%s: " format "\n", \
 				   current->pid, __func__, \
 				   ## arg); \
 	} while (0)
 
+
+/* Look up the current address of a potentially local symbol - to allow testing
+ * against it. NB! This is a hack for unit testing internal unexposed interfaces and
+ * violates the module boundaries and has no fw/bw comp gauarantees, but are
+ * still very useful for detailed unit testing complex logic:
+ */
+void* ktest_find_symbol(const char *mod, const char *sym);
+
+#define ktest_resolve_symbol(mname, sname) \
+	do { \
+		sname = ktest_find_symbol(#mname, #sname);	\
+		if (!sname) \
+			return -ENOENT; \
+	} while (0)
 #endif

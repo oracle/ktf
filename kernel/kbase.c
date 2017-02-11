@@ -1,4 +1,5 @@
 #include <linux/module.h>
+#include <linux/kallsyms.h>
 #include <rdma/ib_verbs.h>
 #include "ktest.h"
 #include "nl.h"
@@ -65,18 +66,40 @@ static struct ib_client ib_client = {
 	.remove = ktest_device_remove
 };
 
+
+
+struct ktest_kernel_internals {
+	/* From module.h: Look up a module symbol - supports syntax module:name */
+	unsigned long (*module_kallsyms_lookup_name)(const char *);
+};
+
+static struct ktest_kernel_internals ki;
+
+
 static int __init ktest_init(void)
 {
+	const char* ks = "module_kallsyms_lookup_name";
+
 	/* Register with IB */
-	int ret = ib_register_client(&ib_client);
+	int ret = 0; //ib_register_client(&ib_client);
 	if (ret) {
 		printk("ktest: Failed to register with IB, ret = %d\n", ret);
 		return ret;
 	}
 
+	/* We rely on being able to resolve this symbol for looking up module
+	 * specific internal symbols (multiple modules may define the same symbol):
+	 */
+	ki.module_kallsyms_lookup_name = (void*)kallsyms_lookup_name(ks);
+	if (!ki.module_kallsyms_lookup_name) {
+		printk(KERN_ERR "Unable to look up \"%s\" in kallsyms - maybe interface has changed?",
+			ks);
+		return -EINVAL;
+	}
+
 	ret = ktest_nl_register();
 	if (ret) {
-		printk(KERN_INFO "Unable to register protocol with netlink");
+		printk(KERN_ERR "Unable to register protocol with netlink");
 		goto failure;
 	}
 
@@ -92,7 +115,7 @@ static int __init ktest_init(void)
 	tcase_create("sif");
 	return 0;
 failure:
-	ib_unregister_client(&ib_client);
+	//ib_unregister_client(&ib_client);
 	return ret;
 }
 
@@ -100,7 +123,7 @@ failure:
 static void __exit ktest_exit(void)
 {
 	ktest_cleanup_check();
-	ib_unregister_client(&ib_client);
+	//ib_unregister_client(&ib_client);
 	ktest_nl_unregister();
 }
 
@@ -152,6 +175,32 @@ struct test_dev* ktest_number_to_dev(int devno)
 	return ret;
 }
 EXPORT_SYMBOL(ktest_number_to_dev);
+
+
+/* Support for looking up module internal symbols to enable testing */
+void* ktest_find_symbol(const char *mod, const char *sym)
+{
+	char sm[200];
+	const char *symref;
+	unsigned long addr;
+
+	if (mod) {
+		sprintf(sm, "%s:%s", mod, sym);
+		symref = sm;
+	} else
+		symref = sym;
+
+	addr = ki.module_kallsyms_lookup_name(symref);
+	if (addr)
+		tlog(T_INFO, "Found %s at %0lx\n", sym, addr);
+	else {
+		tlog(T_INFO, "Fatal error: %s not found\n", sym);
+		return NULL;
+	}
+	return (void*)addr;
+}
+EXPORT_SYMBOL(ktest_find_symbol);
+
 
 module_init(ktest_init);
 module_exit(ktest_exit);

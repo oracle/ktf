@@ -57,7 +57,7 @@ AC_DEFUN([AM_KTEST_DIR],dnl Usage: AM_KTEST_DIR([subdir]) where subdir contains 
 [
 
 TEST_DIR="$srcdir/$1"
-TEST_SRC=`cd $TEST_DIR && ls *.h *.c 2> /dev/null | tr '\n' ' '| sed 's/ \w*\.mod\.c|\w*version.c|\wversioninfo.h//'`
+TEST_SRC=`cd $TEST_DIR && ls *.h *.c *.S 2> /dev/null | tr '\n' ' '| sed 's/ \w*\.mod\.c|\w*version.c|\wversioninfo.h//'`
 
 
 rulepath="$1"
