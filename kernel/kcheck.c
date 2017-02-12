@@ -27,7 +27,7 @@ u32 assert_cnt = 0;
 void flush_assert_cnt(struct sk_buff* skb)
 {
 	if (assert_cnt) {
-		tlog(T_INFO, "update: %d asserts", assert_cnt);
+		tlog(T_DEBUG, "update: %d asserts", assert_cnt);
 		nla_put_u32(skb, KTEST_A_STAT, assert_cnt);
 		assert_cnt = 0;
 	}
@@ -66,10 +66,10 @@ EXPORT_SYMBOL(_fail_unless);
 /* Add a test to a testcase:
  * Tests are represented by fun_hook objects that are linked into
  * two lists: fun_hook::flist in TCase::fun_list and
- *            fun_hook::hlist in test_handle::test_list
+ *            fun_hook::hlist in ktest_handle::test_list
  */
 void  _tcase_add_test (struct __test_desc td,
-				struct test_handle *th,
+				struct ktest_handle *th,
 				int _signal,
 				int allowed_exit_value,
 				int start, int end)
@@ -93,6 +93,7 @@ void  _tcase_add_test (struct __test_desc td,
 	fc->fun = td.fun;
 	fc->start = start;
 	fc->end = end;
+	fc->handle = th;
 
 	DM(T_LIST, printk(KERN_INFO "ktest Testcase %s: Added test \"%s\""
 		" start = %d, end = %d\n",
@@ -133,9 +134,9 @@ TCase*  tcase_find (const char *name)
 }
 
 
-/* Clean up all tests associated with a test_handle */
+/* Clean up all tests associated with a ktest_handle */
 
-void _tcase_cleanup(struct test_handle *th)
+void _tcase_cleanup(struct ktest_handle *th)
 {
 	struct fun_hook *fh;
 	struct list_head *pos, *n;
@@ -143,7 +144,7 @@ void _tcase_cleanup(struct test_handle *th)
 	spin_lock(&tc_lock);
 	list_for_each_safe(pos, n, &th->test_list) {
 		fh = list_entry(pos, struct fun_hook, hlist);
-		DM(T_INFO, printk(KERN_INFO "ktest: delete test set %s\n", fh->name));
+		DM(T_INFO, printk(KERN_INFO "ktest: delete test %s\n", fh->name));
 		list_del(&fh->flist);
 		list_del(&fh->hlist);
 		kfree(fh);

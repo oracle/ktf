@@ -62,14 +62,25 @@ TEST_SRC=`cd $TEST_DIR && ls *.h *.c *.S 2> /dev/null | tr '\n' ' '| sed 's/ \w*
 
 rulepath="$1"
 rulefile="$rulepath/genrules.mk"
+top_builddir="`pwd`"
 
 mkdir -p $rulepath
 cat - > $rulefile <<EOF
 
+top_builddir= $top_builddir
 srcdir= $TEST_DIR
 src_links= $TEST_SRC
 
 all: \$(src_links) module
+
+Makefile: \$(srcdir)/Makefile.in \$(top_builddir)/config.status
+	@case '\$?' in \\
+	  *config.status*) \\
+	    cd \$(top_builddir) && \$(MAKE) \$(AM_MAKEFLAGS) am--refresh;; \\
+	  *) \\
+	    echo ' cd \$(top_builddir) && \$(SHELL) ./config.status \$(subdir)/\$@; \
+	    cd \$(top_builddir) && \$(SHELL) ./config.status \$(subdir)/\$@ ;; \\
+	esac;
 
 install: all
 uninstall:

@@ -3,32 +3,26 @@
 
 #include <linux/completion.h>
 #include "kcheck.h"
+#include "ktest_map.h"
 
-struct test_dev {
-	struct list_head dev_list; /* Link into list of registered contexts */
-	struct ib_device *ibdev;  /* Referenced device */
-	u8* vpci_base; /* Start of "our" vpci test CSR space */
-	char dma_space[4096];	/* 4K 'static' DMA test space.. */
-	dma_addr_t dma_adr;
-	struct pci_pool *dma_pool;	/* A test DMA pool */
-	char *dma_space2; /* Allocated from pool */
-	char * base_adr;  /* Used by dma_rw */
-	dma_addr_t dma_adr2;
-	struct completion intr_compl;
-	u32 intr_enabled; /* Set to nonzero if we expect an interrupt */
-	u32 intr_count; /* Number of interrupts seen */
-	u32 assert_cnt; /* Temporary count of passed assertions */
-	u64 min_resp_ticks;   /* expected min. hw resp.time in ticks */
+struct ktest_context {
+	struct ktest_map_elem elem;  /* Linkage for ktest_map */
+	struct ktest_handle *handle; /* Owner of this context */
 };
 
-
-typedef void (*test_adder)(void);
+typedef void (*ktest_test_adder)(void);
 
 /* Generic setup function for client modules */
-void ktest_add_tests(test_adder f);
+void ktest_add_tests(ktest_test_adder f);
 
-struct test_dev* ktest_number_to_dev(int devno);
-struct test_dev* ktest_find_dev(struct ib_device* dev);
+int ktest_context_add(struct ktest_handle *handle, struct ktest_context* ctx, const char* name);
+struct ktest_context* ktest_find_context(struct ktest_handle *handle, const char* name);
+struct ktest_context *ktest_find_first_context(struct ktest_handle *handle);
+struct ktest_context *ktest_find_next_context(struct ktest_context* ctx);
+
+static inline size_t ktest_has_contexts(struct ktest_handle *handle) {
+	return ktest_map_size(&handle->ctx_map) > 0;
+}
 
 /* Test macros */
 
@@ -133,8 +127,8 @@ struct test_dev* ktest_find_dev(struct ib_device* dev);
 #define EXPECT_ADDR_NE(X, Y) _ck_assert_long((u64)(X), !=, (u64)(Y))
 #define EXPECT_LONG_GT(X, Y) _ck_assert_long(X, >=, Y)
 
-#define EXPECT_STREQ(X, Y) _ck_assert_str_eq(X, ==, Y)
-#define EXPECT_STRNE(X, Y) (!_ck_assert_str_eq(X, !=, Y))
+#define EXPECT_STREQ(X, Y) _ck_assert_str_eq(X, Y)
+#define EXPECT_STRNE(X, Y) _ck_assert_str_ne(X, Y)
 
 extern ulong ktest_debug_mask;
 #define DM(m, x) do { if (ktest_debug_mask & m) { x; } } while (0)

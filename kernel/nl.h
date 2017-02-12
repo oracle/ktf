@@ -25,6 +25,7 @@ struct fun_hook {
 	TFun fun;
 	int start; /* Start and end value to argument to fun */
 	int end;   /* Defines number of iterations */
+	struct ktest_handle *handle; /* Handler for owning module */
 	struct list_head flist; /* linkage for all tests */
 	struct list_head hlist; /* linkage for tests for a specific module */
 };

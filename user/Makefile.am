@@ -13,4 +13,4 @@ bin_PROGRAMS = ktest
 
 ## Simple kernel test runner sample program:
 ktest_SOURCES = ktest.cpp
-ktest_LDADD = -L../lib -lktest $(NETLINK_LIBS) $(GTEST_LIBS)
+ktest_LDADD = -L$(top_builddir)/lib -lktest $(NETLINK_LIBS) $(GTEST_LIBS)

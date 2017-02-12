@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) 2009-2017, Oracle and/or its affiliates. All rights reserved.
+ *    Author: Knut Omang <knut.omang@oracle.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation.
+ *
+ * kbase.c: Main part of ktest kernel module that implements a generic unit test
+ *   framework for tests written in kernel code, with support for gtest
+ *   (googletest) user space tools for invocation and reporting.
+ *
+ */
+
 #include <linux/module.h>
 #include <linux/kallsyms.h>
 #include <rdma/ib_verbs.h>
@@ -6,11 +20,14 @@
 
 MODULE_LICENSE("GPL");
 
-ulong ktest_debug_mask = T_INFO;
+ulong ktest_debug_mask = T_INFO | T_ERROR;
 
-/* list of all currently registered sif devices */
-static LIST_HEAD(dev_list);
-DEFINE_SPINLOCK(dev_list_lock);
+unsigned int ktest_context_maxid = 0;
+
+DEFINE_SPINLOCK(context_lock);
+
+/* global linked list of all ktest_handle objects that have contexts */
+LIST_HEAD(context_handles);
 
 module_param_named(debug_mask, ktest_debug_mask, ulong, S_IRUGO | S_IWUSR);
 EXPORT_SYMBOL(ktest_debug_mask);
@@ -18,55 +35,63 @@ EXPORT_SYMBOL(ktest_debug_mask);
 /* Defined in kcheck.c */
 void ktest_cleanup_check(void);
 
-static void ktest_device_add(struct ib_device* dev)
+int ktest_context_add(struct ktest_handle *handle, struct ktest_context *ctx, const char *name)
 {
-	struct test_dev* tdev;
 	unsigned long flags;
+	int ret;
 
-	printk ("ktest: added device %s (at %p)\n", dev->name, dev);
-	tdev = (struct test_dev*) kmalloc(sizeof(struct test_dev), GFP_KERNEL);
-	memset(tdev, 0, sizeof(struct test_dev));
-	tdev->min_resp_ticks = 1000;
-	tdev->ibdev = dev;
-	if (!tdev) {
-		printk("ERROR: ktest: failed to allocate test memory\n");
-		return;
-	}
+	printk ("ktest: added context %s (at %p)\n", name, ctx);
+	ktest_map_elem_init(&ctx->elem, name);
 
-	spin_lock_irqsave(&dev_list_lock, flags);
-	list_add(&tdev->dev_list, &dev_list);
-	spin_unlock_irqrestore(&dev_list_lock, flags);
-}
-
-#if (KERNEL_VERSION(4, 4, 0) < LINUX_VERSION_CODE)
-static void ktest_device_remove(struct ib_device* dev, void *client_data)
-#else
-static void ktest_device_remove(struct ib_device* dev)
-#endif
-{
-	struct test_dev *pos, *n;
-	unsigned long flags;
-
-	/* ktest_find_dev might be called from interrupt level */
-	spin_lock_irqsave(&dev_list_lock,flags);
-	list_for_each_entry_safe(pos, n, &dev_list, dev_list) {
-		if (pos->ibdev == dev) {
-			list_del(&pos->dev_list);
-			kfree(pos);
-			break;
+	spin_lock_irqsave(&context_lock, flags);
+	ret = ktest_map_insert(&handle->ctx_map, &ctx->elem);
+	if (!ret) {
+		ctx->handle = handle;
+		if (ktest_map_size(&handle->ctx_map) == 1) {
+			handle->id = ++ktest_context_maxid;
+			list_add(&handle->handle_list, &context_handles);
 		}
 	}
-	spin_unlock_irqrestore(&dev_list_lock,flags);
-	printk ("ktest: removed device %p\n", dev);
+	spin_unlock_irqrestore(&context_lock, flags);
+	return ret;
+}
+EXPORT_SYMBOL(ktest_context_add);
+
+
+void ktest_context_remove(struct ktest_context *ctx)
+{
+	unsigned long flags;
+	struct ktest_handle *handle = ctx->handle;
+
+	/* ktest_find_context might be called from interrupt level */
+	spin_lock_irqsave(&context_lock,flags);
+	ktest_map_remove(&handle->ctx_map, ctx->elem.name);
+
+	if (!ktest_has_contexts(handle))
+		list_del(&handle->handle_list);
+	spin_unlock_irqrestore(&context_lock,flags);
+	printk ("ktest: removed context %s at %p\n", ctx->elem.name, ctx);
 }
 
-static struct ib_client ib_client = {
-	.name = "ktest",
-	.add = ktest_device_add,
-	.remove = ktest_device_remove
-};
+struct ktest_context *ktest_find_first_context(struct ktest_handle *handle)
+{
+	struct ktest_map_elem *elem = ktest_map_find_first(&handle->ctx_map);
+	if (elem)
+		return container_of(elem, struct ktest_context, elem);
+	return NULL;
+}
 
+struct ktest_context* ktest_find_context(struct ktest_handle *handle, const char* name)
+{
+	struct ktest_map_elem *elem = ktest_map_find(&handle->ctx_map, name);
+	return container_of(elem, struct ktest_context, elem);
+}
 
+struct ktest_context *ktest_find_next_context(struct ktest_context* ctx)
+{
+	struct ktest_map_elem *elem = ktest_map_find_next(&ctx->elem);
+	return container_of(elem, struct ktest_context, elem);
+}
 
 struct ktest_kernel_internals {
 	/* From module.h: Look up a module symbol - supports syntax module:name */
@@ -129,52 +154,11 @@ static void __exit ktest_exit(void)
 
 
 /* Generic setup function for client modules */
-void ktest_add_tests(test_adder f)
+void ktest_add_tests(ktest_test_adder f)
 {
 	f();
 }
 EXPORT_SYMBOL(ktest_add_tests);
-
-
-struct test_dev* ktest_find_dev(struct ib_device* dev)
-{
-	int i = 0;
-	struct test_dev* ret = NULL;
-	struct test_dev *pos;
-	unsigned long flags;
-
-	spin_lock_irqsave(&dev_list_lock, flags);
-	list_for_each_entry(pos, &dev_list, dev_list) {
-		if (pos->ibdev == dev) {
-			ret = pos;
-			break;
-		}
-		i++;
-	}
-	spin_unlock_irqrestore(&dev_list_lock, flags);
-	return ret;
-}
-EXPORT_SYMBOL(ktest_find_dev);
-
-struct test_dev* ktest_number_to_dev(int devno)
-{
-	int i = 0;
-	struct test_dev* ret = NULL;
-	struct test_dev *pos;
-	unsigned long flags;
-
-	spin_lock_irqsave(&dev_list_lock, flags);
-	list_for_each_entry(pos, &dev_list, dev_list) {
-		if (i == devno) {
-			ret = pos;
-			break;
-		}
-		i++;
-	}
-	spin_unlock_irqrestore(&dev_list_lock, flags);
-	return ret;
-}
-EXPORT_SYMBOL(ktest_number_to_dev);
 
 
 /* Support for looking up module internal symbols to enable testing */
@@ -192,7 +176,7 @@ void* ktest_find_symbol(const char *mod, const char *sym)
 
 	addr = ki.module_kallsyms_lookup_name(symref);
 	if (addr)
-		tlog(T_INFO, "Found %s at %0lx\n", sym, addr);
+		tlog(T_DEBUG, "Found %s at %0lx\n", sym, addr);
 	else {
 		tlog(T_INFO, "Fatal error: %s not found\n", sym);
 		return NULL;

@@ -27,6 +27,7 @@
 
 #include <net/netlink.h>
 #include <linux/version.h>
+#include "ktest_map.h"
 
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
 #define GCC_VERSION_AT_LEAST(major, minor) \
@@ -49,20 +50,18 @@ void flush_assert_cnt(struct sk_buff* skb);
  * with tcase_free.
  */
 typedef struct TCase TCase;
-struct test_dev;
+struct ktest_context;
 
-/* Each module client of the test framework is require to
- * declare a test handle __test_handle via the macro TEST_INIT_HANDLE (below)
+/* Each module client of the test framework is required to
+ * declare at least one ktest_handle via the macro
+ * DECLARE_KTEST_HANDLE (below)
+ * If the module require extra data of some sorts, that
+ * can be embedded within the handle
  */
-struct test_handle;
-
-/* This extern refers to the handle declared by the required call to
- * TEST_INIT_HANDLE (one per module)
- */
-extern struct test_handle __test_handle;
+struct ktest_handle;
 
 /* type for a test function */
-typedef void (*TFun) (struct sk_buff *, struct test_dev* tdev, int, u32);
+typedef void (*TFun) (struct sk_buff *, struct ktest_context* tdev, int, u32);
 
 struct __test_desc
 {
@@ -72,13 +71,14 @@ struct __test_desc
 	TFun fun;
 };
 
-/* This should really be a test device agnostic type.. */
-struct sif_dev;
-
 /* Create a test case */
 TCase* tcase_create (const char *name);
 
 TCase* tcase_find (const char *name);
+
+/* Add a test function to a test case for a given handle (macro version) */
+#define tcase_add_test_to(td, __test_handle)					\
+	_tcase_add_test(td##_setup, &__test_handle, 0, 0, 0, 1)
 
 /* Add a test function to a test case (macro version) */
 #define tcase_add_test(td) \
@@ -96,7 +96,7 @@ TCase* tcase_find (const char *name);
 /* Add a test function to a test case
   (function version -- use this when the macro won't work
 */
-void _tcase_add_test(struct __test_desc td, struct test_handle *th,
+void _tcase_add_test(struct __test_desc td, struct ktest_handle *th,
 		int _signal, int allowed_exit_value, int start, int end);
 
 /* Internal function to mark the start of a test function */
@@ -105,6 +105,9 @@ void tcase_fn_start (const char *fname, const char *file, int line);
 /* Add a test previously created with TEST() or TEST_F() */
 #define ADD_TEST(__testname)\
 	tcase_add_test(__testname)
+
+#define ADD_TEST_TO(__handle, __testname) \
+	tcase_add_test_to(__testname, __handle)
 
 #define ADD_LOOP_TEST(__testname, from, to)			\
 	tcase_add_loop_test(__testname, from, to)
@@ -119,30 +122,39 @@ void tcase_fn_start (const char *fname, const char *file, int line);
  *  and call TEST_CLEANUP() upon unload
  */
 
-struct test_handle {
-	struct list_head test_list;
+struct ktest_handle {
+	struct list_head test_list;   /* Linkage for the list of all tests assoc.with this handle */
+	struct list_head handle_list; /* Linkage for the global list of all handles with context */
+	struct ktest_map ctx_map;     /* a (possibly empty) map from name to context for this handle */
+	unsigned int id; 	      /* A unique nonzero ID for this handle, set iff contexts */
 };
 
-void _tcase_cleanup(struct test_handle *th);
+void _tcase_cleanup(struct ktest_handle *th);
 
-#define TEST_INIT_HANDLE() \
-	struct test_handle __test_handle = { \
-		.test_list = LIST_HEAD_INIT(__test_handle.test_list) \
+#define DECLARE_KTEST_HANDLE(__test_handle) \
+	struct ktest_handle __test_handle = { \
+		.test_list = LIST_HEAD_INIT(__test_handle.test_list), \
+		.handle_list = LIST_HEAD_INIT(__test_handle.handle_list), \
+		.ctx_map = { .root = RB_ROOT, .size = 0, },		\
+		.id = 0, \
 	};
-#define TEST_CLEANUP() \
+#define DECLARE_DEFAULT_HANDLE() DECLARE_KTEST_HANDLE(__test_handle)
+
+#define KTEST_HANDLE_CLEANUP(__test_handle) \
 	_tcase_cleanup(&__test_handle)
+#define KTEST_CLEANUP() KTEST_HANDLE_CLEANUP(__test_handle)
 
 /* Start a unit test with TEST(suite_name,unit_name)
 */
 #define TEST(__testsuite, __testname)\
 	static void __testname(struct sk_buff * skb,\
-			struct test_dev *tdev,\
+			struct ktest_context *tdev,\
 			int _i, u32 _value);		    \
 	struct __test_desc __testname##_setup = \
         { .tclass = "" # __testsuite "", .name = "" # __testname "",\
-	  .fun = __testname, .file = __FILE__ };					    \
+	  .fun = __testname, .file = __FILE__ };    \
 	\
-	static void __testname(struct sk_buff * skb, struct test_dev* tdev, \
+	static void __testname(struct sk_buff * skb, struct ktest_context* ctx, \
 			int _i, u32 _value)
 
 /* Start a unit test using a fixture
@@ -277,10 +289,17 @@ long _fail_unless (struct sk_buff *skb, int result, const char *file,
 	} while (0)
 
 /* String comparsion macros with improved output compared to fail_unless() */
-#define _ck_assert_str_eq(X, O, Y)			\
+#define _ck_assert_str_eq(X, Y)	\
 	do { const char* x = (X); const char* y = (Y);\
 		ck_assert_msg(strcmp(x,y) == 0,\
-		  "Assertion '"#X#O#Y"' failed: "#X"==\"%s\", "#Y"==\"%s\"",\
+		  "Assertion '"#X"=="#Y"' failed: "#X"==\"%s\", "#Y"==\"%s\"",\
+		  x, y);\
+	} while (0)
+
+#define _ck_assert_str_ne(X, Y)				\
+	do { const char* x = (X); const char* y = (Y);\
+		ck_assert_msg(strcmp(x,y) != 0,\
+		  "Assertion '"#X"!="#Y"' failed: "#X"==\"%s\", "#Y"==\"%s\"",\
 		  x, y);\
 	} while (0)
 
