@@ -36,9 +36,10 @@ MODULE_LICENSE("GPL");
 
 struct map_test_ctx {
 	struct ktest_context k;
+	bool seen;
 };
 
-struct map_test_ctx mctx[2];
+struct map_test_ctx s_mctx[2];
 
 /* Declare a simple handle with no contexts for simple (unparameterized) tests: */
 DECLARE_DEFAULT_HANDLE();
@@ -49,11 +50,19 @@ DECLARE_DEFAULT_HANDLE();
  */
 DECLARE_KTEST_HANDLE(dual_handle);
 
+struct map_test_ctx *to_mctx(struct ktest_context *ctx)
+{
+	return container_of(ctx, struct map_test_ctx, k);
+}
+
+
 
 TEST(any, simplemap)
 {
 	const int nelems = 3;
 	int i;
+	struct map_test_ctx *mctx = to_mctx(ctx);
+
 	struct ktest_map tm;
 	struct myelem {
 		struct ktest_map_elem foo;
@@ -61,8 +70,12 @@ TEST(any, simplemap)
 
 	struct myelem e[nelems];
 
-	/* For the simple no-context handle, ctx should be NULL */
-	EXPECT_ADDR_EQ(NULL, ctx);
+	if (mctx) {
+		tlog(T_DEBUG, "ctx %s\n", mctx->k.elem.name);
+		EXPECT_FALSE(mctx->seen);
+		mctx->seen = true;
+	} else
+		tlog(T_DEBUG, "ctx <none>\n");
 
 	ktest_map_init(&tm);
 	EXPECT_INT_EQ(0, ktest_map_elem_init(&e[0].foo, "foo"));
@@ -95,12 +108,18 @@ static void add_map_tests(void)
 static int __init maptest_init(void)
 {
 	int ret;
+	int i;
 
-	ret = ktest_context_add(&dual_handle, &mctx[0].k, "map1");
+	/* Initialize these to check that we have no "aliasing" between contexts: */
+	for (i = 0; i < 2; i++)
+		s_mctx[i].seen = false;
+
+	s_mctx[0].seen = false;
+	ret = ktest_context_add(&dual_handle, &s_mctx[0].k, "map1");
 	if (ret)
 		return ret;
 
-	ret = ktest_context_add(&dual_handle, &mctx[1].k, "map2");
+	ret = ktest_context_add(&dual_handle, &s_mctx[1].k, "map2");
 	if (ret)
 		return ret;
 

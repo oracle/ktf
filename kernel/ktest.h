@@ -19,10 +19,21 @@ int ktest_context_add(struct ktest_handle *handle, struct ktest_context* ctx, co
 struct ktest_context* ktest_find_context(struct ktest_handle *handle, const char* name);
 struct ktest_context *ktest_find_first_context(struct ktest_handle *handle);
 struct ktest_context *ktest_find_next_context(struct ktest_context* ctx);
+void ktest_context_remove(struct ktest_context *ctx);
 
 static inline size_t ktest_has_contexts(struct ktest_handle *handle) {
 	return ktest_map_size(&handle->ctx_map) > 0;
 }
+
+/* Declare the implicit __test_handle as extern for .c files that use it
+ * when adding tests with ADD_TEST but where definition is in another .c file:
+ */
+extern struct ktest_handle __test_handle;
+
+/* Add/remove/find a context to/from the default handle */
+#define KTEST_CONTEXT_ADD(__context, name) ktest_context_add(&__test_handle, __context, name)
+#define KTEST_CONTEXT_REMOVE(__context) ktest_context_remove(__context)
+#define KTEST_CONTEXT_FIND(name) ktest_find_context(&__test_handle, name)
 
 /* Test macros */
 

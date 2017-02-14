@@ -78,37 +78,6 @@ static int ktest_req(struct sk_buff *skb, struct genl_info *info)
 }
 
 
-static int send_test_fun_data(struct sk_buff *resp_skb, struct fun_hook *fh)
-{
-	int stat;
-	char fname[MAX_LEN_TEST_NAME+1];
-	char *postfix_start = fname;
-	struct ktest_context *ctx;
-
-	if (!fh->fun)
-		return 0;
-
-	/* If the owner handle has multiple contexts, this
-	 * test function gives rise to multiple tests with different
-	 * name postfixes:
-	 */
-	if (!ktest_has_contexts(fh->handle))
-		return nla_put_string(resp_skb, KTEST_A_STR, fh->name);
-
-	ctx = ktest_find_first_context(fh->handle);
-	postfix_start += sprintf(fname, fh->name);
-	*(postfix_start++) = '_';
-	while (ctx) {
-		sprintf(postfix_start,ctx->elem.name);
-		stat = nla_put_string(resp_skb, KTEST_A_STR, fname);
-		if (stat)
-			return stat;
-		ctx = ktest_find_next_context(ctx);
-	}
-	return 0;
-}
-
-
 /* Send data about one testcase */
 static int send_test_data(struct sk_buff *resp_skb, TCase *tc)
 {
@@ -121,7 +90,10 @@ static int send_test_data(struct sk_buff *resp_skb, TCase *tc)
 	nest_attr = nla_nest_start(resp_skb, KTEST_A_TEST);
 	if (stat) return stat;
 	list_for_each_entry(fh, &tc->fun_list, flist) {
-		stat = send_test_fun_data(resp_skb, fh);
+		/* If nonzero handle ID, add it first for user code to detect it */
+		if (fh->handle->id)
+			nla_put_u32(resp_skb, KTEST_A_HID, fh->handle->id);
+		stat = nla_put_string(resp_skb, KTEST_A_STR, fh->name);
 		if (stat) return stat;
 	}
 	nla_nest_end(resp_skb, nest_attr);
@@ -135,7 +107,9 @@ static int ktest_query(struct sk_buff *skb, struct genl_info *info)
 	struct sk_buff *resp_skb;
 	void *data;
 	int retval = 0;
-	struct nlattr *nest_attr;
+	struct nlattr *nest_attr, *nest2;
+	struct ktest_handle *handle;
+	struct ktest_context *ctx;
 	int i;
 
 	/* No options yet, just send a response */
@@ -151,9 +125,30 @@ static int ktest_query(struct sk_buff *skb, struct genl_info *info)
 	}
 	/* Add all test sets to the report
 	 *  We send test info as follows:
-	 *    KTEST_CT_QUERY testset_num [testset1 [name1 name2 ..] testset2 [name1 name2 ..]]
+	 *    KTEST_CT_QUERY hid1 [context1 [context2 ...]] hid2 [context1 [context2 ...]]
+	 *                   testset_num [testset1 [name1 name2 ..] testset2 [name1 name2 ..]]
+	 *  Handle IDs without contexts are not present
 	 */
 	if (!nla_put_u32(resp_skb, KTEST_A_TYPE, KTEST_CT_QUERY)) {
+		if (!list_empty(&context_handles)) {
+			/* Traverse list of handles with contexts */
+			nest_attr = nla_nest_start(resp_skb, KTEST_A_HLIST);
+			list_for_each_entry(handle, &context_handles, handle_list) {
+				/* Send HID */
+				nla_put_u32(resp_skb, KTEST_A_HID, handle->id);
+				/* Send contexts */
+				nest2 = nla_nest_start(resp_skb, KTEST_A_LIST);
+				ctx = ktest_find_first_context(handle);
+				while (ctx) {
+					nla_put_string(resp_skb, KTEST_A_STR, ctx->elem.name);
+					ctx = ktest_find_next_context(ctx);
+				}
+				nla_nest_end(resp_skb, nest2);
+			}
+			nla_nest_end(resp_skb, nest_attr);
+		}
+
+		/* Send total number of tests */
 		nla_put_u32(resp_skb, KTEST_A_NUM, check_test_cnt);
 		nest_attr = nla_nest_start(resp_skb, KTEST_A_LIST);
 		if (!nest_attr) {
@@ -179,7 +174,7 @@ resp_failure:
 
 
 
-static int ktest_run_funcs(struct sk_buff *skb, struct ktest_context* ctx,
+static int ktest_run_funcs(struct sk_buff *skb, const char* ctxname,
 			int setnum, int testnum, u32 value)
 {
 	TCase* testset;
@@ -197,6 +192,8 @@ static int ktest_run_funcs(struct sk_buff *skb, struct ktest_context* ctx,
 			        DM(T_DEBUG, printk(KERN_INFO "Running test %s.%s [%d:%d]\n",
 					fh->tclass,fh->name, fh->start, fh->end));
 				for (i = fh->start; i < fh->end; i++) {
+					struct ktest_context *ctx =
+						ktest_find_context(fh->handle, ctxname);
 					fh->fun(skb,ctx,i,value);
 					flush_assert_cnt(skb);
 				}
@@ -220,21 +217,14 @@ static int ktest_run(struct sk_buff *skb, struct genl_info *info)
 	void *data;
 	int retval = 0;
 	struct nlattr *nest_attr;
-	struct ktest_context* ctx = NULL;
-#if 0
 	char ctxname_store[101];
 	char *ctxname = ctxname_store;
 
-	if (info->attrs[KTEST_A_CTXNAME]) {
-		nla_strlcpy(ctxname, info->attrs[KTEST_A_CTXNAME], 100);
-		ctx = ktest_find_context(ctxname);
+	if (info->attrs[KTEST_A_STR]) {
+		nla_strlcpy(ctxname, info->attrs[KTEST_A_STR], 100);
+	} else
+		ctxname = NULL;
 
-		if (!ctx) {
-			printk(KERN_ERR "Could not find context name %s\n", ctxname);
-			return -ENODEV;
-		}
-	}
-#endif
 	if (!info->attrs[KTEST_A_SN])	{  /* Using SN field as testset number */
 		printk(KERN_ERR "received KTEST_CT_RUN msg without testset number!\n");
 		return -EINVAL;
@@ -273,7 +263,7 @@ static int ktest_run(struct sk_buff *skb, struct genl_info *info)
 	if (setnum < check_test_cnt && setnum >= 0) {
 		nla_put_u32(resp_skb, KTEST_A_NUM, testnum);
 		nest_attr = nla_nest_start(resp_skb, KTEST_A_LIST);
-		ktest_run_funcs(resp_skb, ctx, setnum, testnum, value);
+		ktest_run_funcs(resp_skb, ctxname, setnum, testnum, value);
 		nla_nest_end(resp_skb, nest_attr);
 	}
 

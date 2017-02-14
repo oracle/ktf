@@ -176,7 +176,7 @@ void _tcase_cleanup(struct ktest_handle *th);
 
 #define DECLARE_F(__fixture)\
 	struct __fixture {\
-		void (*setup) (struct sk_buff *, struct test_dev*, struct __fixture*); \
+		void (*setup) (struct sk_buff *, struct ktest_context*, struct __fixture*); \
 		void (*teardown) (struct sk_buff *, struct __fixture*);\
 		bool ok;
 
@@ -190,18 +190,18 @@ void _tcase_cleanup(struct ktest_handle *th);
 
 #define TEST_F(__fixture, __testsuite, __testname) \
 	static void __testname##_body(struct sk_buff*,struct __fixture*,int,u32); \
-	static void __testname(struct sk_buff * skb, struct test_dev* tdev, int _i, u32 _value); \
+	static void __testname(struct sk_buff * skb, struct ktest_context* ctx, int _i, u32 _value); \
 	struct __test_desc __testname##_setup = \
         { .tclass = "" # __testsuite "", .name = "" # __testname "", .fun = __testname };\
 	\
-	static void __testname(struct sk_buff * skb, struct test_dev* tdev, \
+	static void __testname(struct sk_buff * skb, struct ktest_context* ctx, \
 		int _i, u32 _value)				\
 	{\
-		struct __fixture ctx = __fixture##_template;\
-		ctx.setup(skb,tdev,&ctx);\
-		if (!ctx.ok) return;\
-		__testname##_body(skb,&ctx,_i,_value);	\
-		ctx.teardown(skb,&ctx);\
+		struct __fixture f_ctx = __fixture##_template;\
+		f_ctx.setup(skb,ctx,&f_ctx);\
+		if (!f_ctx.ok) return;\
+		__testname##_body(skb,&f_ctx,_i,_value);	\
+		f_ctx.teardown(skb,&f_ctx);\
 	}\
 	static void __testname##_body(struct sk_buff * skb,\
 			struct __fixture* ctx,\

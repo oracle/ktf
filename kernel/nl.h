@@ -33,4 +33,7 @@ struct fun_hook {
 /* The array of test cases defined */
 extern TCase check_test_case[];
 
+/* The list of handles that have contexts associated with them */
+extern struct list_head context_handles;
+
 #endif

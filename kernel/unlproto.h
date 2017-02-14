@@ -26,9 +26,8 @@ enum ktest_attr {
 	KTEST_A_STAT,
 	KTEST_A_LIST,
 	KTEST_A_TEST,
-	KTEST_A_DEVNO,
-	KTEST_A_CNAME,  /* optional context name */
-	KTEST_A_CLIST,  /* List of CNAME */
+	KTEST_A_HID,    /* Test handle ID */
+	KTEST_A_HLIST,  /* List of handles repr. as a LIST of contexts for a given HID */
 	KTEST_A_MAX
 };
 
@@ -39,11 +38,10 @@ struct nla_policy ktest_gnl_policy[KTEST_A_MAX] = {
 	[KTEST_A_SN]    = { .type = NLA_U32 },
 	[KTEST_A_NUM]   = { .type = NLA_U32 },
 	[KTEST_A_STAT]  = { .type = NLA_U32 },
-	[KTEST_A_DEVNO] = { .type = NLA_U32 },
-	[KTEST_A_CNAME] = { .type = NLA_STRING },
 	[KTEST_A_LIST]  = { .type = NLA_NESTED },
 	[KTEST_A_TEST]  = { .type = NLA_NESTED },
-	[KTEST_A_CLIST] = { .type = NLA_NESTED },
+	[KTEST_A_HID]   = { .type = NLA_U32 },
+	[KTEST_A_HLIST] = { .type = NLA_NESTED },
 	[KTEST_A_STR]   = { .type = NLA_STRING },
 	[KTEST_A_FILE]  = { .type = NLA_STRING },
 };

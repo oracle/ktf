@@ -25,7 +25,7 @@ public:
   {
     log(KTEST_INFO, "%s.%s\n", setname.c_str(), testname.c_str());
 
-    ukt = utest::find_test(setname,testname);
+    ukt = utest::find_test(setname,testname,&ctx);
     assert(ukt);
     log(KTEST_INFO, "### Kernel ctor %s (%ld,%ld)\n", ukt->name.c_str(), ukt->setnum, ukt->testnum);
   }
@@ -46,6 +46,7 @@ public:
   virtual void TestBody();
 private:
   utest::KernelTest* ukt;
+  std::string ctx;
   friend void gtest_init();
 
   static int AddToRegistry();
@@ -125,7 +126,7 @@ int Kernel::gtest_registering_dummy_ = Kernel::AddToRegistry();
 
 void Kernel::TestBody()
 {
-  run_test(ukt);
+  run_test(ukt, ctx);
 }
 
 

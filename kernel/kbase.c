@@ -72,6 +72,7 @@ void ktest_context_remove(struct ktest_context *ctx)
 	spin_unlock_irqrestore(&context_lock,flags);
 	printk ("ktest: removed context %s at %p\n", ctx->elem.name, ctx);
 }
+EXPORT_SYMBOL(ktest_context_remove);
 
 struct ktest_context *ktest_find_first_context(struct ktest_handle *handle)
 {
@@ -83,9 +84,13 @@ struct ktest_context *ktest_find_first_context(struct ktest_handle *handle)
 
 struct ktest_context* ktest_find_context(struct ktest_handle *handle, const char* name)
 {
-	struct ktest_map_elem *elem = ktest_map_find(&handle->ctx_map, name);
+	struct ktest_map_elem *elem;
+	if (!name)
+		return NULL;
+	elem = ktest_map_find(&handle->ctx_map, name);
 	return container_of(elem, struct ktest_context, elem);
 }
+EXPORT_SYMBOL(ktest_find_context);
 
 struct ktest_context *ktest_find_next_context(struct ktest_context* ctx)
 {
@@ -103,14 +108,8 @@ static struct ktest_kernel_internals ki;
 
 static int __init ktest_init(void)
 {
+	int ret;
 	const char* ks = "module_kallsyms_lookup_name";
-
-	/* Register with IB */
-	int ret = 0; //ib_register_client(&ib_client);
-	if (ret) {
-		printk("ktest: Failed to register with IB, ret = %d\n", ret);
-		return ret;
-	}
 
 	/* We rely on being able to resolve this symbol for looking up module
 	 * specific internal symbols (multiple modules may define the same symbol):
@@ -140,7 +139,6 @@ static int __init ktest_init(void)
 	tcase_create("sif");
 	return 0;
 failure:
-	//ib_unregister_client(&ib_client);
 	return ret;
 }
 
@@ -148,7 +146,6 @@ failure:
 static void __exit ktest_exit(void)
 {
 	ktest_cleanup_check();
-	//ib_unregister_client(&ib_client);
 	ktest_nl_unregister();
 }
 

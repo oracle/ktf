@@ -84,8 +84,8 @@ public:
 
   testset& find_add_set(std::string& setname);
   testset& find_add_test(std::string& setname, std::string& testname);
-  void add_test(const std::string& setname, const char* tname);
-  KernelTest* find_test(const std::string&setname, const std::string& testname);
+  void add_test(const std::string& setname, const char* tname, unsigned int handle_id);
+  KernelTest* find_test(const std::string&setname, const std::string& testname, std::string* ctx);
   void add_wrapper(const std::string setname, const std::string testname, test_cb* tcb);
 
   stringvec& get_set_names() { return set_names; }
@@ -101,11 +101,18 @@ public:
     return cur->setname;
   }
 
+  stringvec& get_contexts(unsigned int id)
+  {
+    return handle_to_ctxvec[id];
+  }
+
+  void add_cset(unsigned int hid, stringvec& ctxs);
 private:
   setmap sets;
   stringvec test_names;
   stringvec set_names;
   stringset kernelsets;
+  std::map<unsigned int, stringvec> handle_to_ctxvec;
   int next_set;
   name_iter* cur;
 };
@@ -127,7 +134,7 @@ testset& KernelTestMgr::find_add_set(std::string& setname)
 {
   bool new_set = false;
 
-  log(KTEST_INFO, "find_add_test(%s)\n", setname.c_str());
+  log(KTEST_DEBUG, "find_add_set(%s)\n", setname.c_str());
 
   stringset::iterator it = kernelsets.find(setname);
   if (it == kernelsets.end()) {
@@ -146,18 +153,57 @@ testset& KernelTestMgr::find_add_set(std::string& setname)
 }
 
 
-void KernelTestMgr::add_test(const std::string& setname, const char* tname)
+void KernelTestMgr::add_test(const std::string& setname, const char* tname,
+			     unsigned int handle_id)
 {
-  log(KTEST_DEBUG_V, "add_test: %s.%s\n", setname.c_str(),tname);
+  log(KTEST_INFO_V, "add_test: %s.%s", setname.c_str(),tname);
+  logs(KTEST_INFO_V,
+       if (handle_id)
+	 fprintf(stderr, " [id %d]\n", handle_id);
+       else
+	 fprintf(stderr, "\n"));
   std::string name(tname);
-  new KernelTest(setname, tname);
+  new KernelTest(setname, tname, handle_id);
 }
 
 
-KernelTest* KernelTestMgr::find_test(const std::string&setname, const std::string& testname)
+/* Here we might get called with test names expanded with context names */
+KernelTest* KernelTestMgr::find_test(const std::string&setname,
+				     const std::string& testname,
+				     std::string* pctx)
 {
+  size_t pos;
   log(KTEST_DEBUG, "find test %s.%s\n", setname.c_str(), testname.c_str());
-  return sets[setname].tests[testname];
+
+  /* Try direct lookup first: */
+  KernelTest* kt = sets[setname].tests[testname];
+  if (kt) {
+    *pctx = std::string();
+    return kt;
+  }
+
+  /* If we don't have any contexts set, no need to parse name: */
+  if (handle_to_ctxvec.empty())
+    return NULL;
+
+  pos = testname.find_last_of('_');
+  if (pos >= 0) {
+    std::string tname = testname.substr(0,pos);
+    std::string ctx = testname.substr(pos + 1, testname.npos);
+    *pctx = ctx;
+    return sets[setname].tests[tname];
+  }
+  return NULL;
+}
+
+
+void KernelTestMgr::add_cset(unsigned int hid, stringvec& ctxs)
+{
+  log(KTEST_INFO, "hid %d: ", hid);
+  logs(KTEST_INFO, for (stringvec::iterator it = ctxs.begin(); it != ctxs.end(); ++it)
+	 fprintf(stderr, "%s ", it->c_str());
+       fprintf(stderr, "\n"));
+  handle_to_ctxvec[hid] = ctxs;
 }
 
 
@@ -196,7 +242,7 @@ stringvec KernelTestMgr::get_test_names()
 }
 
 
-KernelTest::KernelTest(const std::string& sn, const char* tn)
+  KernelTest::KernelTest(const std::string& sn, const char* tn, unsigned int handle_id)
   : setname(sn),
     testname(tn),
     setnum(0),
@@ -214,8 +260,15 @@ KernelTest::KernelTest(const std::string& sn, const char* tn)
   testset& ts(kmgr().find_add_test(setname, testname));
   setnum = ts.setnum;
   ts.tests[testname] = this;
-  ts.test_names.push_back(testname);
-  testnum = ts.test_names.size();
+
+  if (!handle_id)
+    ts.test_names.push_back(testname);
+  else {
+    stringvec& ctxv = kmgr().get_contexts(handle_id);
+    for (stringvec::iterator it = ctxv.begin(); it != ctxv.end(); ++it)
+      ts.test_names.push_back(testname + "_" + *it);
+  }
+  testnum = ts.tests.size();
 
   wrappermap::iterator hit = ts.wrapper.find(testname);
   if (hit != ts.wrapper.end())
@@ -247,7 +300,7 @@ int nl_connect(void)
   /* Ask kernel to resolve family name to family id */
   family = genl_ctrl_resolve(sock, "ktest");
   if (family <= 0) {
-    fprintf(stderr, "Netlink protocol family not found - is test driver loaded?\n");
+    fprintf(stderr, "Netlink protocol family for ktest not found - is the ktest module loaded?\n");
     exit(1);
   }
 
@@ -319,9 +372,9 @@ std::string get_current_setname()
   return kmgr().get_current_setname();
 }
 
-KernelTest* find_test(const std::string&setname, const std::string& testname)
+KernelTest* find_test(const std::string&setname, const std::string& testname, std::string* ctx)
 {
-  return kmgr().find_test(setname, testname);
+  return kmgr().find_test(setname, testname, ctx);
 }
 
 void add_wrapper(const std::string setname, const std::string testname, test_cb* tcb)
@@ -329,16 +382,16 @@ void add_wrapper(const std::string setname, const std::string testname, test_cb*
   kmgr().add_wrapper(setname, testname, tcb);
 }
 
-void run_test(KernelTest* kt)
+void run_test(KernelTest* kt, std::string& ctx)
 {
   if (kt->user_test)
     kt->user_test->fun(kt);
   else
-    run_kernel_test(kt);
+    run_kernel_test(kt, ctx);
 }
 
 
-void run_kernel_test(KernelTest* kt)
+void run_kernel_test(KernelTest* kt, std::string& context)
 {
   struct nl_msg *msg;
 
@@ -351,7 +404,11 @@ void run_kernel_test(KernelTest* kt)
   nla_put_u32(msg, KTEST_A_TYPE, KTEST_CT_RUN);
   nla_put_u32(msg, KTEST_A_SN, kt->setnum);
   nla_put_u32(msg, KTEST_A_NUM, kt->testnum);
-  nla_put_u32(msg, KTEST_A_DEVNO, 0); /* Run only on device 0 right now */
+
+  if (!context.empty())
+    nla_put_string(msg, KTEST_A_STR, context.c_str());
+
+  //  nla_put_u32(msg, KTEST_A_DEVNO, 0); /* Run only on device 0 right now */
   if (kt->value)
     nla_put_u32(msg, KTEST_A_STAT, kt->value);
 
@@ -377,17 +434,23 @@ void run_kernel_test(KernelTest* kt)
 
 
 
-static nl_cb_action parse_one_test(std::string& setname,
-				   std::string& testname, struct nlattr* attr)
+static nl_cb_action parse_one_set(std::string& setname,
+				  std::string& testname, struct nlattr* attr)
 {
   int rem = 0;
   struct nlattr *nla;
   const char* msg;
+  unsigned int handle_id = 0;
+
   nla_for_each_nested(nla, attr, rem) {
     switch (nla->nla_type) {
+    case KTEST_A_HID:
+      handle_id = nla_get_u32(nla);
+      break;
     case KTEST_A_STR:
       msg = nla_get_string(nla);
-      kmgr().add_test(setname,msg);
+      kmgr().add_test(setname, msg, handle_id);
+      handle_id = 0;
       break;
     default:
       fprintf(stderr,"parse_result: Unexpected attribute type %d\n", nla->nla_type);
@@ -403,7 +466,34 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
 {
   int alloc = 0, rem = 0;
   nl_cb_action stat;
-  std::string setname,testname;
+  std::string setname,testname,ctx;
+
+  if (attrs[KTEST_A_HLIST]) {
+    struct nlattr *nla, *nla2;
+    stringvec contexts;
+    unsigned int handle_id = 0;
+
+    /* Parse info on handle IDs and associated contexts: */
+    nla_for_each_nested(nla, attrs[KTEST_A_HLIST], rem) {
+      switch (nla->nla_type) {
+      case KTEST_A_HID:
+	handle_id = nla_get_u32(nla);
+	break;
+      case KTEST_A_LIST:
+	nla_for_each_nested(nla2, nla, rem) {
+	  ctx = nla_get_string(nla2);
+	  contexts.push_back(ctx);
+	}
+	/* Add this set of contexts for the handle_id */
+	kmgr().add_cset(handle_id, contexts);
+	handle_id = 0;
+	break;
+      default:
+	fprintf(stderr,"parse_result: Unexpected attribute type %d\n", nla->nla_type);
+	return NL_SKIP;
+      }
+    }
+  }
 
   if (attrs[KTEST_A_NUM]) {
     alloc = nla_get_u32(attrs[KTEST_A_NUM]);
@@ -413,21 +503,17 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
     return -1;
   }
 
-  if (attrs[KTEST_A_DEVNO]) {
-    devcnt = nla_get_u32(attrs[KTEST_A_NUM]);
-    log(KTEST_INFO_V, "A total of %d devices registered.\n", devcnt);
-  }
-
   if (attrs[KTEST_A_LIST]) {
     struct nlattr *nla;
 
+    /* Parse info on test sets */
     nla_for_each_nested(nla, attrs[KTEST_A_LIST], rem) {
       switch (nla->nla_type) {
       case KTEST_A_STR:
 	setname = nla_get_string(nla);
 	break;
       case KTEST_A_TEST:
-	stat = parse_one_test(setname, testname, nla);
+	stat = parse_one_set(setname, testname, nla);
 	if (stat != NL_OK)
 	  return stat;
 	break;

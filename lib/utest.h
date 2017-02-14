@@ -32,9 +32,10 @@ namespace utest
   class KernelTest
   {
   public:
-    KernelTest(const std::string&,const char*);
+    KernelTest(const std::string& setname, const char* testname, unsigned int handle_id);
     std::string setname;
     std::string testname;
+    unsigned int handle_id;
     std::string name;
     size_t setnum;  /* This test belongs to this set in the kernel */
     size_t testnum; /* This test's index (test number) in the kernel */
@@ -58,15 +59,16 @@ namespace utest
   std::string get_current_setname();
   stringvec get_test_names();
 
-  KernelTest* find_test(const std::string& setname, const std::string& testname);
+  KernelTest* find_test(const std::string& setname, const std::string& testname,
+			std::string* ctx);
 
   /* "private" - only run from gtest framework */
-  void run_test(KernelTest* test);
+  void run_test(KernelTest* test, std::string& ctx);
 
   /* This is the function to call from a KTEST() wrapper
    * definition when the kernel part of the test should be run:
    */
-  void run_kernel_test(KernelTest* kt);
+  void run_kernel_test(KernelTest* kt, std::string& ctx);
 
   /* Function for adding a user level test wrapper */
   void add_wrapper(const std::string setname, const std::string testname, test_cb* tcb);

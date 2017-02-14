@@ -11,7 +11,6 @@
 int main (int argc, char** argv)
 {
   testing::GTEST_FLAG(output) = "xml:ktest.xml";
-  ktest_debug_init();
   testing::InitGoogleTest(&argc,argv);
 
   return RUN_ALL_TESTS();
