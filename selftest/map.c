@@ -36,10 +36,9 @@ MODULE_LICENSE("GPL");
 
 struct map_test_ctx {
 	struct ktest_context k;
-	bool seen;
 };
 
-struct map_test_ctx s_mctx[2];
+struct map_test_ctx s_mctx[3];
 
 /* Declare a simple handle with no contexts for simple (unparameterized) tests: */
 DECLARE_DEFAULT_HANDLE();
@@ -49,6 +48,8 @@ DECLARE_DEFAULT_HANDLE();
  *  other abstract contexts, definable by the test module)
  */
 DECLARE_KTEST_HANDLE(dual_handle);
+DECLARE_KTEST_HANDLE(single_handle);
+DECLARE_KTEST_HANDLE(no_handle);
 
 struct map_test_ctx *to_mctx(struct ktest_context *ctx)
 {
@@ -56,11 +57,10 @@ struct map_test_ctx *to_mctx(struct ktest_context *ctx)
 }
 
 
-
 TEST(any, simplemap)
 {
-	const int nelems = 3;
 	int i;
+	const int nelems = 3;
 	struct map_test_ctx *mctx = to_mctx(ctx);
 
 	struct ktest_map tm;
@@ -72,8 +72,6 @@ TEST(any, simplemap)
 
 	if (mctx) {
 		tlog(T_DEBUG, "ctx %s\n", mctx->k.elem.name);
-		EXPECT_FALSE(mctx->seen);
-		mctx->seen = true;
 	} else
 		tlog(T_DEBUG, "ctx <none>\n");
 
@@ -98,28 +96,30 @@ TEST(any, simplemap)
 	EXPECT_LONG_EQ(0, ktest_map_size(&tm));
 }
 
+TEST(any, dummy)
+{
+	EXPECT_TRUE(true);
+}
+
+
 static void add_map_tests(void)
 {
-	ADD_TEST(simplemap);
+	ADD_TEST(dummy);
 	ADD_TEST_TO(dual_handle, simplemap);
 }
 
 
 static int __init maptest_init(void)
 {
-	int ret;
-	int i;
-
-	/* Initialize these to check that we have no "aliasing" between contexts: */
-	for (i = 0; i < 2; i++)
-		s_mctx[i].seen = false;
-
-	s_mctx[0].seen = false;
-	ret = ktest_context_add(&dual_handle, &s_mctx[0].k, "map1");
+	int ret = ktest_context_add(&dual_handle, &s_mctx[0].k, "map1");
 	if (ret)
 		return ret;
 
 	ret = ktest_context_add(&dual_handle, &s_mctx[1].k, "map2");
+	if (ret)
+		return ret;
+
+	ret = ktest_context_add(&single_handle, &s_mctx[2].k, "map3");
 	if (ret)
 		return ret;
 
@@ -132,7 +132,9 @@ static int __init maptest_init(void)
 
 static void __exit maptest_exit(void)
 {
+	KTEST_HANDLE_CLEANUP(single_handle);
 	KTEST_HANDLE_CLEANUP(dual_handle);
+	KTEST_HANDLE_CLEANUP(no_handle);
 	KTEST_CLEANUP();
 	tlog(T_INFO, "map: unloaded\n");
 	/* Nothing to do here */

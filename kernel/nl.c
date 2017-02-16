@@ -83,18 +83,44 @@ static int send_test_data(struct sk_buff *resp_skb, TCase *tc)
 {
 	struct nlattr *nest_attr;
 	struct fun_hook *fh;
+	int stat;
 
-	int stat = 0;
 	stat = nla_put_string(resp_skb, KTEST_A_STR, tc->name);
 	if (stat) return stat;
 	nest_attr = nla_nest_start(resp_skb, KTEST_A_TEST);
-	if (stat) return stat;
 	list_for_each_entry(fh, &tc->fun_list, flist) {
-		/* If nonzero handle ID, add it first for user code to detect it */
 		if (fh->handle->id)
 			nla_put_u32(resp_skb, KTEST_A_HID, fh->handle->id);
 		stat = nla_put_string(resp_skb, KTEST_A_STR, fh->name);
 		if (stat) return stat;
+	}
+	nla_nest_end(resp_skb, nest_attr);
+	return 0;
+}
+
+
+
+static int send_handle_data(struct sk_buff *resp_skb, struct ktest_handle *handle)
+{
+	struct nlattr *nest_attr;
+	struct ktest_context *ctx;
+	int stat;
+
+	tlog(T_DEBUG, "Found context handle %d: ", handle->id);
+
+	/* Send HID */
+	stat = nla_put_u32(resp_skb, KTEST_A_HID, handle->id);
+	if (stat) return stat;
+
+	/* Send contexts */
+	nest_attr = nla_nest_start(resp_skb, KTEST_A_LIST);
+	if (!nest_attr)
+		return -ENOMEM;
+
+	ctx = ktest_find_first_context(handle);
+	while (ctx) {
+		nla_put_string(resp_skb, KTEST_A_STR, ctx->elem.name);
+		ctx = ktest_find_next_context(ctx);
 	}
 	nla_nest_end(resp_skb, nest_attr);
 	return 0;
@@ -107,9 +133,8 @@ static int ktest_query(struct sk_buff *skb, struct genl_info *info)
 	struct sk_buff *resp_skb;
 	void *data;
 	int retval = 0;
-	struct nlattr *nest_attr, *nest2;
+	struct nlattr *nest_attr;
 	struct ktest_handle *handle;
-	struct ktest_context *ctx;
 	int i;
 
 	/* No options yet, just send a response */
@@ -134,16 +159,7 @@ static int ktest_query(struct sk_buff *skb, struct genl_info *info)
 			/* Traverse list of handles with contexts */
 			nest_attr = nla_nest_start(resp_skb, KTEST_A_HLIST);
 			list_for_each_entry(handle, &context_handles, handle_list) {
-				/* Send HID */
-				nla_put_u32(resp_skb, KTEST_A_HID, handle->id);
-				/* Send contexts */
-				nest2 = nla_nest_start(resp_skb, KTEST_A_LIST);
-				ctx = ktest_find_first_context(handle);
-				while (ctx) {
-					nla_put_string(resp_skb, KTEST_A_STR, ctx->elem.name);
-					ctx = ktest_find_next_context(ctx);
-				}
-				nla_nest_end(resp_skb, nest2);
+				send_handle_data(resp_skb, handle);
 			}
 			nla_nest_end(resp_skb, nest_attr);
 		}
@@ -156,7 +172,11 @@ static int ktest_query(struct sk_buff *skb, struct genl_info *info)
 			goto resp_failure;
 		}
 		for (i = 0; i < check_test_cnt; i++) {
-			send_test_data(resp_skb, &check_test_case[i]);
+			retval = send_test_data(resp_skb, &check_test_case[i]);
+			if (retval) {
+				retval = -ENOMEM;
+				goto resp_failure;
+			}
 		}
 		nla_nest_end(resp_skb, nest_attr);
 	}
@@ -189,11 +209,16 @@ static int ktest_run_funcs(struct sk_buff *skb, const char* ctxname,
 		if (testnum == 0 || testnum == tn) {
 			/* If testnum != 0 run that test only */
 			if (fh->fun) {
-			        DM(T_DEBUG, printk(KERN_INFO "Running test %s.%s [%d:%d]\n",
-					fh->tclass,fh->name, fh->start, fh->end));
 				for (i = fh->start; i < fh->end; i++) {
 					struct ktest_context *ctx =
 						ktest_find_context(fh->handle, ctxname);
+					DM(T_DEBUG,
+						printk(KERN_INFO "Running test %s.%s",
+							fh->tclass, fh->name);
+						if (ctx)
+							printk("_%s", ctxname);
+						printk("[%d:%d]\n", fh->start, fh->end);
+					);
 					fh->fun(skb,ctx,i,value);
 					flush_assert_cnt(skb);
 				}
@@ -211,7 +236,7 @@ static int ktest_run_funcs(struct sk_buff *skb, const char* ctxname,
 
 static int ktest_run(struct sk_buff *skb, struct genl_info *info)
 {
-	int testnum, setnum, devno;
+	int testnum, setnum;
 	u32 value = 0;
 	struct sk_buff *resp_skb;
 	void *data;
@@ -243,8 +268,8 @@ static int ktest_run(struct sk_buff *skb, struct genl_info *info)
 	}
 
 	DM(T_DEBUG, printk(KERN_INFO "ktest_run: Request for testset# %d/%d, "
-				"test %d on device %d\n",
-				setnum, check_test_cnt, testnum, devno));
+				"test %d\n",
+				setnum, check_test_cnt, testnum));
 
 	/* Start building a response */
 	resp_skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);

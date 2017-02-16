@@ -464,7 +464,7 @@ static nl_cb_action parse_one_set(std::string& setname,
 
 static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
 {
-  int alloc = 0, rem = 0;
+  int alloc = 0, rem = 0, rem2 = 0;
   nl_cb_action stat;
   std::string setname,testname,ctx;
 
@@ -480,13 +480,14 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
 	handle_id = nla_get_u32(nla);
 	break;
       case KTEST_A_LIST:
-	nla_for_each_nested(nla2, nla, rem) {
+	nla_for_each_nested(nla2, nla, rem2) {
 	  ctx = nla_get_string(nla2);
 	  contexts.push_back(ctx);
 	}
 	/* Add this set of contexts for the handle_id */
 	kmgr().add_cset(handle_id, contexts);
 	handle_id = 0;
+	contexts.clear();
 	break;
       default:
 	fprintf(stderr,"parse_result: Unexpected attribute type %d\n", nla->nla_type);

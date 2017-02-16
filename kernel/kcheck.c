@@ -67,6 +67,9 @@ EXPORT_SYMBOL(_fail_unless);
  * Tests are represented by fun_hook objects that are linked into
  * two lists: fun_hook::flist in TCase::fun_list and
  *            fun_hook::hlist in ktest_handle::test_list
+ *
+ * TCase::fun_list is used for iterating through the tests.
+ * ktest_handle::test_list is needed for cleanup
  */
 void  _tcase_add_test (struct __test_desc td,
 				struct ktest_handle *th,
