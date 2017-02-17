@@ -1,36 +1,7 @@
 #include <linux/module.h>
 #include "ktest.h"
 #include "ktest_map.h"
-#include <linux/kallsyms.h>
-
-struct ktest_syms {
-	void (*map_init)(struct ktest_map *map);
-	int (*map_elem_init)(struct ktest_map_elem *elem, const char *name);
-	int (*map_insert)(struct ktest_map *map, struct ktest_map_elem *elem);
-	struct ktest_map_elem* (*map_find)(struct ktest_map *map, const char *name);
-	struct ktest_map_elem* (*map_find_first)(struct ktest_map *map);
-	struct ktest_map_elem* (*map_remove)(struct ktest_map *map, const char *name);
-};
-
-struct ktest_syms ktest_syms;
-
-#define ktest_map_init ktest_syms.map_init
-#define ktest_map_elem_init ktest_syms.map_elem_init
-#define ktest_map_insert ktest_syms.map_insert
-#define ktest_map_find ktest_syms.map_find
-#define ktest_map_find_first ktest_syms.map_find_first
-#define ktest_map_remove ktest_syms.map_remove
-
-static int resolve_symbols(void)
-{
-	ktest_resolve_symbol(ktest, ktest_map_init);
-	ktest_resolve_symbol(ktest, ktest_map_elem_init);
-	ktest_resolve_symbol(ktest, ktest_map_insert);
-	ktest_resolve_symbol(ktest, ktest_map_find);
-	ktest_resolve_symbol(ktest, ktest_map_find_first);
-	ktest_resolve_symbol(ktest, ktest_map_remove);
-	return 0;
-}
+#include "ktest_syms.h"
 
 MODULE_LICENSE("GPL");
 

@@ -2,7 +2,7 @@ ccflags-y += -Wno-declaration-after-statement
 
 KVER = @KVER@
 
--include genrules.mk
+-include ktest_gen.mk
 
 obj-m := ktest.o
 

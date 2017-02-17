@@ -59,28 +59,38 @@ AC_DEFUN([AM_KTEST_DIR],dnl Usage: AM_KTEST_DIR([subdir]) where subdir contains 
 TEST_DIR="$srcdir/$1"
 TEST_SRC=`cd $TEST_DIR && ls *.h *.c *.S 2> /dev/null | tr '\n' ' '| sed 's/ \w*\.mod\.c|\w*version.c|\wversioninfo.h//'`
 
+dnl Provide automatic generation of internal symbol resolving from ktest_syms.txt
+dnl if it exists:
+dnl
+ktest_symfile=`cd $TEST_DIR && ls ktest_syms.txt 2> /dev/null || true`
 
 rulepath="$1"
-rulefile="$rulepath/genrules.mk"
+rulefile="$rulepath/ktest_gen.mk"
 top_builddir="`pwd`"
 
 mkdir -p $rulepath
 cat - > $rulefile <<EOF
 
-top_builddir= $top_builddir
-srcdir= $TEST_DIR
-src_links= $TEST_SRC
+top_builddir = $top_builddir
+srcdir = $TEST_DIR
+src_links = $TEST_SRC
+ktest_symfile = $ktest_symfile
 
-all: \$(src_links) module
+ktest_syms = \$(ktest_symfile:%.txt=%.h)
+
+all: \$(ktest_syms) \$(src_links) module
 
 Makefile: \$(srcdir)/Makefile.in \$(top_builddir)/config.status
 	@case '\$?' in \\
 	  *config.status*) \\
 	    cd \$(top_builddir) && \$(MAKE) \$(AM_MAKEFLAGS) am--refresh;; \\
 	  *) \\
-	    echo ' cd \$(top_builddir) && \$(SHELL) ./config.status \$(subdir)/\$@; \
-	    cd \$(top_builddir) && \$(SHELL) ./config.status \$(subdir)/\$@ ;; \\
+	    echo ' cd \$(top_builddir) && \$(SHELL) ./config.status \$(subdir)/\$[]@; \
+	    cd \$(top_builddir) && \$(SHELL) ./config.status \$(subdir)/\$[]@ ;; \\
 	esac;
+
+ktest_syms.h: \$(srcdir)/ktest_syms.txt
+	\$(KTEST_DIR)/../scripts/resolve \$(ccflags-y) \$< \$[]@
 
 install: all
 uninstall:
