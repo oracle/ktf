@@ -127,16 +127,6 @@ static int __init ktest_init(void)
 		goto failure;
 	}
 
-	/* NB! Test classes must be inserted alphabetically */
-	tcase_create("any");
-	tcase_create("mlx");
-	tcase_create("prm");
-	tcase_create("rtl");
-
-	/* long tests not part of checkin regression */
-	tcase_create("rtlx");
-
-	tcase_create("sif");
 	return 0;
 failure:
 	return ret;
@@ -145,7 +135,7 @@ failure:
 
 static void __exit ktest_exit(void)
 {
-	ktest_cleanup_check();
+	ktest_cleanup();
 	ktest_nl_unregister();
 }
 

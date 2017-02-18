@@ -402,13 +402,11 @@ void run_kernel_test(KernelTest* kt, std::string& context)
   genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
 	      KTEST_C_REQ, 1);
   nla_put_u32(msg, KTEST_A_TYPE, KTEST_CT_RUN);
-  nla_put_u32(msg, KTEST_A_SN, kt->setnum);
-  nla_put_u32(msg, KTEST_A_NUM, kt->testnum);
+  nla_put_string(msg, KTEST_A_SNAM, kt->setname.c_str());
+  nla_put_string(msg, KTEST_A_TNAM, kt->testname.c_str());
 
   if (!context.empty())
     nla_put_string(msg, KTEST_A_STR, context.c_str());
-
-  //  nla_put_u32(msg, KTEST_A_DEVNO, 0); /* Run only on device 0 right now */
   if (kt->value)
     nla_put_u32(msg, KTEST_A_STAT, kt->value);
 
@@ -533,12 +531,15 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
 static enum nl_cb_action parse_result(struct nl_msg *msg, struct nlattr** attrs)
 {
   int assert_cnt = 0, fail_cnt = 0;
-  int rem = 0, testnum;
+  int rem = 0, stat;
   const char *file = "no_file",*report = "no_report";
 
-  if (attrs[KTEST_A_NUM]) {
-    testnum = nla_get_u32(attrs[KTEST_A_NUM]);
-    log(KTEST_DEBUG, "parsed test number %d\n",testnum);
+  if (attrs[KTEST_A_STAT]) {
+    stat = nla_get_u32(attrs[KTEST_A_STAT]);
+    log(KTEST_DEBUG, "parsed test status %d\n", stat);
+    if (stat) {
+      fprintf(stderr, "Failed to execute test in kernel - status %d\n", stat);
+    }
   }
   if (attrs[KTEST_A_LIST]) {
     /* Parse list of test results */

@@ -7,18 +7,62 @@
 #include "unlproto.h"
 #include "ktest.h"
 
-/* The array of test cases defined */
-TCase check_test_case[MAX_TEST_CASES];
+/* The global map from name to ktest_case */
+DEFINE_KTEST_MAP(test_cases);
 
-/* Number of elements in check_test_case[] */
-int check_test_cnt = 0;
-
-/* a mutex to protect this datastructure */
-DEFINE_SPINLOCK(tc_lock);
+/* a lock to protect this datastructure */
+DEFINE_MUTEX(tc_lock);
 
 #define MAX_PRINTF 4096
 
-/* TBD: access to check_test_cases should be properly synchronized
+
+/* Current total number of test cases defined */
+size_t ktest_case_count()
+{
+	return ktest_map_size(&test_cases);
+}
+
+struct ktest_case *ktest_case_create(const char *name)
+{
+	struct ktest_case *tc = kmalloc(sizeof(*tc), GFP_KERNEL);
+	int ret;
+
+	if (!tc)
+		return tc;
+
+	INIT_LIST_HEAD(&tc->fun_list);
+	ret = ktest_map_elem_init(&tc->kmap, name);
+	if (ret) {
+		kfree(tc);
+		return NULL;
+	}
+	DM(T_INFO, printk(KERN_INFO "ktest: Added test set %s\n", name));
+	return tc;
+}
+
+struct ktest_case *ktest_case_find(const char *name)
+{
+	return ktest_map_find_entry(&test_cases, name, struct ktest_case, kmap);
+}
+
+struct ktest_case *ktest_case_find_create(const char *name)
+{
+	struct ktest_case *tc;
+	int ret = 0;
+
+	tc = ktest_case_find(name);
+	if (!tc) {
+		tc = ktest_case_create(name);
+		ret = ktest_map_insert(&test_cases, &tc->kmap);
+		if (ret) {
+			kfree(tc);
+			tc = NULL;
+		}
+	}
+	return tc;
+}
+
+/* TBD: access to 'test_cases' should be properly synchronized
  * to avoid crashes if someone tries to unload while a test in progress
  */
 
@@ -77,16 +121,16 @@ void  _tcase_add_test (struct __test_desc td,
 				int allowed_exit_value,
 				int start, int end)
 {
-	TCase *tc;
+	struct ktest_case *tc;
 	struct fun_hook *fc = (struct fun_hook *)
 		kmalloc(sizeof(struct fun_hook), GFP_KERNEL);
 	if (!fc)
 		return;
 
-	spin_lock(&tc_lock);
-	tc = tcase_find(td.tclass);
+	mutex_lock(&tc_lock);
+	tc = ktest_case_find_create(td.tclass);
 	if (!tc) {
-		printk(KERN_INFO "ERROR: Failed to add test %s from %s - no such test case \"%s\"",
+		printk(KERN_INFO "ERROR: Failed to add test %s from %s to test case \"%s\"",
 			td.name, td.file, td.tclass);
 		kfree(fc);
 		goto out;
@@ -104,37 +148,9 @@ void  _tcase_add_test (struct __test_desc td,
 	list_add(&fc->flist, &tc->fun_list);
 	list_add(&fc->hlist, &th->test_list);
 out:
-	spin_unlock(&tc_lock);
+	mutex_unlock(&tc_lock);
 }
 EXPORT_SYMBOL(_tcase_add_test);
-
-/* Create a test case */
-TCase*  tcase_create (const char *name)
-{
-	TCase* tc = NULL;
-	spin_lock(&tc_lock);
-	DM(T_INFO, printk(KERN_INFO "ktest: Added test set %s\n", name));
-	if (check_test_cnt > MAX_TEST_CASES) {
-		printk(KERN_ERR "ktest: Too many tests - increase MAX_TEST_CASES!");
-		goto out;
-	}
-	tc = &check_test_case[check_test_cnt++];
-	INIT_LIST_HEAD(&tc->fun_list);
-	strncpy(tc->name, name, MAX_LEN_TEST_NAME);
-out:
-	spin_unlock(&tc_lock);
-	return tc;
-}
-
-TCase*  tcase_find (const char *name)
-{
-	int i;
-	for (i = 0; i < check_test_cnt; i++) {
-		if (strcmp(name,check_test_case[i].name) == 0)
-			return &check_test_case[i];
-	}
-	return NULL;
-}
 
 
 /* Clean up all tests associated with a ktest_handle */
@@ -144,7 +160,7 @@ void _tcase_cleanup(struct ktest_handle *th)
 	struct fun_hook *fh;
 	struct list_head *pos, *n;
 
-	spin_lock(&tc_lock);
+	mutex_lock(&tc_lock);
 	list_for_each_safe(pos, n, &th->test_list) {
 		fh = list_entry(pos, struct fun_hook, hlist);
 		DM(T_INFO, printk(KERN_INFO "ktest: delete test %s\n", fh->name));
@@ -152,25 +168,30 @@ void _tcase_cleanup(struct ktest_handle *th)
 		list_del(&fh->hlist);
 		kfree(fh);
 	}
-	spin_unlock(&tc_lock);
+	mutex_unlock(&tc_lock);
 }
 EXPORT_SYMBOL(_tcase_cleanup);
 
 
 
 
-void ktest_cleanup_check(void)
+int ktest_cleanup(void)
 {
-	int i;
 	struct fun_hook *fh;
-	struct list_head *pos;
+	struct ktest_case *tc;
 
-	spin_lock(&tc_lock);
-	for (i = 0; i < check_test_cnt; i++) {
-		list_for_each(pos, &check_test_case[i].fun_list) {
+	mutex_lock(&tc_lock);
+	ktest_map_for_each_entry(tc, &test_cases, kmap) {
+		struct list_head *pos;
+		list_for_each(pos, &tc->fun_list) {
 			fh = list_entry(pos, struct fun_hook, flist);
-			printk(KERN_INFO "ktest: test set %s still active at unload!\n", fh->name);
+			printk(KERN_WARNING
+				"ktest: (memory leak) test set %s still active with test %s at unload!\n",
+				tc_name(tc), fh->name);
+			return -EBUSY;
 		}
 	}
-	spin_unlock(&tc_lock);
+	ktest_map_delete_all(&test_cases, struct ktest_case, kmap);
+	mutex_unlock(&tc_lock);
+	return 0;
 }

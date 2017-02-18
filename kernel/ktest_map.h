@@ -15,7 +15,7 @@
 #include <linux/version.h>
 #include <linux/rbtree.h>
 
-#define KTEST_MAX_NAME 20
+#define KTEST_MAX_NAME 64
 
 struct ktest_map {
 	struct rb_root root; /* The rb tree holding the map */
@@ -58,6 +58,44 @@ struct ktest_map_elem *ktest_map_remove(struct ktest_map *map, const char *name)
 
 static inline size_t ktest_map_size(struct ktest_map *map) {
 	return map->size;
+}
+
+static inline bool ktest_map_empty(struct ktest_map *map) {
+	return map->size == 0;
+}
+
+#define ktest_map_first_entry(map, type, member) \
+	ktest_map_empty(map) ? NULL : \
+	container_of(ktest_map_find_first(map), type, member)
+
+#define ktest_map_next_entry(pos, member) ({ \
+	struct ktest_map_elem *e = ktest_map_find_next(&(pos)->member); \
+        e ? container_of(e, typeof(*pos), member) : NULL; \
+})
+
+#define ktest_map_for_each(pos, map)	\
+	for (pos = ktest_map_find_first(map); pos != NULL; pos = ktest_map_find_next(pos))
+
+#define ktest_map_for_each_entry(pos, map, member) \
+	for (pos = ktest_map_first_entry(map, typeof(*pos), member);	\
+	     pos != NULL; \
+	     pos = ktest_map_next_entry(pos, member))
+
+#define ktest_map_find_entry(map, key, type, member) ({	\
+	struct ktest_map_elem *e = ktest_map_find(map, key);	\
+        e ? container_of(e, type, member) : NULL; \
+})
+
+/* Empty the whole map by first calling kfree on each entry in post order,
+ * then setting the map to empty
+ */
+
+#define ktest_map_delete_all(map, type, member) { \
+	struct ktest_map_elem *elem, *pos; \
+	rbtree_postorder_for_each_entry_safe(pos, elem, &(map)->root, node) { \
+		type *e = container_of(pos, type, member);\
+		kfree(e); \
+	}\
 }
 
 #endif

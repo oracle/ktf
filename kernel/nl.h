@@ -1,23 +1,29 @@
 #ifndef SIF_TEST_NL_H
 #define SIF_TEST_NL_H
 #include <linux/list.h>
-
+#include "ktest_map.h"
 
 int ktest_nl_register(void);
 void ktest_nl_unregister(void);
 
-/* Current max number of (named) tests, increase when needed.. */
-#define MAX_TEST_CASES 100
-#define MAX_LEN_TEST_NAME 64
-
-
-/* Number of elements in check_test_case[] */
-extern int check_test_cnt;
-
-struct TCase {
-	char name[MAX_LEN_TEST_NAME+1];
+struct ktest_case {
+	struct ktest_map_elem kmap;  /* Linkage for ktest_map */
 	struct list_head fun_list; /* A list of functions to run */
 };
+
+extern struct ktest_map test_cases;
+
+static inline const char *tc_name(struct ktest_case *tc)
+{
+	return tc->kmap.name;
+}
+
+/* Current total number of test cases defined */
+size_t ktest_case_count(void);
+
+
+/* Called upon ktest unload to clean up test cases */
+int ktest_cleanup(void);
 
 struct fun_hook {
 	const char* tclass; /* test class name */
@@ -29,9 +35,6 @@ struct fun_hook {
 	struct list_head flist; /* linkage for all tests */
 	struct list_head hlist; /* linkage for tests for a specific module */
 };
-
-/* The array of test cases defined */
-extern TCase check_test_case[];
 
 /* The list of handles that have contexts associated with them */
 extern struct list_head context_handles;

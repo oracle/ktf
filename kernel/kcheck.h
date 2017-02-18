@@ -45,11 +45,15 @@
 
 void flush_assert_cnt(struct sk_buff* skb);
 
-/* opaque type for a test case
- * A TCase represents a test case.  Create with tcase_create, free
- * with tcase_free.
+/* Representation of a test case (a group of tests) */
+struct ktest_case;
+
+struct ktest_case *ktest_case_find(const char *name);
+
+/* A test context is an extendable object that a test client module
+ * can supply, and that all tests will be invoked with as an implicit
+ * 'ctx' argument:
  */
-typedef struct TCase TCase;
 struct ktest_context;
 
 /* Each module client of the test framework is required to
@@ -70,11 +74,6 @@ struct __test_desc
 	const char* file;   /* File that implements test */
 	TFun fun;
 };
-
-/* Create a test case */
-TCase* tcase_create (const char *name);
-
-TCase* tcase_find (const char *name);
 
 /* Add a test function to a test case for a given handle (macro version) */
 #define tcase_add_test_to(td, __test_handle)					\

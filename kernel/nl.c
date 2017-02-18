@@ -79,13 +79,13 @@ static int ktest_req(struct sk_buff *skb, struct genl_info *info)
 
 
 /* Send data about one testcase */
-static int send_test_data(struct sk_buff *resp_skb, TCase *tc)
+static int send_test_data(struct sk_buff *resp_skb, struct ktest_case *tc)
 {
 	struct nlattr *nest_attr;
 	struct fun_hook *fh;
 	int stat;
 
-	stat = nla_put_string(resp_skb, KTEST_A_STR, tc->name);
+	stat = nla_put_string(resp_skb, KTEST_A_STR, tc_name(tc));
 	if (stat) return stat;
 	nest_attr = nla_nest_start(resp_skb, KTEST_A_TEST);
 	list_for_each_entry(fh, &tc->fun_list, flist) {
@@ -135,7 +135,7 @@ static int ktest_query(struct sk_buff *skb, struct genl_info *info)
 	int retval = 0;
 	struct nlattr *nest_attr;
 	struct ktest_handle *handle;
-	int i;
+	struct ktest_case *tc;
 
 	/* No options yet, just send a response */
 	resp_skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
@@ -165,14 +165,14 @@ static int ktest_query(struct sk_buff *skb, struct genl_info *info)
 		}
 
 		/* Send total number of tests */
-		nla_put_u32(resp_skb, KTEST_A_NUM, check_test_cnt);
+		nla_put_u32(resp_skb, KTEST_A_NUM, ktest_case_count());
 		nest_attr = nla_nest_start(resp_skb, KTEST_A_LIST);
 		if (!nest_attr) {
 			retval = -ENOMEM;
 			goto resp_failure;
 		}
-		for (i = 0; i < check_test_cnt; i++) {
-			retval = send_test_data(resp_skb, &check_test_case[i]);
+		ktest_map_for_each_entry(tc, &test_cases, kmap) {
+			retval = send_test_data(resp_skb, tc);
 			if (retval) {
 				retval = -ENOMEM;
 				goto resp_failure;
@@ -194,82 +194,81 @@ resp_failure:
 
 
 
-static int ktest_run_funcs(struct sk_buff *skb, const char* ctxname,
-			int setnum, int testnum, u32 value)
+static int ktest_run_func(struct sk_buff *skb, const char* ctxname,
+			const char *setname, const char *testname, u32 value)
 {
-	TCase* testset;
+	struct ktest_case* testset = ktest_case_find(setname);
 
 	/* Execute test functions */
 	struct fun_hook *fh;
 	int i;
-	int tn = 1;
-	testset = &check_test_case[setnum];
+	int tn = 0;
+
+	if (!testset) {
+		tlog(T_INFO, "No such testset \"%s\"\n", setname);
+		return -EFAULT;
+	}
 
 	list_for_each_entry(fh, &testset->fun_list, flist) {
-		if (testnum == 0 || testnum == tn) {
-			/* If testnum != 0 run that test only */
-			if (fh->fun) {
-				for (i = fh->start; i < fh->end; i++) {
-					struct ktest_context *ctx =
-						ktest_find_context(fh->handle, ctxname);
-					DM(T_DEBUG,
-						printk(KERN_INFO "Running test %s.%s",
-							fh->tclass, fh->name);
-						if (ctx)
-							printk("_%s", ctxname);
-						printk("[%d:%d]\n", fh->start, fh->end);
+		if (fh->fun && strcmp(fh->name,testname) == 0) {
+			struct ktest_context *ctx = ktest_find_context(fh->handle, ctxname);
+			for (i = fh->start; i < fh->end; i++) {
+				DM(T_DEBUG,
+					printk(KERN_INFO "Running test %s.%s",
+						fh->tclass, fh->name);
+					if (ctx)
+						printk("_%s", ctxname);
+					printk("[%d:%d]\n", fh->start, fh->end);
 					);
-					fh->fun(skb,ctx,i,value);
-					flush_assert_cnt(skb);
-				}
-			} else
-				DM(T_DEBUG, printk(KERN_INFO "** no function for test %s.%s **\n",
-					fh->tclass,fh->name));
-		}
+				fh->fun(skb,ctx,i,value);
+				flush_assert_cnt(skb);
+			}
+		} else
+			DM(T_DEBUG, printk(KERN_INFO "** no function for test %s.%s **\n",
+						fh->tclass,fh->name));
 		tn++;
 	}
 	DM(T_DEBUG, printk(KERN_INFO "Set %s contained %d tests\n",
-				testset->name, tn-1));
+				tc_name(testset), tn));
 	return 0;
 }
 
 
 static int ktest_run(struct sk_buff *skb, struct genl_info *info)
 {
-	int testnum, setnum;
 	u32 value = 0;
 	struct sk_buff *resp_skb;
 	void *data;
 	int retval = 0;
 	struct nlattr *nest_attr;
-	char ctxname_store[101];
+	char ctxname_store[KTEST_MAX_NAME+1];
 	char *ctxname = ctxname_store;
+	char setname[KTEST_MAX_NAME+1];
+	char testname[KTEST_MAX_NAME+1];
 
 	if (info->attrs[KTEST_A_STR]) {
-		nla_strlcpy(ctxname, info->attrs[KTEST_A_STR], 100);
+		nla_strlcpy(ctxname, info->attrs[KTEST_A_STR], KTEST_MAX_NAME);
 	} else
 		ctxname = NULL;
 
-	if (!info->attrs[KTEST_A_SN])	{  /* Using SN field as testset number */
-		printk(KERN_ERR "received KTEST_CT_RUN msg without testset number!\n");
+	if (!info->attrs[KTEST_A_SNAM])	{
+		printk(KERN_ERR "received KTEST_CT_RUN msg without testset name!\n");
 		return -EINVAL;
 	}
-	setnum = nla_get_u32(info->attrs[KTEST_A_SN]);
+	nla_strlcpy(setname, info->attrs[KTEST_A_SNAM], KTEST_MAX_NAME);
 
-	if (!info->attrs[KTEST_A_NUM])	{  /* Using NUM field as test number */
-		printk(KERN_ERR "received KTEST_CT_RUN msg without testnum!\n");
+	if (!info->attrs[KTEST_A_TNAM])	{  /* Test name wo/context */
+		printk(KERN_ERR "received KTEST_CT_RUN msg without test name!\n");
 		return -EINVAL;
 	}
-	testnum = nla_get_u32(info->attrs[KTEST_A_NUM]);
+	nla_strlcpy(testname, info->attrs[KTEST_A_TNAM], KTEST_MAX_NAME);
 
-	if (info->attrs[KTEST_A_STAT])	{
-		/* Using STAT field as optional u32 input parameter to test */
-		value = nla_get_u32(info->attrs[KTEST_A_STAT]);
+	if (info->attrs[KTEST_A_NUM])	{
+		/* Using NUM field as optional u32 input parameter to test */
+		value = nla_get_u32(info->attrs[KTEST_A_NUM]);
 	}
 
-	DM(T_DEBUG, printk(KERN_INFO "ktest_run: Request for testset# %d/%d, "
-				"test %d\n",
-				setnum, check_test_cnt, testnum));
+	tlog(T_DEBUG, "ktest_run: Request for testset %s, test %s\n", setname, testname);
 
 	/* Start building a response */
 	resp_skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
@@ -284,26 +283,21 @@ static int ktest_run(struct sk_buff *skb, struct genl_info *info)
 	}
 
 	nla_put_u32(resp_skb, KTEST_A_TYPE, KTEST_CT_RUN);
-
-	if (setnum < check_test_cnt && setnum >= 0) {
-		nla_put_u32(resp_skb, KTEST_A_NUM, testnum);
-		nest_attr = nla_nest_start(resp_skb, KTEST_A_LIST);
-		ktest_run_funcs(resp_skb, ctxname, setnum, testnum, value);
-		nla_nest_end(resp_skb, nest_attr);
-	}
+	nest_attr = nla_nest_start(resp_skb, KTEST_A_LIST);
+	retval = ktest_run_func(resp_skb, ctxname, setname, testname, value);
+	nla_nest_end(resp_skb, nest_attr);
+	nla_put_u32(resp_skb, KTEST_A_STAT, retval);
 
 	/* Recompute message header */
 	genlmsg_end(resp_skb, data);
 
 	retval = genlmsg_reply(resp_skb, info);
 	if (!retval)
-		DM(T_DEBUG, printk(KERN_INFO "ktest_run: Sent reply for test %d\n",
-					testnum));
+		tlog(T_DEBUG, "Sent reply for test %s.%s\n", setname, testname);
 	else
-		printk(KERN_INFO
-			"ktest_run: Failed to send reply"
-			" for test %d - value %d\n",
-			testnum, retval);
+		printk(KERN_WARNING
+			"ktest_run: Failed to send reply for test %s.%s - value %d\n",
+			setname, testname, retval);
 put_fail:
 	/* Free buffer if failure */
 	if (retval)

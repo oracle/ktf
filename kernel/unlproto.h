@@ -19,7 +19,8 @@ enum ktest_cmd_type {
 enum ktest_attr {
 	KTEST_A_UNSPEC,
 	KTEST_A_TYPE,
-	KTEST_A_SN,
+	KTEST_A_SNAM,
+	KTEST_A_TNAM,
 	KTEST_A_NUM,
 	KTEST_A_STR,
 	KTEST_A_FILE,
@@ -35,7 +36,8 @@ enum ktest_attr {
 #ifdef NL_INTERNAL
 struct nla_policy ktest_gnl_policy[KTEST_A_MAX] = {
 	[KTEST_A_TYPE]  = { .type = NLA_U32 },
-	[KTEST_A_SN]    = { .type = NLA_U32 },
+	[KTEST_A_SNAM]  = { .type = NLA_STRING },
+	[KTEST_A_TNAM]  = { .type = NLA_STRING },
 	[KTEST_A_NUM]   = { .type = NLA_U32 },
 	[KTEST_A_STAT]  = { .type = NLA_U32 },
 	[KTEST_A_HID]   = { .type = NLA_U32 },
