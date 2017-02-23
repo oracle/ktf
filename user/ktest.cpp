@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "ktest_run.h"
+#include "ktf_run.h"
 #include "debug.h"
 
 /* This program is now a generic

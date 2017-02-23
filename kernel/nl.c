@@ -4,72 +4,72 @@
 #include "unlproto.h"
 #include "kcheck.h"
 #include "nl.h"
-#include "ktest.h"
+#include "ktf.h"
 
 /* Generic netlink support to communicate with user level
  * test framework.
  */
 
 /* Callback functions defined below */
-static int ktest_run(struct sk_buff *skb, struct genl_info *info);
-static int ktest_query(struct sk_buff *skb, struct genl_info *info);
-static int ktest_req(struct sk_buff *skb, struct genl_info *info);
-static int ktest_resp(struct sk_buff *skb, struct genl_info *info);
+static int ktf_run(struct sk_buff *skb, struct genl_info *info);
+static int ktf_query(struct sk_buff *skb, struct genl_info *info);
+static int ktf_req(struct sk_buff *skb, struct genl_info *info);
+static int ktf_resp(struct sk_buff *skb, struct genl_info *info);
 
 /* operation definition */
-static struct genl_ops ktest_ops[] = {
+static struct genl_ops ktf_ops[] = {
 	{
-		.cmd = KTEST_C_REQ,
+		.cmd = KTF_C_REQ,
 		.flags = 0,
-		.policy = ktest_gnl_policy,
-		.doit = ktest_req,
+		.policy = ktf_gnl_policy,
+		.doit = ktf_req,
 		.dumpit = NULL,
 	},
 	{
-		.cmd = KTEST_C_RESP,
+		.cmd = KTF_C_RESP,
 		.flags = 0,
-		.policy = ktest_gnl_policy,
-		.doit = ktest_resp,
+		.policy = ktf_gnl_policy,
+		.doit = ktf_resp,
 		.dumpit = NULL,
 	}
 };
 
 /* family definition */
-static struct genl_family ktest_gnl_family = {
+static struct genl_family ktf_gnl_family = {
 #if (KERNEL_VERSION(4, 10, 0) > LINUX_VERSION_CODE)
 	.id = GENL_ID_GENERATE,
 #else
 	.module = THIS_MODULE,
 #endif
 	.hdrsize = 0,
-	.name = "ktest",
+	.name = "ktf",
 	.version = 1,
-	.maxattr = KTEST_A_MAX+4,
+	.maxattr = KTF_A_MAX+4,
 #if (KERNEL_VERSION(3, 13, 7) < LINUX_VERSION_CODE)
-	.ops = ktest_ops,
-	.n_ops = ARRAY_SIZE(ktest_ops),
+	.ops = ktf_ops,
+	.n_ops = ARRAY_SIZE(ktf_ops),
 #endif
 };
 
 /* handler, returns 0 on success, negative
  * values on failure
  */
-static int ktest_req(struct sk_buff *skb, struct genl_info *info)
+static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 {
-	enum ktest_cmd_type type;
+	enum ktf_cmd_type type;
 	/* Dispatch on type of request */
 
-	if (!info->attrs[KTEST_A_TYPE]) {
+	if (!info->attrs[KTF_A_TYPE]) {
 		printk(KERN_ERR "received netlink msg with no type!");
 		return -EINVAL;
 	}
-	type = nla_get_u32(info->attrs[KTEST_A_TYPE]);
+	type = nla_get_u32(info->attrs[KTF_A_TYPE]);
 
 	switch(type) {
-	case KTEST_CT_QUERY:
-		return ktest_query(skb, info);
-	case KTEST_CT_RUN:
-		return ktest_run(skb, info);
+	case KTF_CT_QUERY:
+		return ktf_query(skb, info);
+	case KTF_CT_RUN:
+		return ktf_run(skb, info);
 	default:
 		printk(KERN_ERR "received netlink msg with invalid type (%d)",
 			type);
@@ -79,19 +79,19 @@ static int ktest_req(struct sk_buff *skb, struct genl_info *info)
 
 
 /* Send data about one testcase */
-static int send_test_data(struct sk_buff *resp_skb, struct ktest_case *tc)
+static int send_test_data(struct sk_buff *resp_skb, struct ktf_case *tc)
 {
 	struct nlattr *nest_attr;
 	struct fun_hook *fh;
 	int stat;
 
-	stat = nla_put_string(resp_skb, KTEST_A_STR, tc_name(tc));
+	stat = nla_put_string(resp_skb, KTF_A_STR, tc_name(tc));
 	if (stat) return stat;
-	nest_attr = nla_nest_start(resp_skb, KTEST_A_TEST);
+	nest_attr = nla_nest_start(resp_skb, KTF_A_TEST);
 	list_for_each_entry(fh, &tc->fun_list, flist) {
 		if (fh->handle->id)
-			nla_put_u32(resp_skb, KTEST_A_HID, fh->handle->id);
-		stat = nla_put_string(resp_skb, KTEST_A_STR, fh->name);
+			nla_put_u32(resp_skb, KTF_A_HID, fh->handle->id);
+		stat = nla_put_string(resp_skb, KTF_A_STR, fh->name);
 		if (stat) return stat;
 	}
 	nla_nest_end(resp_skb, nest_attr);
@@ -100,27 +100,27 @@ static int send_test_data(struct sk_buff *resp_skb, struct ktest_case *tc)
 
 
 
-static int send_handle_data(struct sk_buff *resp_skb, struct ktest_handle *handle)
+static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
 {
 	struct nlattr *nest_attr;
-	struct ktest_context *ctx;
+	struct ktf_context *ctx;
 	int stat;
 
 	tlog(T_DEBUG, "Found context handle %d: ", handle->id);
 
 	/* Send HID */
-	stat = nla_put_u32(resp_skb, KTEST_A_HID, handle->id);
+	stat = nla_put_u32(resp_skb, KTF_A_HID, handle->id);
 	if (stat) return stat;
 
 	/* Send contexts */
-	nest_attr = nla_nest_start(resp_skb, KTEST_A_LIST);
+	nest_attr = nla_nest_start(resp_skb, KTF_A_LIST);
 	if (!nest_attr)
 		return -ENOMEM;
 
-	ctx = ktest_find_first_context(handle);
+	ctx = ktf_find_first_context(handle);
 	while (ctx) {
-		nla_put_string(resp_skb, KTEST_A_STR, ctx->elem.name);
-		ctx = ktest_find_next_context(ctx);
+		nla_put_string(resp_skb, KTF_A_STR, ctx->elem.name);
+		ctx = ktf_find_next_context(ctx);
 	}
 	nla_nest_end(resp_skb, nest_attr);
 	return 0;
@@ -128,36 +128,36 @@ static int send_handle_data(struct sk_buff *resp_skb, struct ktest_handle *handl
 
 
 
-static int ktest_query(struct sk_buff *skb, struct genl_info *info)
+static int ktf_query(struct sk_buff *skb, struct genl_info *info)
 {
 	struct sk_buff *resp_skb;
 	void *data;
 	int retval = 0;
 	struct nlattr *nest_attr;
-	struct ktest_handle *handle;
-	struct ktest_case *tc;
+	struct ktf_handle *handle;
+	struct ktf_case *tc;
 
 	/* No options yet, just send a response */
 	resp_skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
 	if (!resp_skb)
 		return -ENOMEM;
 
-	data = genlmsg_put_reply(resp_skb, info, &ktest_gnl_family,
-				0, KTEST_C_RESP);
+	data = genlmsg_put_reply(resp_skb, info, &ktf_gnl_family,
+				0, KTF_C_RESP);
 	if (data == NULL) {
 		retval = -ENOMEM;
 		goto resp_failure;
 	}
 	/* Add all test sets to the report
 	 *  We send test info as follows:
-	 *    KTEST_CT_QUERY hid1 [context1 [context2 ...]] hid2 [context1 [context2 ...]]
+	 *    KTF_CT_QUERY hid1 [context1 [context2 ...]] hid2 [context1 [context2 ...]]
 	 *                   testset_num [testset1 [name1 name2 ..] testset2 [name1 name2 ..]]
 	 *  Handle IDs without contexts are not present
 	 */
-	if (!nla_put_u32(resp_skb, KTEST_A_TYPE, KTEST_CT_QUERY)) {
+	if (!nla_put_u32(resp_skb, KTF_A_TYPE, KTF_CT_QUERY)) {
 		if (!list_empty(&context_handles)) {
 			/* Traverse list of handles with contexts */
-			nest_attr = nla_nest_start(resp_skb, KTEST_A_HLIST);
+			nest_attr = nla_nest_start(resp_skb, KTF_A_HLIST);
 			list_for_each_entry(handle, &context_handles, handle_list) {
 				send_handle_data(resp_skb, handle);
 			}
@@ -165,13 +165,13 @@ static int ktest_query(struct sk_buff *skb, struct genl_info *info)
 		}
 
 		/* Send total number of tests */
-		nla_put_u32(resp_skb, KTEST_A_NUM, ktest_case_count());
-		nest_attr = nla_nest_start(resp_skb, KTEST_A_LIST);
+		nla_put_u32(resp_skb, KTF_A_NUM, ktf_case_count());
+		nest_attr = nla_nest_start(resp_skb, KTF_A_LIST);
 		if (!nest_attr) {
 			retval = -ENOMEM;
 			goto resp_failure;
 		}
-		ktest_map_for_each_entry(tc, &test_cases, kmap) {
+		ktf_map_for_each_entry(tc, &test_cases, kmap) {
 			retval = send_test_data(resp_skb, tc);
 			if (retval) {
 				retval = -ENOMEM;
@@ -194,10 +194,10 @@ resp_failure:
 
 
 
-static int ktest_run_func(struct sk_buff *skb, const char* ctxname,
+static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 			const char *setname, const char *testname, u32 value)
 {
-	struct ktest_case* testset = ktest_case_find(setname);
+	struct ktf_case* testset = ktf_case_find(setname);
 
 	/* Execute test functions */
 	struct fun_hook *fh;
@@ -211,7 +211,7 @@ static int ktest_run_func(struct sk_buff *skb, const char* ctxname,
 
 	list_for_each_entry(fh, &testset->fun_list, flist) {
 		if (fh->fun && strcmp(fh->name,testname) == 0) {
-			struct ktest_context *ctx = ktest_find_context(fh->handle, ctxname);
+			struct ktf_context *ctx = ktf_find_context(fh->handle, ctxname);
 			for (i = fh->start; i < fh->end; i++) {
 				DM(T_DEBUG,
 					printk(KERN_INFO "Running test %s.%s",
@@ -234,59 +234,59 @@ static int ktest_run_func(struct sk_buff *skb, const char* ctxname,
 }
 
 
-static int ktest_run(struct sk_buff *skb, struct genl_info *info)
+static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 {
 	u32 value = 0;
 	struct sk_buff *resp_skb;
 	void *data;
 	int retval = 0;
 	struct nlattr *nest_attr;
-	char ctxname_store[KTEST_MAX_NAME+1];
+	char ctxname_store[KTF_MAX_NAME+1];
 	char *ctxname = ctxname_store;
-	char setname[KTEST_MAX_NAME+1];
-	char testname[KTEST_MAX_NAME+1];
+	char setname[KTF_MAX_NAME+1];
+	char testname[KTF_MAX_NAME+1];
 
-	if (info->attrs[KTEST_A_STR]) {
-		nla_strlcpy(ctxname, info->attrs[KTEST_A_STR], KTEST_MAX_NAME);
+	if (info->attrs[KTF_A_STR]) {
+		nla_strlcpy(ctxname, info->attrs[KTF_A_STR], KTF_MAX_NAME);
 	} else
 		ctxname = NULL;
 
-	if (!info->attrs[KTEST_A_SNAM])	{
-		printk(KERN_ERR "received KTEST_CT_RUN msg without testset name!\n");
+	if (!info->attrs[KTF_A_SNAM])	{
+		printk(KERN_ERR "received KTF_CT_RUN msg without testset name!\n");
 		return -EINVAL;
 	}
-	nla_strlcpy(setname, info->attrs[KTEST_A_SNAM], KTEST_MAX_NAME);
+	nla_strlcpy(setname, info->attrs[KTF_A_SNAM], KTF_MAX_NAME);
 
-	if (!info->attrs[KTEST_A_TNAM])	{  /* Test name wo/context */
-		printk(KERN_ERR "received KTEST_CT_RUN msg without test name!\n");
+	if (!info->attrs[KTF_A_TNAM])	{  /* Test name wo/context */
+		printk(KERN_ERR "received KTF_CT_RUN msg without test name!\n");
 		return -EINVAL;
 	}
-	nla_strlcpy(testname, info->attrs[KTEST_A_TNAM], KTEST_MAX_NAME);
+	nla_strlcpy(testname, info->attrs[KTF_A_TNAM], KTF_MAX_NAME);
 
-	if (info->attrs[KTEST_A_NUM])	{
+	if (info->attrs[KTF_A_NUM])	{
 		/* Using NUM field as optional u32 input parameter to test */
-		value = nla_get_u32(info->attrs[KTEST_A_NUM]);
+		value = nla_get_u32(info->attrs[KTF_A_NUM]);
 	}
 
-	tlog(T_DEBUG, "ktest_run: Request for testset %s, test %s\n", setname, testname);
+	tlog(T_DEBUG, "ktf_run: Request for testset %s, test %s\n", setname, testname);
 
 	/* Start building a response */
 	resp_skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
 	if (!resp_skb)
 		return -ENOMEM;
 
-	data = genlmsg_put_reply(resp_skb, info, &ktest_gnl_family,
-				0, KTEST_C_REQ);
+	data = genlmsg_put_reply(resp_skb, info, &ktf_gnl_family,
+				0, KTF_C_REQ);
 	if (data == NULL) {
 		retval = -ENOMEM;
 		goto put_fail;
 	}
 
-	nla_put_u32(resp_skb, KTEST_A_TYPE, KTEST_CT_RUN);
-	nest_attr = nla_nest_start(resp_skb, KTEST_A_LIST);
-	retval = ktest_run_func(resp_skb, ctxname, setname, testname, value);
+	nla_put_u32(resp_skb, KTF_A_TYPE, KTF_CT_RUN);
+	nest_attr = nla_nest_start(resp_skb, KTF_A_LIST);
+	retval = ktf_run_func(resp_skb, ctxname, setname, testname, value);
 	nla_nest_end(resp_skb, nest_attr);
-	nla_put_u32(resp_skb, KTEST_A_STAT, retval);
+	nla_put_u32(resp_skb, KTF_A_STAT, retval);
 
 	/* Recompute message header */
 	genlmsg_end(resp_skb, data);
@@ -296,7 +296,7 @@ static int ktest_run(struct sk_buff *skb, struct genl_info *info)
 		tlog(T_DEBUG, "Sent reply for test %s.%s\n", setname, testname);
 	else
 		printk(KERN_WARNING
-			"ktest_run: Failed to send reply for test %s.%s - value %d\n",
+			"ktf_run: Failed to send reply for test %s.%s - value %d\n",
 			setname, testname, retval);
 put_fail:
 	/* Free buffer if failure */
@@ -307,26 +307,26 @@ put_fail:
 
 
 
-static int ktest_resp(struct sk_buff *skb, struct genl_info *info)
+static int ktf_resp(struct sk_buff *skb, struct genl_info *info)
 {
 	/* not to expect this message here */
 	printk(KERN_INFO "unexpected netlink RESP msg received");
 	return 0;
 }
 
-int ktest_nl_register(void)
+int ktf_nl_register(void)
 {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,13,7))
 	int stat = genl_register_family_with_ops(
-		&ktest_gnl_family,
-		ktest_ops, ARRAY_SIZE(ktest_ops));
+		&ktf_gnl_family,
+		ktf_ops, ARRAY_SIZE(ktf_ops));
 #else
-	int stat = genl_register_family(&ktest_gnl_family);
+	int stat = genl_register_family(&ktf_gnl_family);
 #endif
 	return stat;
 }
 
-void ktest_nl_unregister(void)
+void ktf_nl_unregister(void)
 {
-	genl_unregister_family(&ktest_gnl_family);
+	genl_unregister_family(&ktf_gnl_family);
 }

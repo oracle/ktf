@@ -9,7 +9,7 @@
 #include "kernel/unlproto.h"
 
 
-struct nla_policy *get_ktest_gnl_policy()
+struct nla_policy *get_ktf_gnl_policy()
 {
-  return ktest_gnl_policy;
+  return ktf_gnl_policy;
 }

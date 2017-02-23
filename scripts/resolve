@@ -79,11 +79,11 @@ class Module:
 
     def write_defines(self, file):
         for fi in self.func_def:
-            file.write("#define %s ktest_syms.%s\n" % (fi.symbol, fi.re_sym))
+            file.write("#define %s ktf_syms.%s\n" % (fi.symbol, fi.re_sym))
 
     def write_resolve_calls(self, file):
         for fi in self.func_def:
-            file.write("\tktest_resolve_symbol(%s, %s);\n" % (self.name, fi.symbol))
+            file.write("\tktf_resolve_symbol(%s, %s);\n" % (self.name, fi.symbol))
 
 usage_h = False
 my_argv = []
@@ -147,8 +147,8 @@ try:
     output = open(outputfile, "w")
 except:
     print "Failed to open output header file \"%s\"" % outputfile
-output.write('#ifndef _KTEST_RESOLVE_H\n#define _KTEST_RESOLVE_H\n')
-output.write('#include "ktest.h"\n\nstruct ktest_syms {\n')
+output.write('#ifndef _KTF_RESOLVE_H\n#define _KTF_RESOLVE_H\n')
+output.write('#include "ktf.h"\n\nstruct ktf_syms {\n')
 
 for m in all_modules:
     m.write_funcs(output)
@@ -158,14 +158,14 @@ output.write('};\n\n')
 for m in all_modules:
     m.write_defines(output)
 
-output.write('\n\n#ifdef KTEST_CLIENT\nextern struct ktest_syms ktest_syms;\n')
+output.write('\n\n#ifdef KTF_CLIENT\nextern struct ktf_syms ktf_syms;\n')
 output.write('\nint resolve_symbols(void);\n#else\n')
-output.write('struct ktest_syms ktest_syms;\n\n')
+output.write('struct ktf_syms ktf_syms;\n\n')
 
 output.write('\nint resolve_symbols(void)\n{\n')
 
 for m in all_modules:
     m.write_resolve_calls(output)
 
-output.write('\treturn 0;\n}\n\n#endif /* !KTEST_CLIENT */\n#endif /* _KTEST_RESOLVE_H */ \n')
+output.write('\treturn 0;\n}\n\n#endif /* !KTF_CLIENT */\n#endif /* _KTF_RESOLVE_H */ \n')
 output.close()

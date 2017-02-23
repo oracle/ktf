@@ -1,8 +1,0 @@
-#module ktest
-#header ktest_map.h
-ktest_map_init
-ktest_map_elem_init
-ktest_map_insert
-ktest_map_find
-ktest_map_find_first
-ktest_map_remove

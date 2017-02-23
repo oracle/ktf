@@ -6,24 +6,24 @@
  * it under the terms of the GNU General Public License version 2
  * as published by the Free Software Foundation.
  *
- * ktest_map.c: Implementation of a kernel version independent std::map like API
+ * ktf_map.c: Implementation of a kernel version independent std::map like API
  *   (made abstract to allow impl to change)
  */
 
-#include "ktest_map.h"
-#include "ktest.h"
+#include "ktf_map.h"
+#include "ktf.h"
 
-void ktest_map_init(struct ktest_map *map)
+void ktf_map_init(struct ktf_map *map)
 {
 	map->root = RB_ROOT;
 	map->size = 0;
 }
 
 /* returns 0 upon success or -ENOMEM if key got truncated */
-int ktest_map_elem_init(struct ktest_map_elem *elem, const char *name)
+int ktf_map_elem_init(struct ktf_map_elem *elem, const char *name)
 {
-	char *dest = strncpy(elem->name, name, KTEST_MAX_NAME + 1);
-	if (dest - elem->name == KTEST_MAX_NAME + 1) {
+	char *dest = strncpy(elem->name, name, KTF_MAX_NAME + 1);
+	if (dest - elem->name == KTF_MAX_NAME + 1) {
 		*(--dest) = '\0';
 		return -ENOMEM;
 	}
@@ -31,12 +31,12 @@ int ktest_map_elem_init(struct ktest_map_elem *elem, const char *name)
 }
 
 
-struct ktest_map_elem *ktest_map_find(struct ktest_map *map, const char *name)
+struct ktf_map_elem *ktf_map_find(struct ktf_map *map, const char *name)
 {
 	struct rb_node *node = map->root.rb_node;
 
 	while (node) {
-		struct ktest_map_elem *elem = container_of(node, struct ktest_map_elem, node);
+		struct ktf_map_elem *elem = container_of(node, struct ktf_map_elem, node);
 		int result;
 
 		result = strcmp(name, elem->name);
@@ -53,29 +53,29 @@ struct ktest_map_elem *ktest_map_find(struct ktest_map *map, const char *name)
 
 
 /* Find the first map elem in 'map' */
-struct ktest_map_elem *ktest_map_find_first(struct ktest_map *map)
+struct ktf_map_elem *ktf_map_find_first(struct ktf_map *map)
 {
 	struct rb_node *node = rb_first(&map->root);
 	if (node)
-		return container_of(node, struct ktest_map_elem, node);
+		return container_of(node, struct ktf_map_elem, node);
 	return NULL;
 }
 
 /* Find the next element in the map after 'elem' if any */
-struct ktest_map_elem *ktest_map_find_next(struct ktest_map_elem *elem)
+struct ktf_map_elem *ktf_map_find_next(struct ktf_map_elem *elem)
 {
 	struct rb_node *node = rb_next(&elem->node);
 	if (node)
-		return container_of(node, struct ktest_map_elem, node);
+		return container_of(node, struct ktf_map_elem, node);
 	return NULL;
 }
 
-int ktest_map_insert(struct ktest_map *map, struct ktest_map_elem *elem)
+int ktf_map_insert(struct ktf_map *map, struct ktf_map_elem *elem)
 {
 	struct rb_node **newobj = &(map->root.rb_node), *parent = NULL;
 
 	while (*newobj) {
-		struct ktest_map_elem *this = container_of(*newobj, struct ktest_map_elem, node);
+		struct ktf_map_elem *this = container_of(*newobj, struct ktf_map_elem, node);
 		int result = strcmp(elem->name, this->name);
 
 		parent = *newobj;
@@ -94,9 +94,9 @@ int ktest_map_insert(struct ktest_map *map, struct ktest_map_elem *elem)
 	return 0;
 }
 
-struct ktest_map_elem *ktest_map_remove(struct ktest_map *map, const char *name)
+struct ktf_map_elem *ktf_map_remove(struct ktf_map *map, const char *name)
 {
-	struct ktest_map_elem *elem = ktest_map_find(map, name);
+	struct ktf_map_elem *elem = ktf_map_find(map, name);
 	if (elem) {
 		rb_erase(&elem->node, &map->root);
 		map->size--;

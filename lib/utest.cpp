@@ -24,7 +24,7 @@
 extern "C"
 {
   /* From unlproto.c */
-  struct nla_policy *get_ktest_gnl_policy();
+  struct nla_policy *get_ktf_gnl_policy();
 }
 
 int devcnt = 0;
@@ -134,7 +134,7 @@ testset& KernelTestMgr::find_add_set(std::string& setname)
 {
   bool new_set = false;
 
-  log(KTEST_DEBUG, "find_add_set(%s)\n", setname.c_str());
+  log(KTF_DEBUG, "find_add_set(%s)\n", setname.c_str());
 
   stringset::iterator it = kernelsets.find(setname);
   if (it == kernelsets.end()) {
@@ -147,7 +147,7 @@ testset& KernelTestMgr::find_add_set(std::string& setname)
   if (new_set)
   {
     ts.setnum = next_set++;
-    log(KTEST_INFO, "added %s (set %d)\n", setname.c_str(), ts.setnum);
+    log(KTF_INFO, "added %s (set %d)\n", setname.c_str(), ts.setnum);
   }
   return ts;
 }
@@ -156,8 +156,8 @@ testset& KernelTestMgr::find_add_set(std::string& setname)
 void KernelTestMgr::add_test(const std::string& setname, const char* tname,
 			     unsigned int handle_id)
 {
-  log(KTEST_INFO_V, "add_test: %s.%s", setname.c_str(),tname);
-  logs(KTEST_INFO_V,
+  log(KTF_INFO_V, "add_test: %s.%s", setname.c_str(),tname);
+  logs(KTF_INFO_V,
        if (handle_id)
 	 fprintf(stderr, " [id %d]\n", handle_id);
        else
@@ -173,7 +173,7 @@ KernelTest* KernelTestMgr::find_test(const std::string&setname,
 				     std::string* pctx)
 {
   size_t pos;
-  log(KTEST_DEBUG, "find test %s.%s\n", setname.c_str(), testname.c_str());
+  log(KTF_DEBUG, "find test %s.%s\n", setname.c_str(), testname.c_str());
 
   /* Try direct lookup first: */
   KernelTest* kt = sets[setname].tests[testname];
@@ -199,8 +199,8 @@ KernelTest* KernelTestMgr::find_test(const std::string&setname,
 
 void KernelTestMgr::add_cset(unsigned int hid, stringvec& ctxs)
 {
-  log(KTEST_INFO, "hid %d: ", hid);
-  logs(KTEST_INFO, for (stringvec::iterator it = ctxs.begin(); it != ctxs.end(); ++it)
+  log(KTF_INFO, "hid %d: ", hid);
+  logs(KTF_INFO, for (stringvec::iterator it = ctxs.begin(); it != ctxs.end(); ++it)
 	 fprintf(stderr, "%s ", it->c_str());
        fprintf(stderr, "\n"));
   handle_to_ctxvec[hid] = ctxs;
@@ -210,7 +210,7 @@ void KernelTestMgr::add_cset(unsigned int hid, stringvec& ctxs)
 /* Function for adding a wrapper user level test */
 void KernelTestMgr::add_wrapper(const std::string setname, const std::string testname, test_cb* tcb)
 {
-  log(KTEST_DEBUG, "add_wrapper: %s.%s\n", setname.c_str(),testname.c_str());
+  log(KTF_DEBUG, "add_wrapper: %s.%s\n", setname.c_str(),testname.c_str());
   testset& ts = sets[setname];
   /* Depending on C++ initialization order which vary between compiler version
    * (sigh!) either the kernel tests have already been processed or we have to store
@@ -298,9 +298,9 @@ int nl_connect(void)
   }
 
   /* Ask kernel to resolve family name to family id */
-  family = genl_ctrl_resolve(sock, "ktest");
+  family = genl_ctrl_resolve(sock, "ktf");
   if (family <= 0) {
-    fprintf(stderr, "Netlink protocol family for ktest not found - is the ktest module loaded?\n");
+    fprintf(stderr, "Netlink protocol family for ktf not found - is the ktf module loaded?\n");
     exit(1);
   }
 
@@ -324,7 +324,7 @@ test_handler handle_test = default_test_handler;
 
 bool setup(test_handler ht)
 {
-  ktest_debug_init();
+  ktf_debug_init();
   handle_test = ht;
   return nl_connect() == 0;
 }
@@ -338,8 +338,8 @@ stringvec& query_testsets()
 
   msg = nlmsg_alloc();
   genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
-	      KTEST_C_REQ, 1);
-  nla_put_u32(msg, KTEST_A_TYPE, KTEST_CT_QUERY);
+	      KTF_C_REQ, 1);
+  nla_put_u32(msg, KTF_A_TYPE, KTF_CT_QUERY);
 
   // Send message over netlink socket
   nl_send_auto_complete(sock, msg);
@@ -395,20 +395,20 @@ void run_kernel_test(KernelTest* kt, std::string& context)
 {
   struct nl_msg *msg;
 
-  log(KTEST_DEBUG_V, "START kernel test (%ld,%ld): %s\n", kt->setnum,
+  log(KTF_DEBUG_V, "START kernel test (%ld,%ld): %s\n", kt->setnum,
 		kt->testnum, kt->name.c_str());
 
   msg = nlmsg_alloc();
   genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
-	      KTEST_C_REQ, 1);
-  nla_put_u32(msg, KTEST_A_TYPE, KTEST_CT_RUN);
-  nla_put_string(msg, KTEST_A_SNAM, kt->setname.c_str());
-  nla_put_string(msg, KTEST_A_TNAM, kt->testname.c_str());
+	      KTF_C_REQ, 1);
+  nla_put_u32(msg, KTF_A_TYPE, KTF_CT_RUN);
+  nla_put_string(msg, KTF_A_SNAM, kt->setname.c_str());
+  nla_put_string(msg, KTF_A_TNAM, kt->testname.c_str());
 
   if (!context.empty())
-    nla_put_string(msg, KTEST_A_STR, context.c_str());
+    nla_put_string(msg, KTF_A_STR, context.c_str());
   if (kt->value)
-    nla_put_u32(msg, KTEST_A_STAT, kt->value);
+    nla_put_u32(msg, KTF_A_STAT, kt->value);
 
   // Send message over netlink socket
   nl_send_auto_complete(sock, msg);
@@ -427,7 +427,7 @@ void run_kernel_test(KernelTest* kt, std::string& context)
   // Wait for the answer and receive it
   nl_recvmsgs_default(sock);
 
-  log(KTEST_DEBUG_V, "END   utest::run_kernel_test %s\n", kt->name.c_str());
+  log(KTF_DEBUG_V, "END   utest::run_kernel_test %s\n", kt->name.c_str());
 }
 
 
@@ -442,10 +442,10 @@ static nl_cb_action parse_one_set(std::string& setname,
 
   nla_for_each_nested(nla, attr, rem) {
     switch (nla->nla_type) {
-    case KTEST_A_HID:
+    case KTF_A_HID:
       handle_id = nla_get_u32(nla);
       break;
-    case KTEST_A_STR:
+    case KTF_A_STR:
       msg = nla_get_string(nla);
       kmgr().add_test(setname, msg, handle_id);
       handle_id = 0;
@@ -466,18 +466,18 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
   nl_cb_action stat;
   std::string setname,testname,ctx;
 
-  if (attrs[KTEST_A_HLIST]) {
+  if (attrs[KTF_A_HLIST]) {
     struct nlattr *nla, *nla2;
     stringvec contexts;
     unsigned int handle_id = 0;
 
     /* Parse info on handle IDs and associated contexts: */
-    nla_for_each_nested(nla, attrs[KTEST_A_HLIST], rem) {
+    nla_for_each_nested(nla, attrs[KTF_A_HLIST], rem) {
       switch (nla->nla_type) {
-      case KTEST_A_HID:
+      case KTF_A_HID:
 	handle_id = nla_get_u32(nla);
 	break;
-      case KTEST_A_LIST:
+      case KTF_A_LIST:
 	nla_for_each_nested(nla2, nla, rem2) {
 	  ctx = nla_get_string(nla2);
 	  contexts.push_back(ctx);
@@ -494,24 +494,24 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
     }
   }
 
-  if (attrs[KTEST_A_NUM]) {
-    alloc = nla_get_u32(attrs[KTEST_A_NUM]);
-    log(KTEST_DEBUG, "Kernel offers %d test sets:\n", alloc);
+  if (attrs[KTF_A_NUM]) {
+    alloc = nla_get_u32(attrs[KTF_A_NUM]);
+    log(KTF_DEBUG, "Kernel offers %d test sets:\n", alloc);
   } else {
     fprintf(stderr,"No test set count in kernel response??\n");
     return -1;
   }
 
-  if (attrs[KTEST_A_LIST]) {
+  if (attrs[KTF_A_LIST]) {
     struct nlattr *nla;
 
     /* Parse info on test sets */
-    nla_for_each_nested(nla, attrs[KTEST_A_LIST], rem) {
+    nla_for_each_nested(nla, attrs[KTF_A_LIST], rem) {
       switch (nla->nla_type) {
-      case KTEST_A_STR:
+      case KTF_A_STR:
 	setname = nla_get_string(nla);
 	break;
-      case KTEST_A_TEST:
+      case KTF_A_TEST:
 	stat = parse_one_set(setname, testname, nla);
 	if (stat != NL_OK)
 	  return stat;
@@ -534,20 +534,20 @@ static enum nl_cb_action parse_result(struct nl_msg *msg, struct nlattr** attrs)
   int rem = 0, stat;
   const char *file = "no_file",*report = "no_report";
 
-  if (attrs[KTEST_A_STAT]) {
-    stat = nla_get_u32(attrs[KTEST_A_STAT]);
-    log(KTEST_DEBUG, "parsed test status %d\n", stat);
+  if (attrs[KTF_A_STAT]) {
+    stat = nla_get_u32(attrs[KTF_A_STAT]);
+    log(KTF_DEBUG, "parsed test status %d\n", stat);
     if (stat) {
       fprintf(stderr, "Failed to execute test in kernel - status %d\n", stat);
     }
   }
-  if (attrs[KTEST_A_LIST]) {
+  if (attrs[KTF_A_LIST]) {
     /* Parse list of test results */
     struct nlattr *nla;
     int result = -1, line = 0;
-    nla_for_each_nested(nla, attrs[KTEST_A_LIST], rem) {
+    nla_for_each_nested(nla, attrs[KTF_A_LIST], rem) {
       switch (nla->nla_type) {
-      case KTEST_A_STAT:
+      case KTF_A_STAT:
 	/* Flush previous test, if any */
 	handle_test(result,file,line,report);
 	result = nla_get_u32(nla);
@@ -560,15 +560,15 @@ static enum nl_cb_action parse_result(struct nl_msg *msg, struct nlattr** attrs)
 	  assert_cnt++;
 	}
 	break;
-      case KTEST_A_FILE:
+      case KTF_A_FILE:
 	file = nla_get_string(nla);
 	if (!file)
 	  file = "no_file";
 	break;
-      case KTEST_A_NUM:
+      case KTF_A_NUM:
 	line = nla_get_u32(nla);
 	break;
-      case KTEST_A_STR:
+      case KTF_A_STR:
 	report = nla_get_string(nla);
 	if (!report)
 	  report = "no_report";
@@ -589,26 +589,26 @@ static enum nl_cb_action parse_result(struct nl_msg *msg, struct nlattr** attrs)
 static int parse_cb(struct nl_msg *msg, void *arg)
 {
   struct nlmsghdr *nlh = nlmsg_hdr(msg);
-  int maxtype = KTEST_A_MAX+10;
+  int maxtype = KTF_A_MAX+10;
   struct nlattr *attrs[maxtype];
-  enum ktest_cmd_type type;
+  enum ktf_cmd_type type;
 
   //  memset(attrs, 0, sizeof(attrs));
 
   /* Validate message and parse attributes */
-  int err = genlmsg_parse(nlh, 0, attrs, KTEST_A_MAX, get_ktest_gnl_policy());
+  int err = genlmsg_parse(nlh, 0, attrs, KTF_A_MAX, get_ktf_gnl_policy());
   if (err < 0) return err;
 
-  if (!attrs[KTEST_A_TYPE]) {
+  if (!attrs[KTF_A_TYPE]) {
     fprintf(stderr, "Received kernel response without a type\n");
     return NL_SKIP;
   }
 
-  type = (ktest_cmd_type)nla_get_u32(attrs[KTEST_A_TYPE]);
+  type = (ktf_cmd_type)nla_get_u32(attrs[KTF_A_TYPE]);
   switch (type) {
-  case KTEST_CT_QUERY:
+  case KTF_CT_QUERY:
     return parse_query(msg, attrs);
-  case KTEST_CT_RUN:
+  case KTF_CT_RUN:
     return parse_result(msg, attrs);
   default:
     debug_cb(msg, attrs);

@@ -3,12 +3,12 @@
  * Oracle SIF Infiniband PCI Express host channel adapter (HCA)
  *   device driver for Linux
  *
- * ktest_run.h: Gtest integration of kernel tests
+ * ktf_run.h: Gtest integration of kernel tests
  *
  */
 
-#ifndef SIF_KTEST_RUN_H
-#define SIF_KTEST_RUN_H
+#ifndef SIF_KTF_RUN_H
+#define SIF_KTF_RUN_H
 #include "utest.h"
 #include <gtest/gtest.h>
 

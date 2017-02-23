@@ -1,5 +1,5 @@
-#ifndef KTEST_UTEST_H
-#define KTEST_UTEST_H
+#ifndef KTF_UTEST_H
+#define KTF_UTEST_H
 #include <string>
 #include <vector>
 
@@ -8,7 +8,7 @@
  *  2) Standard command line parameters
  *
  * This is now a generic interface.
- * For gtest integration of kernel tests, see ktest_run.{cpp,h}
+ * For gtest integration of kernel tests, see ktf_run.{cpp,h}
  */
 
 typedef std::vector<std::string> stringvec;
@@ -65,7 +65,7 @@ namespace utest
   /* "private" - only run from gtest framework */
   void run_test(KernelTest* test, std::string& ctx);
 
-  /* This is the function to call from a KTEST() wrapper
+  /* This is the function to call from a KTF() wrapper
    * definition when the kernel part of the test should be run:
    */
   void run_kernel_test(KernelTest* kt, std::string& ctx);

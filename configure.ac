@@ -2,10 +2,10 @@
 
 # Prelude.
 AC_PREREQ([2.59])
-AC_INIT([ktest], [1.0], [knut.omang@oracle.com])
+AC_INIT([ktf], [1.0], [knut.omang@oracle.com])
 
 # unique source file --- primitive safety check
-AC_CONFIG_SRCDIR([kernel/ktest.h])
+AC_CONFIG_SRCDIR([kernel/ktf.h])
 
 # place to put some extra build scripts installed
 AC_CONFIG_AUX_DIR([ac])
@@ -54,9 +54,9 @@ AS_IF([ test x$KVER != x ],dnl
 
 AC_ARG_VAR([KVER],[Kernel version to use])
 
-AM_CONFIG_KTEST
-AM_KTEST_DIR([kernel])
-AM_KTEST_DIR([selftest])
+AM_CONFIG_KTF
+AM_KTF_DIR([kernel])
+AM_KTF_DIR([selftest])
 
 AC_CONFIG_FILES([Makefile
 		 kernel/Makefile

@@ -9,9 +9,9 @@ AM_CXXFLAGS = -I$(top_srcdir) $(LIBNL3_CFLAGS) \
 		-Wno-pointer-arith -Werror \
 		-D__FILENAME__=\"`basename $<`\"
 
-lib_LTLIBRARIES = libktest.la
-libktest_la_SOURCES = utest.cpp ktest_run.cpp unlproto.c debug.cpp
+lib_LTLIBRARIES = libktf.la
+libktf_la_SOURCES = utest.cpp ktf_run.cpp unlproto.c debug.cpp
 
 ## Simple kernel test runner sample program:
-#ktest_SOURCES = ktest.cpp
-#ktest_LDADD = -lktest $(NETLINK_LIBS) $(GTEST_LIBS)
+#ktf_SOURCES = ktf.cpp
+#ktf_LDADD = -lktf $(NETLINK_LIBS) $(GTEST_LIBS)

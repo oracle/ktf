@@ -1,0 +1,8 @@
+#module ktf
+#header ktf_map.h
+ktf_map_init
+ktf_map_elem_init
+ktf_map_insert
+ktf_map_find
+ktf_map_find_first
+ktf_map_remove

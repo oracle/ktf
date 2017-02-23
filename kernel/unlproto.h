@@ -1,14 +1,14 @@
-#ifndef _KTEST_UNLPROTO_H
-#define _KTEST_UNLPROTO_H
+#ifndef _KTF_UNLPROTO_H
+#define _KTF_UNLPROTO_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-enum ktest_cmd_type {
-	KTEST_CT_UNSPEC,
-	KTEST_CT_QUERY,
-	KTEST_CT_RUN,
-	KTEST_CT_MAX,
+enum ktf_cmd_type {
+	KTF_CT_UNSPEC,
+	KTF_CT_QUERY,
+	KTF_CT_RUN,
+	KTF_CT_MAX,
 };
 
 /* Netlink protocol definition shared between user and kernel space
@@ -16,45 +16,45 @@ enum ktest_cmd_type {
  */
 
 /* supported attributes */
-enum ktest_attr {
-	KTEST_A_UNSPEC,
-	KTEST_A_TYPE,
-	KTEST_A_SNAM,
-	KTEST_A_TNAM,
-	KTEST_A_NUM,
-	KTEST_A_STR,
-	KTEST_A_FILE,
-	KTEST_A_STAT,
-	KTEST_A_LIST,
-	KTEST_A_TEST,
-	KTEST_A_HID,    /* Test handle ID */
-	KTEST_A_HLIST,  /* List of handles repr. as a LIST of contexts for a given HID */
-	KTEST_A_MAX
+enum ktf_attr {
+	KTF_A_UNSPEC,
+	KTF_A_TYPE,
+	KTF_A_SNAM,
+	KTF_A_TNAM,
+	KTF_A_NUM,
+	KTF_A_STR,
+	KTF_A_FILE,
+	KTF_A_STAT,
+	KTF_A_LIST,
+	KTF_A_TEST,
+	KTF_A_HID,    /* Test handle ID */
+	KTF_A_HLIST,  /* List of handles repr. as a LIST of contexts for a given HID */
+	KTF_A_MAX
 };
 
 /* attribute policy */
 #ifdef NL_INTERNAL
-struct nla_policy ktest_gnl_policy[KTEST_A_MAX] = {
-	[KTEST_A_TYPE]  = { .type = NLA_U32 },
-	[KTEST_A_SNAM]  = { .type = NLA_STRING },
-	[KTEST_A_TNAM]  = { .type = NLA_STRING },
-	[KTEST_A_NUM]   = { .type = NLA_U32 },
-	[KTEST_A_STAT]  = { .type = NLA_U32 },
-	[KTEST_A_HID]   = { .type = NLA_U32 },
-	[KTEST_A_LIST]  = { .type = NLA_NESTED },
-	[KTEST_A_TEST]  = { .type = NLA_NESTED },
-	[KTEST_A_HLIST] = { .type = NLA_NESTED },
-	[KTEST_A_STR]   = { .type = NLA_STRING },
-	[KTEST_A_FILE]  = { .type = NLA_STRING },
+struct nla_policy ktf_gnl_policy[KTF_A_MAX] = {
+	[KTF_A_TYPE]  = { .type = NLA_U32 },
+	[KTF_A_SNAM]  = { .type = NLA_STRING },
+	[KTF_A_TNAM]  = { .type = NLA_STRING },
+	[KTF_A_NUM]   = { .type = NLA_U32 },
+	[KTF_A_STAT]  = { .type = NLA_U32 },
+	[KTF_A_HID]   = { .type = NLA_U32 },
+	[KTF_A_LIST]  = { .type = NLA_NESTED },
+	[KTF_A_TEST]  = { .type = NLA_NESTED },
+	[KTF_A_HLIST] = { .type = NLA_NESTED },
+	[KTF_A_STR]   = { .type = NLA_STRING },
+	[KTF_A_FILE]  = { .type = NLA_STRING },
 };
 #endif
 
 /* supported commands */
-enum ktest_cmd {
-	KTEST_C_UNSPEC,
-	KTEST_C_REQ,
-	KTEST_C_RESP,
-	KTEST_C_MAX
+enum ktf_cmd {
+	KTF_C_UNSPEC,
+	KTF_C_REQ,
+	KTF_C_RESP,
+	KTF_C_MAX
 };
 
 

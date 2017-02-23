@@ -27,7 +27,7 @@
 
 #include <net/netlink.h>
 #include <linux/version.h>
-#include "ktest_map.h"
+#include "ktf_map.h"
 
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
 #define GCC_VERSION_AT_LEAST(major, minor) \
@@ -46,26 +46,26 @@
 void flush_assert_cnt(struct sk_buff* skb);
 
 /* Representation of a test case (a group of tests) */
-struct ktest_case;
+struct ktf_case;
 
-struct ktest_case *ktest_case_find(const char *name);
+struct ktf_case *ktf_case_find(const char *name);
 
 /* A test context is an extendable object that a test client module
  * can supply, and that all tests will be invoked with as an implicit
  * 'ctx' argument:
  */
-struct ktest_context;
+struct ktf_context;
 
 /* Each module client of the test framework is required to
- * declare at least one ktest_handle via the macro
- * DECLARE_KTEST_HANDLE (below)
+ * declare at least one ktf_handle via the macro
+ * DECLARE_KTF_HANDLE (below)
  * If the module require extra data of some sorts, that
  * can be embedded within the handle
  */
-struct ktest_handle;
+struct ktf_handle;
 
 /* type for a test function */
-typedef void (*TFun) (struct sk_buff *, struct ktest_context* tdev, int, u32);
+typedef void (*TFun) (struct sk_buff *, struct ktf_context* tdev, int, u32);
 
 struct __test_desc
 {
@@ -95,7 +95,7 @@ struct __test_desc
 /* Add a test function to a test case
   (function version -- use this when the macro won't work
 */
-void _tcase_add_test(struct __test_desc td, struct ktest_handle *th,
+void _tcase_add_test(struct __test_desc td, struct ktf_handle *th,
 		int _signal, int allowed_exit_value, int start, int end);
 
 /* Internal function to mark the start of a test function */
@@ -121,39 +121,39 @@ void tcase_fn_start (const char *fname, const char *file, int line);
  *  and call TEST_CLEANUP() upon unload
  */
 
-struct ktest_handle {
+struct ktf_handle {
 	struct list_head test_list;   /* Linkage for the list of all tests assoc.with this handle */
 	struct list_head handle_list; /* Linkage for the global list of all handles with context */
-	struct ktest_map ctx_map;     /* a (possibly empty) map from name to context for this handle */
+	struct ktf_map ctx_map;     /* a (possibly empty) map from name to context for this handle */
 	unsigned int id; 	      /* A unique nonzero ID for this handle, set iff contexts */
 };
 
-void _tcase_cleanup(struct ktest_handle *th);
+void _tcase_cleanup(struct ktf_handle *th);
 
-#define DECLARE_KTEST_HANDLE(__test_handle) \
-	struct ktest_handle __test_handle = { \
+#define DECLARE_KTF_HANDLE(__test_handle) \
+	struct ktf_handle __test_handle = { \
 		.test_list = LIST_HEAD_INIT(__test_handle.test_list), \
 		.handle_list = LIST_HEAD_INIT(__test_handle.handle_list), \
 		.ctx_map = { .root = RB_ROOT, .size = 0, },		\
 		.id = 0, \
 	};
-#define DECLARE_DEFAULT_HANDLE() DECLARE_KTEST_HANDLE(__test_handle)
+#define DECLARE_DEFAULT_HANDLE() DECLARE_KTF_HANDLE(__test_handle)
 
-#define KTEST_HANDLE_CLEANUP(__test_handle) \
+#define KTF_HANDLE_CLEANUP(__test_handle) \
 	_tcase_cleanup(&__test_handle)
-#define KTEST_CLEANUP() KTEST_HANDLE_CLEANUP(__test_handle)
+#define KTF_CLEANUP() KTF_HANDLE_CLEANUP(__test_handle)
 
 /* Start a unit test with TEST(suite_name,unit_name)
 */
 #define TEST(__testsuite, __testname)\
 	static void __testname(struct sk_buff * skb,\
-			struct ktest_context *tdev,\
+			struct ktf_context *tdev,\
 			int _i, u32 _value);		    \
 	struct __test_desc __testname##_setup = \
         { .tclass = "" # __testsuite "", .name = "" # __testname "",\
 	  .fun = __testname, .file = __FILE__ };    \
 	\
-	static void __testname(struct sk_buff * skb, struct ktest_context* ctx, \
+	static void __testname(struct sk_buff * skb, struct ktf_context* ctx, \
 			int _i, u32 _value)
 
 /* Start a unit test using a fixture
@@ -175,7 +175,7 @@ void _tcase_cleanup(struct ktest_handle *th);
 
 #define DECLARE_F(__fixture)\
 	struct __fixture {\
-		void (*setup) (struct sk_buff *, struct ktest_context*, struct __fixture*); \
+		void (*setup) (struct sk_buff *, struct ktf_context*, struct __fixture*); \
 		void (*teardown) (struct sk_buff *, struct __fixture*);\
 		bool ok;
 
@@ -189,11 +189,11 @@ void _tcase_cleanup(struct ktest_handle *th);
 
 #define TEST_F(__fixture, __testsuite, __testname) \
 	static void __testname##_body(struct sk_buff*,struct __fixture*,int,u32); \
-	static void __testname(struct sk_buff * skb, struct ktest_context* ctx, int _i, u32 _value); \
+	static void __testname(struct sk_buff * skb, struct ktf_context* ctx, int _i, u32 _value); \
 	struct __test_desc __testname##_setup = \
         { .tclass = "" # __testsuite "", .name = "" # __testname "", .fun = __testname };\
 	\
-	static void __testname(struct sk_buff * skb, struct ktest_context* ctx, \
+	static void __testname(struct sk_buff * skb, struct ktf_context* ctx, \
 		int _i, u32 _value)				\
 	{\
 		struct __fixture f_ctx = __fixture##_template;\

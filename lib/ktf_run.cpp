@@ -1,4 +1,4 @@
-#include "ktest_run.h"
+#include "ktf_run.h"
 #include <assert.h>
 #include <errno.h>
 #include "debug.h"
@@ -23,22 +23,22 @@ public:
 
   Kernel(std::string& setname, std::string& testname)
   {
-    log(KTEST_INFO, "%s.%s\n", setname.c_str(), testname.c_str());
+    log(KTF_INFO, "%s.%s\n", setname.c_str(), testname.c_str());
 
     ukt = utest::find_test(setname,testname,&ctx);
     assert(ukt);
-    log(KTEST_INFO, "### Kernel ctor %s (%ld,%ld)\n", ukt->name.c_str(), ukt->setnum, ukt->testnum);
+    log(KTF_INFO, "### Kernel ctor %s (%ld,%ld)\n", ukt->name.c_str(), ukt->setnum, ukt->testnum);
   }
 
   virtual ~Kernel()
   {
-    log(KTEST_INFO, "### Kernel dtor %s\n", ukt->name.c_str());
+    log(KTF_INFO, "### Kernel dtor %s\n", ukt->name.c_str());
 
     /* For some reason errno sometimes get set
      * TBD: Figure out why - for now just reset it to avoid confusing the next test!
      */
     if (errno) {
-      log(KTEST_INFO, "### %s: errno was set to %d - resetting..\n", ukt->name.c_str(), errno);
+      log(KTF_INFO, "### %s: errno was set to %d - resetting..\n", ukt->name.c_str(), errno);
       errno = 0;
     }
   }
