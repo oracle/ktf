@@ -57,10 +57,12 @@ AC_ARG_VAR([KVER],[Kernel version to use])
 AM_CONFIG_KTF
 AM_KTF_DIR([kernel])
 AM_KTF_DIR([selftest])
+AM_KTF_DIR([examples])
 
 AC_CONFIG_FILES([Makefile
 		 kernel/Makefile
 		 selftest/Makefile
+		 examples/Makefile
 		 lib/Makefile
 		 user/Makefile
 ])

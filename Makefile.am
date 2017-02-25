@@ -2,4 +2,4 @@
 
 ACLOCAL_AMFLAGS= -I m4
 
-SUBDIRS = kernel selftest lib user
+SUBDIRS = kernel selftest examples lib user

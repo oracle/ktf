@@ -3,9 +3,9 @@
 #include "ktf_run.h"
 #include "debug.h"
 
-/* This program is now a generic
- * user level app to run kernel tests
- * provided by the test driver.
+/* This program is a generic
+ * user level application to run kernel tests
+ * provided by modules subscribing to ktf services:
  */
 
 int main (int argc, char** argv)
