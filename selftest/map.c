@@ -12,15 +12,15 @@ struct map_test_ctx {
 struct map_test_ctx s_mctx[3];
 
 /* Declare a simple handle with no contexts for simple (unparameterized) tests: */
-DECLARE_DEFAULT_HANDLE();
+KTF_INIT();
 
 /* For tests that defines multiple test cases
  * (e.g. if the test scope requires application of each test on several devices or
  *  other abstract contexts, definable by the test module)
  */
-DECLARE_KTF_HANDLE(dual_handle);
-DECLARE_KTF_HANDLE(single_handle);
-DECLARE_KTF_HANDLE(no_handle);
+KTF_HANDLE_INIT(dual_handle);
+KTF_HANDLE_INIT(single_handle);
+KTF_HANDLE_INIT(no_handle);
 
 struct map_test_ctx *to_mctx(struct ktf_context *ctx)
 {

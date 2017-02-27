@@ -117,8 +117,8 @@ void tcase_fn_start (const char *fname, const char *file, int line);
 
 /* A test_handle identifies the calling module:
  * Declare one in the module global scope using
- *  TEST_INIT_HANDLE()
- *  and call TEST_CLEANUP() upon unload
+ *  KTF_INIT() or KTF_HANDLE_INIT()
+ *  and call KTF_CLEANUP() or KTF_HANDLE_CLEANUP() upon unload
  */
 
 struct ktf_handle {
@@ -130,14 +130,14 @@ struct ktf_handle {
 
 void _tcase_cleanup(struct ktf_handle *th);
 
-#define DECLARE_KTF_HANDLE(__test_handle) \
+#define KTF_HANDLE_INIT(__test_handle)	    \
 	struct ktf_handle __test_handle = { \
 		.test_list = LIST_HEAD_INIT(__test_handle.test_list), \
 		.handle_list = LIST_HEAD_INIT(__test_handle.handle_list), \
 		.ctx_map = { .root = RB_ROOT, .size = 0, },		\
 		.id = 0, \
 	};
-#define DECLARE_DEFAULT_HANDLE() DECLARE_KTF_HANDLE(__test_handle)
+#define KTF_INIT() KTF_HANDLE_INIT(__test_handle)
 
 #define KTF_HANDLE_CLEANUP(__test_handle) \
 	_tcase_cleanup(&__test_handle)

@@ -3,7 +3,7 @@
 
 MODULE_LICENSE("GPL");
 
-DECLARE_DEFAULT_HANDLE();
+KTF_INIT();
 
 TEST(examples, hello_ok)
 {
