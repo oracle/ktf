@@ -125,6 +125,11 @@ extern struct ktf_handle __test_handle;
 		goto _lbl; \
 }
 
+#define ASSERT_OK_ADDR_BREAK(X) { \
+	if (!ck_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - was 0x%Lx", (X))) \
+		break; \
+}
+
 #define EXPECT_INT_EQ(X,Y) _ck_assert_int(X, ==, Y)
 #define EXPECT_INT_GT(X,Y) _ck_assert_int(X, >, Y)
 #define EXPECT_INT_GE(X,Y) _ck_assert_int(X, >=, Y)
@@ -136,7 +141,10 @@ extern struct ktf_handle __test_handle;
 #define EXPECT_LONG_NE(X, Y) _ck_assert_long(X, !=, Y)
 #define EXPECT_ADDR_EQ(X, Y) _ck_assert_long((u64)(X), ==, (u64)(Y))
 #define EXPECT_ADDR_NE(X, Y) _ck_assert_long((u64)(X), !=, (u64)(Y))
-#define EXPECT_LONG_GT(X, Y) _ck_assert_long(X, >=, Y)
+#define EXPECT_LONG_GT(X, Y) _ck_assert_long(X, >, Y)
+#define EXPECT_LONG_GE(X, Y) _ck_assert_long(X, >=, Y)
+#define EXPECT_LONG_LE(X, Y) _ck_assert_long(X, <=, Y)
+#define EXPECT_LONG_LT(X, Y) _ck_assert_long(X, <, Y)
 
 #define EXPECT_STREQ(X, Y) _ck_assert_str_eq(X, Y)
 #define EXPECT_STRNE(X, Y) _ck_assert_str_ne(X, Y)

@@ -8,7 +8,7 @@ KTF_BDIR = @KTF_BDIR@
 
 ccflags-y += -I$(KTF_DIR)
 
-obj-m := hello.o
+obj-m := hello.o h2.o
 
 KDIR   := /lib/modules/$(KVER)
 PWD    := $(shell pwd)
