@@ -1493,7 +1493,7 @@ need_locks=$enable_libtool_lock
 m4_defun([_LT_PROG_AR],
 [AC_CHECK_TOOLS(AR, [ar], false)
 : ${AR=ar}
-: ${AR_FLAGS=cru}
+: ${AR_FLAGS=cr}
 _LT_DECL([], [AR], [1], [The archiver])
 _LT_DECL([], [AR_FLAGS], [1], [Flags to create an archive])
 
