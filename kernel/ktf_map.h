@@ -86,6 +86,24 @@ static inline bool ktf_map_empty(struct ktf_map *map) {
         e ? container_of(e, type, member) : NULL; \
 })
 
+#if (KERNEL_VERSION(3, 11, 0) > LINUX_VERSION_CODE)
+/* postorder traversal not supported, just remove from the head */
+#define ktf_map_delete_all(map, type, member) { \
+	struct ktf_map_elem *elem; \
+	struct rb_node *node; \
+	type *e; \
+	do { \
+		node = rb_first(&(map)->root);\
+		if (node) { \
+			rb_erase(node, &(map)->root); \
+			elem = container_of(node, struct ktf_map_elem, node);	\
+			e = container_of(elem, type, member);\
+			kfree(e);  \
+		}\
+	} while (node != NULL);	\
+}
+#else
+
 /* Empty the whole map by first calling kfree on each entry in post order,
  * then setting the map to empty
  */
@@ -98,4 +116,5 @@ static inline bool ktf_map_empty(struct ktf_map *map) {
 	}\
 }
 
+#endif /* LINUX_VERSION_CODE */
 #endif
