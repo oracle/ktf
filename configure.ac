@@ -9,6 +9,7 @@ AC_CONFIG_SRCDIR([kernel/ktf.h])
 
 # place to put some extra build scripts installed
 AC_CONFIG_AUX_DIR([ac])
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 # Look for/generate m4 files under top/m4
 AC_CONFIG_MACRO_DIR([m4])
@@ -22,7 +23,6 @@ AM_SILENT_RULES([yes])
 AC_PROG_CXX
 AM_PROG_CC_C_O
 
-AM_PROG_AR
 AC_PROG_LIBTOOL
 
 # Checks for header files.
