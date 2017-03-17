@@ -61,7 +61,13 @@ EXPORT_SYMBOL(ktf_context_add);
 void ktf_context_remove(struct ktf_context *ctx)
 {
 	unsigned long flags;
-	struct ktf_handle *handle = ctx->handle;
+	struct ktf_handle *handle;
+
+	if (!ctx) {
+		tlog(T_ERROR, "A test case tried to remove an invalid context!");
+		return;
+	}
+	handle = ctx->handle;
 
 	/* ktf_find_context might be called from interrupt level */
 	spin_lock_irqsave(&context_lock,flags);

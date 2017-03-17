@@ -147,7 +147,7 @@ void _tcase_cleanup(struct ktf_handle *th);
 */
 #define TEST(__testsuite, __testname)\
 	static void __testname(struct sk_buff * skb,\
-			struct ktf_context *tdev,\
+			struct ktf_context *ctx,\
 			int _i, u32 _value);		    \
 	struct __test_desc __testname##_setup = \
         { .tclass = "" # __testsuite "", .name = "" # __testname "",\
