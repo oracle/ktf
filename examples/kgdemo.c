@@ -8,43 +8,40 @@ KTF_INIT();
 #define MAX_CNT 3
 #include <linux/kgdb.h>
 
-struct kgdb_demo_ctx {
-	struct ktf_context k;
-	int cnt;
-};
-struct kgdb_demo_ctx myctx = {
-	.cnt = 0,
-};
-
-struct kgdb_demo_ctx *to_hctx(struct ktf_context *ctx)
-{
-	return container_of(ctx, struct kgdb_demo_ctx, k);
-}
+int kgdemo_cnt = 0;
+int *bogus_ref = NULL;
 
 TEST(kgdb, breakpoint)
 {
-	printk("** Please set myctx.cnt = 1 **\n");
+	kgdemo_cnt = 0;
+	printk("** Please set kgdemo_cnt = 1 **\n");
 	kgdb_breakpoint();
-	EXPECT_INT_EQ(1, myctx.cnt);
+	EXPECT_INT_EQ(1, kgdemo_cnt);
+}
+
+TEST(kgdb, nullpointer)
+{
+	int pre = kgdemo_cnt;
+
+	int b = *bogus_ref++;
+	EXPECT_INT_EQ(pre+1, b);
 }
 
 static void add_tests(void)
 {
-  ADD_TEST(breakpoint);
+	ADD_TEST(breakpoint);
+	ADD_TEST(nullpointer);
 }
 
 
 static int __init kgdemo_init(void)
 {
-	KTF_CONTEXT_ADD(&myctx.k, "kgdemo");
 	add_tests();
 	return 0;
 }
 
 static void __exit kgdemo_exit(void)
 {
-	struct ktf_context *kctx = KTF_CONTEXT_FIND("kgdemo");
-	KTF_CONTEXT_REMOVE(kctx);
 	KTF_CLEANUP();
 }
 
