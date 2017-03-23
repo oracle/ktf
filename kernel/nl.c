@@ -223,7 +223,7 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 				fh->fun(skb,ctx,i,value);
 				flush_assert_cnt(skb);
 			}
-		} else
+		} else if (!fh->fun)
 			DM(T_DEBUG, printk(KERN_INFO "** no function for test %s.%s **\n",
 						fh->tclass,fh->name));
 		tn++;

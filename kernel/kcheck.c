@@ -36,7 +36,7 @@ struct ktf_case *ktf_case_create(const char *name)
 		kfree(tc);
 		return NULL;
 	}
-	DM(T_INFO, printk(KERN_INFO "ktf: Added test set %s\n", name));
+	DM(T_DEBUG, printk(KERN_INFO "ktf: Added test set %s\n", name));
 	return tc;
 }
 
@@ -142,7 +142,7 @@ void  _tcase_add_test (struct __test_desc td,
 	fc->end = end;
 	fc->handle = th;
 
-	DM(T_LIST, printk(KERN_INFO "ktf Testcase %s: Added test \"%s\""
+	DM(T_LIST, printk(KERN_INFO "ktf: Added test \"%s.%s\""
 		" start = %d, end = %d\n",
 		td.tclass, td.name, start, end));
 	list_add(&fc->flist, &tc->fun_list);
@@ -163,7 +163,7 @@ void _tcase_cleanup(struct ktf_handle *th)
 	mutex_lock(&tc_lock);
 	list_for_each_safe(pos, n, &th->test_list) {
 		fh = list_entry(pos, struct fun_hook, hlist);
-		DM(T_INFO, printk(KERN_INFO "ktf: delete test %s\n", fh->name));
+		DM(T_LIST, printk(KERN_INFO "ktf: delete test %s.%s\n", fh->tclass, fh->name));
 		list_del(&fh->flist);
 		list_del(&fh->hlist);
 		kfree(fh);

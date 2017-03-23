@@ -155,7 +155,7 @@ extern ulong ktf_debug_mask;
 // Defined debug bits:
 #define T_ERROR    0x1
 #define T_INFO	   0x2
-#define T_LIST   0x100
+#define T_LIST     0x4
 #define T_INTR   0x200
 #define T_DEBUG 0x1000
 #define T_MCAST 0x2000

@@ -187,11 +187,15 @@ KernelTest* KernelTestMgr::find_test(const std::string&setname,
     return NULL;
 
   pos = testname.find_last_of('_');
-  if (pos >= 0) {
+  while (pos >= 0) {
     std::string tname = testname.substr(0,pos);
     std::string ctx = testname.substr(pos + 1, testname.npos);
     *pctx = ctx;
-    return sets[setname].tests[tname];
+    kt = sets[setname].tests[tname];
+    if (kt)
+      return kt;
+    /* context name might contain an '_' , iterate on: */
+    pos = tname.find_last_of('_');
   }
   return NULL;
 }

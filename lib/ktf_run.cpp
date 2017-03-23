@@ -26,7 +26,11 @@ public:
     log(KTF_INFO, "%s.%s\n", setname.c_str(), testname.c_str());
 
     ukt = utest::find_test(setname,testname,&ctx);
-    assert(ukt);
+    if (!ukt) {
+      fprintf(stderr, "**** Internal error: Could not find test %s.%s (set %s, name %s) ****\n",
+	      setname.c_str(), testname.c_str(), setname.c_str(), testname.c_str());
+      exit(7);
+    }
     log(KTF_INFO, "### Kernel ctor %s (%ld,%ld)\n", ukt->name.c_str(), ukt->setnum, ukt->testnum);
   }
 
