@@ -26,14 +26,14 @@ static void add_tests(void)
 static int __init hello_init(void)
 {
 	add_tests();
-	tlog(T_INFO, "hello: loaded\n");
+	tlog(T_INFO, "hello: loaded");
 	return 0;
 }
 
 static void __exit hello_exit(void)
 {
 	KTF_CLEANUP();
-	tlog(T_INFO, "hello: unloaded\n");
+	tlog(T_INFO, "hello: unloaded");
 }
 
 

@@ -165,7 +165,7 @@ void _tcase_cleanup(struct ktf_handle *th);
  *      INIT_F(fixture_name,setup,teardown)
  *
  *   Usage:
- * 	TEST_F(fixture_name,unit_name)
+ * 	TEST_F(fixture_name,unit_name,test_name)
  *      {
  *          <test code>
  *      }
