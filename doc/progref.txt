@@ -1,0 +1,62 @@
+6. KTF programming reference
+----------------------------
+
+KTF itself contains no tests but provides primitives and data structures to
+allow tests to be maintained and written in separate test modules that
+depend on the KTF APIs.
+
+KTF API Overview
+****************
+
+For reference, the following table lists a few terms and classes of
+abstractions provided by KTF:
+
++-----------------------+-------------------------------------------------------+
+| **Item**		| **description** 					|
++=======================+=======================================================+
+| Test module		| A kernel object file (.ko) with ktf tests in it	|
++-----------------------+-------------------------------------------------------+
+| struct ktf_handle	| At least 1 per test module.				|
+|		   	| Use macros KTF_INIT() and KTF_CLEANUP() to set up	|
+|			| and tear down handles.				|
++-----------------------+-------------------------------------------------------+
+| struct ktf_context	| 0-n per test module - test module specific context	|
+|		     	| for the test, such as eg. a device or another      	|
+|		     	| kernel object.					|
++-----------------------+-------------------------------------------------------+
+| KTF_INIT()		| Call this at the global level in the main file	|
+|			| for each test module.					|
++-----------------------+-------------------------------------------------------+
+| KTF_CLEANUP()		| Call this in the __exit function to clean up		|
++-----------------------+-------------------------------------------------------+
+| EXPECT_*		| non-fatal assertions				  	|
++-----------------------+-------------------------------------------------------+
+| ASSERT_*		| "fatal" assertions that would cause return or goto	|
++-----------------------+-------------------------------------------------------+
+| TEST(s, n) {...}	| Define a simple test named 's.n' with implicit 	|
+|		     	| arguments 'ctx' and '_i' for context and iteration	|
++-----------------------+-------------------------------------------------------+
+| DECLARE_F(f) {...}	| Declare a new test fixture named 'f' with		|
+|		     	| additional data structure				|
++-----------------------+-------------------------------------------------------+
+| INIT_F(s, f, n) {...} | Declare the setup and tear down functions for the	|
+|			| fixture						|
++-----------------------+-------------------------------------------------------+
+| TEST_F(s, f, n) {...} | Define a test named 's.n' operating in fixture f	|
++-----------------------+-------------------------------------------------------+
+
+The ``KTF_INIT()`` macro must be called at a global level as it just
+defines a variable ``__test_handle`` which is referred to which existence
+is assumed to continue until the call to KTF_CLEANUP(), typically done in
+the ``__exit`` function of the test module.
+
+
+
+Assertions
+**********
+
+Below is example documentation for some of the available assertion macros.
+For a full overview, see ``kernel/ktf.h``
+
+.. kernel-doc:: kernel/ktf.h
+   :internal:

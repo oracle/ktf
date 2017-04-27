@@ -1,0 +1,50 @@
+3. KTF kernel specific features
+-------------------------------
+
+Reference to module internal symbols
+************************************
+
+When working with unit tests, the need to access non-public interfaces
+often arises. In general non-public interfaces is of course not intended to
+be used by outside programs, but a test framework is somewhat special here
+in that it is often necessary or desirable to unit test internal
+data structures or algorithms even if they are not exposed. The program
+under test may be a complicated beast by itself and merely exercising the
+public interfaces may not be flexible enough to stress the internal code.
+Even if it is possible to get the necessary "pressure" from the outside
+like that, it might be much more challenging or require a lot more work.
+
+The usual method to gain access to internal interfaces is to be part of the
+internals. To some extent this is the way a lot of the kernel testing
+utilities operate. The obvious advantages of this is that the test code
+'automatically' follows the module and it's changes. The disadvantage is
+that test code is tightly integrated with the code itself. One important
+goal with KTF is to make it possible to write detailed and sophisticated
+test code which does not affect the readability or complexity of the tested
+code.
+
+KTF contains a small python program, ``resolve``, which
+parses a list of symbol names on the form::
+
+    #module first_module
+    #header first_header.h
+    private_symbol1
+    private_symbol2
+    ...
+    #header second_header.h
+    #module next_module
+    ...
+
+The output is a header file and a struct containing function pointers and
+some convenience macro definitions to make it possible to 'use' the
+internal functions just as one would if within the module. This logic is
+based on kallsyms, and would of course only work if that functionality is
+enabled in the kernel KTF compiles against.
+
+Requesting callbacks when a certain function gets called
+********************************************************
+
+*(planned functionality)*
+
+
+Tap into

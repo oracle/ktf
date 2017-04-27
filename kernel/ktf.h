@@ -14,7 +14,6 @@ typedef void (*ktf_test_adder)(void);
 
 /* Generic setup function for client modules */
 void ktf_add_tests(ktf_test_adder f);
-
 int ktf_context_add(struct ktf_handle *handle, struct ktf_context* ctx, const char* name);
 struct ktf_context* ktf_find_context(struct ktf_handle *handle, const char* name);
 struct ktf_context *ktf_find_first_context(struct ktf_handle *handle);
@@ -35,25 +34,46 @@ extern struct ktf_handle __test_handle;
 #define KTF_CONTEXT_REMOVE(__context) ktf_context_remove(__context)
 #define KTF_CONTEXT_FIND(name) ktf_find_context(&__test_handle, name)
 
-/* Test macros */
-
-/* Asserts that also makes the current function return; */
+/**
+ * ASSERT_TRUE() - fail and return if @C evaluates to false
+ * @C: Boolean expression to evaluate
+ *
+ */
 #define ASSERT_TRUE(C) { \
 	if (!fail_unless((C))) return;	\
 }
 
+/**
+ * ASSERT_FALSE() - fail and return if @C evaluates to true
+ * @C: Boolean expression to evaluate
+ */
 #define ASSERT_FALSE(C) { \
 	if (!fail_unless(!(C))) return;	\
 }
 
+/**
+ * ASSERT_TRUE_GOTO() - fail and jump to @_lbl if @C evaluates to false
+ * @C: Boolean expression to evaluate
+ * @_lbl: Label to jump to in case of failure
+ */
 #define ASSERT_TRUE_GOTO(C,_lbl) {		\
 	if (!fail_unless((C))) goto _lbl;\
 }
 
+/**
+ * ASSERT_FALSE_GOTO() - fail and jump to @_lbl if @C evaluates to true
+ * @C: Boolean expression to evaluate
+ * @_lbl: Label to jump to in case of failure
+ */
 #define ASSERT_FALSE_GOTO(C,_lbl) {		\
 	if (!fail_unless(!(C))) goto _lbl;\
 }
 
+/**
+ * ASSERT_LONG_EQ() - compare two longs, fail and return if @X != @Y
+ * @X: Expected value
+ * @Y: Actual value
+ */
 #define ASSERT_LONG_EQ(X, Y) \
 	_ck_assert_long_ret(X, ==, Y);
 
@@ -72,6 +92,12 @@ extern struct ktf_handle __test_handle;
 #define ASSERT_INT_GT(X, Y) \
 	_ck_assert_int_ret(X, >, Y);
 
+/**
+ * ASSERT_LONG_EQ() - compare two longs, jump to @_lbl if @X != @Y
+ * @X: Expected value
+ * @Y: Actual value
+ * @_lbl: Label to jump to in case of failure
+ */
 #define ASSERT_LONG_EQ_GOTO(X, Y, _lbl) \
 	_ck_assert_long_goto(X, ==, Y, _lbl)
 
@@ -102,6 +128,11 @@ extern struct ktf_handle __test_handle;
 #define ASSERT_INT_NE_GOTO(X,Y,_lbl) \
 	_ck_assert_int_goto(X, !=, Y, _lbl);
 
+/**
+ * EXPECT_TRUE() - fail if @C evaluates to false but allow test to continue
+ * @C: Boolean expression to evaluate
+ *
+ */
 #define EXPECT_TRUE(C) { \
 	fail_unless(C); \
 }

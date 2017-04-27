@@ -1,0 +1,21 @@
+4. Building and installing KTF
+------------------------------
+
+To build KTF, clone the ktf project, then::
+
+	cd ktf
+	autoreconf
+
+Create a build directory somewhere outside the source tree to allow the same KTF source tree to be used
+against multiple versions of the kernel. Assuming for simplicity that you
+want to build for the running kernel but you can build for any installed ``kernel-*-devel``::
+
+	cd <a dedicated build tree for this kernel>
+	mkdir build
+	cd build
+	~/<path_to_source_root>/ktf/configure KVER=`uname -r`
+	make
+
+Now you should have got a ``kernel/ktf.ko`` that works with your test kernel
+and modules for the ``examples`` and KTF ``selftest`` directories.
+You are ready to create your own test modules based on KTF!

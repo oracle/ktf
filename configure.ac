@@ -65,5 +65,6 @@ AC_CONFIG_FILES([Makefile
 		 examples/Makefile
 		 lib/Makefile
 		 user/Makefile
+		 doc/Makefile
 ])
 AC_OUTPUT
