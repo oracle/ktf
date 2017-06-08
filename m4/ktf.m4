@@ -24,12 +24,17 @@ AS_IF([test -f $ktf_build/config.log],
 	    ktf_src=`dirname $ktf_configure`
 	    ktf_src=`cd $ktf_build && cd $ktf_src && pwd`
 	  ])
+	  ktf_dir=$ktf_src
+	  ktf_bdir=$ktf_build
    ],
-   [ktf_src=$ktf_build]
+   [ktf_src=$ktf_build
+    ktf_dir=$ktf_build/include/ktf
+    ktf_bdir=$ktf_dir
+   ]
 )
 
-AC_SUBST([KTF_DIR],[$ktf_src/kernel])
-AC_SUBST([KTF_BDIR],[$ktf_build/kernel])
+AC_SUBST([KTF_DIR],[$ktf_dir])
+AC_SUBST([KTF_BDIR],[$ktf_bdir])
 
 KTF_CFLAGS="-I$ktf_src/lib"
 KTF_LIBS="-L$ktf_build/lib -lktf"
