@@ -24,8 +24,8 @@ AS_IF([test -f $ktf_build/config.log],
 	    ktf_src=`dirname $ktf_configure`
 	    ktf_src=`cd $ktf_build && cd $ktf_src && pwd`
 	  ])
-	  ktf_dir=$ktf_src
-	  ktf_bdir=$ktf_build
+	  ktf_dir=$ktf_src/kernel
+	  ktf_bdir=$ktf_build/kernel
    ],
    [ktf_src=$ktf_build
     ktf_dir=$ktf_build/include/ktf
