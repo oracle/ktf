@@ -26,6 +26,7 @@ KTF_K_HDRS = \
 kernel_headers_src = $(KTF_K_HDRS:%=$(top_srcdir)/kernel/%)
 kernel_headers = $(KTF_K_HDRS:%=$(includedir)/ktf/%)
 symvers = $(includedir)/ktf/Module.symvers
+scripts = $(includedir)/ktf/resolve
 
 $(kernel_headers): $(includedir)/ktf/%: $(top_srcdir)/kernel/%
 	@mkdir -p `dirname $@`
@@ -35,7 +36,11 @@ $(symvers): $(includedir)/ktf/%: $(top_builddir)/kernel/%
 	@mkdir -p `dirname $@`
 	$(INSTALL) $< $@
 
-install-data-local: $(kernel_headers) $(symvers)
+$(scripts): $(includedir)/ktf/%: $(top_builddir)/scripts/%
+	@mkdir -p `dirname $@`
+	$(INSTALL) $< $@
+
+install-data-local: $(kernel_headers) $(symvers) $(scripts)
 
 
 echo:

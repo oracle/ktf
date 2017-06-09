@@ -30,6 +30,7 @@ AS_IF([test -f $ktf_build/config.log],
    [ktf_src=$ktf_build
     ktf_dir=$ktf_build/include/ktf
     ktf_bdir=$ktf_dir
+    ktf_scripts=$ktf_dir
    ]
 )
 
@@ -53,6 +54,8 @@ GTEST_LIB_CHECK([1.5.0],[echo -n ""],[AC_MSG_ERROR([$gtest_fail_msg])])
 
 KTF_DIR="$srcdir/kernel"
 KTF_BDIR="`pwd`/kernel"
+
+ktf_scripts="$srcdir/scripts"
 
 AC_SUBST([KTF_DIR],[$KTF_DIR])
 AC_SUBST([KTF_BDIR],[$KTF_BDIR])
@@ -82,6 +85,7 @@ src_links = $TEST_SRC
 ktf_symfile = $ktf_symfile
 
 ktf_syms = \$(ktf_symfile:%.txt=%.h)
+ktf_scripts = $ktf_scripts
 
 all: \$(ktf_syms) \$(src_links) module
 
@@ -95,7 +99,7 @@ Makefile: \$(srcdir)/Makefile.in \$(top_builddir)/config.status
 	esac;
 
 ktf_syms.h: \$(srcdir)/ktf_syms.txt
-	\$(KTF_DIR)/../scripts/resolve \$(ccflags-y) \$< \$[]@
+	\$(ktf_scripts)/resolve \$(ccflags-y) \$< \$[]@
 
 install: all
 uninstall:
