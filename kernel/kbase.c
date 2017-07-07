@@ -104,6 +104,12 @@ struct ktf_context *ktf_find_next_context(struct ktf_context* ctx)
 	return container_of(elem, struct ktf_context, elem);
 }
 
+size_t ktf_has_contexts(struct ktf_handle *handle)
+{
+	return ktf_map_size(&handle->ctx_map) > 0;
+}
+EXPORT_SYMBOL(ktf_has_contexts);
+
 struct ktf_kernel_internals {
 	/* From module.h: Look up a module symbol - supports syntax module:name */
 	unsigned long (*module_kallsyms_lookup_name)(const char *);

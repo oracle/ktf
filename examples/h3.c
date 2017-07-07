@@ -16,30 +16,29 @@ struct my_element {
 };
 
 
-static void hello_setup(struct sk_buff* skb, struct ktf_context* kctx,
-			struct hello_fixture *fix)
+SETUP_F(hello_fixture,hello_setup)
 {
 	int i;
-	INIT_LIST_HEAD(&fix->head);
+	INIT_LIST_HEAD(&hello_fixture->head);
 	for (i = 0; i < 10; i++) {
 		struct my_element *e = kzalloc(sizeof(*e), GFP_KERNEL);
 		e->value = i;
-		list_add_tail(&e->list, &fix->head);
+		list_add_tail(&e->list, &hello_fixture->head);
 	}
-	fix->ok = true;
+	hello_fixture->ok = true;
 }
 
-static void hello_teardown(struct sk_buff* skb, struct hello_fixture *fix)
+TEARDOWN_F(hello_fixture,hello_teardown)
 {
 	struct list_head *p, *next_p;
 
 	/* Just cleanup whatever is left after the test */
-	list_for_each_safe(p, next_p, &fix->head) {
+	list_for_each_safe(p, next_p, &hello_fixture->head) {
 		struct my_element *e = list_entry(p, struct my_element, list);
 		list_del(&e->list);
 		kfree(e);
 	}
-	EXPECT_TRUE(list_empty(&fix->head));
+	EXPECT_TRUE(list_empty(&hello_fixture->head));
 }
 
 INIT_F(hello_fixture, hello_setup, hello_teardown);

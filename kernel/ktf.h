@@ -5,10 +5,15 @@
 #include "kcheck.h"
 #include "ktf_map.h"
 
+#define	KTF_MAX_LOG			2048
+
 struct ktf_context {
 	struct ktf_map_elem elem;  /* Linkage for ktf_map */
 	struct ktf_handle *handle; /* Owner of this context */
 };
+
+/* type for a test function */
+struct ktf_test;
 
 typedef void (*ktf_test_adder)(void);
 
@@ -19,10 +24,7 @@ struct ktf_context* ktf_find_context(struct ktf_handle *handle, const char* name
 struct ktf_context *ktf_find_first_context(struct ktf_handle *handle);
 struct ktf_context *ktf_find_next_context(struct ktf_context* ctx);
 void ktf_context_remove(struct ktf_context *ctx);
-
-static inline size_t ktf_has_contexts(struct ktf_handle *handle) {
-	return ktf_map_size(&handle->ctx_map) > 0;
-}
+size_t ktf_has_contexts(struct ktf_handle *handle);
 
 /* Declare the implicit __test_handle as extern for .c files that use it
  * when adding tests with ADD_TEST but where definition is in another .c file:

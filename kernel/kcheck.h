@@ -43,7 +43,26 @@
 #define CK_ATTRIBUTE_UNUSED
 #endif /* GCC 2.95 */
 
-void flush_assert_cnt(struct sk_buff* skb);
+struct ktf_context;
+
+struct ktf_test;
+
+typedef void (*ktf_test_fun) (struct ktf_test *, struct ktf_context* tdev, int, u32);
+
+struct ktf_test {
+	const char* tclass; /* test class name */
+	const char* name; /* Name of the test */
+	ktf_test_fun fun;
+	int start; /* Start and end value to argument to fun */
+	int end;   /* Defines number of iterations */
+	struct sk_buff *skb; /* sk_buff for recording assertion results */
+	char *log; /* per-test log */
+	struct ktf_handle *handle; /* Handler for owning module */
+	struct list_head tlist; /* linkage for all tests */
+	struct list_head hlist; /* linkage for tests for a specific module */
+};
+
+void flush_assert_cnt(struct ktf_test *self);
 
 /* Representation of a test case (a group of tests) */
 struct ktf_case;
@@ -64,15 +83,12 @@ struct ktf_context;
  */
 struct ktf_handle;
 
-/* type for a test function */
-typedef void (*TFun) (struct sk_buff *, struct ktf_context* tdev, int, u32);
-
 struct __test_desc
 {
 	const char* tclass; /* Test class name */
 	const char* name;   /* Test name */
 	const char* file;   /* File that implements test */
-	TFun fun;
+	ktf_test_fun fun;
 };
 
 /* Add a test function to a test case for a given handle (macro version) */
@@ -126,6 +142,7 @@ struct ktf_handle {
 	struct list_head handle_list; /* Linkage for the global list of all handles with context */
 	struct ktf_map ctx_map;     /* a (possibly empty) map from name to context for this handle */
 	unsigned int id; 	      /* A unique nonzero ID for this handle, set iff contexts */
+	struct ktf_test *current_test;/* Current test running */
 };
 
 void _tcase_cleanup(struct ktf_handle *th);
@@ -146,64 +163,82 @@ void _tcase_cleanup(struct ktf_handle *th);
 /* Start a unit test with TEST(suite_name,unit_name)
 */
 #define TEST(__testsuite, __testname)\
-	static void __testname(struct sk_buff * skb,\
-			struct ktf_context *ctx,\
+	static void __testname(struct ktf_test *self, struct ktf_context *ctx, \
 			int _i, u32 _value);		    \
 	struct __test_desc __testname##_setup = \
         { .tclass = "" # __testsuite "", .name = "" # __testname "",\
 	  .fun = __testname, .file = __FILE__ };    \
 	\
-	static void __testname(struct sk_buff * skb, struct ktf_context* ctx, \
+	static void __testname(struct ktf_test *self, struct ktf_context* ctx, \
 			int _i, u32 _value)
 
 /* Start a unit test using a fixture
  * NB! Note the intentionally missing start parenthesis on DECLARE_F!
+ *
  *   Prep:
  *      DECLARE_F(fixture_name)
  *            <attributes>
  *      };
- *      INIT_F(fixture_name,setup,teardown)
+ *      INIT_F(fixture_name,setup,teardown);
  *
  *   Usage:
- * 	TEST_F(fixture_name,unit_name,test_name)
+ *      SETUP_F(fixture_name,setup)
  *      {
- *          <test code>
+ *             <setup code, set ctx->ok to true to have the test executed>
+ *      }
+ *      TEARDOWN_F(fixture_name,teardown)
+ *      {
+ *             <teardown code>
+ *      }
+ *      TEST_F(fixture_name,unit_name,test_name)
+ *      {
+ *             <test code>
  *      }
  *
  *   setup must set ctx->ok to true to have the test itself executed
  */
-
-#define DECLARE_F(__fixture)\
-	struct __fixture {\
-		void (*setup) (struct sk_buff *, struct ktf_context*, struct __fixture*); \
-		void (*teardown) (struct sk_buff *, struct __fixture*);\
+#define DECLARE_F(__fixture) \
+	struct __fixture { \
+		void (*setup) (struct ktf_test *, struct ktf_context *, struct __fixture *); \
+		void (*teardown) (struct ktf_test *, struct __fixture *); \
 		bool ok;
 
 #define INIT_F(__fixture,__setup,__teardown) \
+	void __setup(struct ktf_test *, struct ktf_context *, struct __fixture *); \
+	void __teardown(struct ktf_test *, struct __fixture *); \
 	static struct __fixture __fixture##_template = {\
 		.setup = __setup, \
-		.teardown = __teardown,	 \
+		.teardown = __teardown, \
 		.ok = false,\
 	}
 
+#define	SETUP_F(__fixture, __setup) \
+	void __setup(struct ktf_test *self, struct ktf_context *ctx, \
+		     struct __fixture *__fixture)
+
+#define	TEARDOWN_F(__fixture, __teardown) \
+	void __teardown(struct ktf_test *self, struct __fixture *__fixture)
 
 #define TEST_F(__fixture, __testsuite, __testname) \
-	static void __testname##_body(struct sk_buff*,struct __fixture*,int,u32); \
-	static void __testname(struct sk_buff * skb, struct ktf_context* ctx, int _i, u32 _value); \
+	static void __testname##_body(struct ktf_test *, struct __fixture *, \
+				      int, u32); \
+	static void __testname(struct ktf_test *, struct ktf_context *, int, \
+			       u32); \
 	struct __test_desc __testname##_setup = \
-        { .tclass = "" # __testsuite "", .name = "" # __testname "", .fun = __testname };\
+        { .tclass = "" # __testsuite "", .name = "" # __testname "", \
+	  .fun = __testname }; \
 	\
-	static void __testname(struct sk_buff * skb, struct ktf_context* ctx, \
-		int _i, u32 _value)				\
-	{\
-		struct __fixture f_ctx = __fixture##_template;\
-		f_ctx.setup(skb,ctx,&f_ctx);\
-		if (!f_ctx.ok) return;\
-		__testname##_body(skb,&f_ctx,_i,_value);	\
-		f_ctx.teardown(skb,&f_ctx);\
-	}\
-	static void __testname##_body(struct sk_buff * skb,\
-			struct __fixture* ctx,\
+	static void __testname(struct ktf_test *self, struct ktf_context* ctx, \
+		int _i, u32 _value) \
+	{ \
+		struct __fixture f_ctx = __fixture##_template; \
+		f_ctx.ok = false; \
+		f_ctx.setup(self, ctx, &f_ctx); \
+		if (!f_ctx.ok) return; \
+		__testname##_body(self, &f_ctx, _i, _value); \
+		f_ctx.teardown(self,&f_ctx); \
+	} \
+	static void __testname##_body(struct ktf_test *self, struct __fixture *ctx, \
 			int _i, u32 _value)
 
 /* Fail the test case unless expr is true */
@@ -211,11 +246,11 @@ void _tcase_cleanup(struct ktf_handle *th);
    with gcc 2.95.3 and earlier.
 */
 #define fail_unless_msg(expr, format, ...)			\
-        _fail_unless(skb, expr, __FILE__, __LINE__,		\
+        _fail_unless(self, expr, __FILE__, __LINE__,		\
         format , ## __VA_ARGS__, NULL)
 
 #define fail_unless(expr, ...)\
-        _fail_unless(skb, expr, __FILE__, __LINE__,		\
+        _fail_unless(self, expr, __FILE__, __LINE__,		\
         "Failure '"#expr"' occurred " , ## __VA_ARGS__, NULL)
 
 /* Fail the test case if expr is true */
@@ -226,16 +261,16 @@ void _tcase_cleanup(struct ktf_handle *th);
 /* FIXME: these macros may conflict with C89 if expr is
    FIXME:   strcmp (str1, str2) due to excessive string length. */
 #define fail_if(expr, ...)\
-        _fail_unless(skb, !(expr), __FILE__, __LINE__,		\
+        _fail_unless(self, !(expr), __FILE__, __LINE__,		\
         "Failure '"#expr"' occurred " , ## __VA_ARGS__, NULL)
 
 /* Always fail */
-#define fail(...) _fail_unless(skb, 0, __FILE__, __LINE__, "Failed" , ## __VA_ARGS__, NULL)
+#define fail(...) _fail_unless(self, 0, __FILE__, __LINE__, "Failed" , ## __VA_ARGS__, NULL)
 
 /* Non macro version of #fail_unless, with more complicated interface
  * returns nonzero if ok, 0 otherwise
  */
-long _fail_unless (struct sk_buff *skb, int result, const char *file,
+long _fail_unless (struct ktf_test *self, int result, const char *file,
 		int line, const char *expr, ...);
 
 /* New check fail API. */

@@ -39,7 +39,13 @@ abstractions provided by KTF:
 | DECLARE_F(f) {...}	| Declare a new test fixture named 'f' with		|
 |		     	| additional data structure				|
 +-----------------------+-------------------------------------------------------+
-| INIT_F(s, f, n) {...} | Declare the setup and tear down functions for the	|
+| SETUP_F(f, s) {...}	| Define setup function for the fixture
+|			|
++-----------------------+-------------------------------------------------------+
+| TEARDOWN_F(f, t) {...}| Define teardown function for the fixture
+|			|
++-----------------------+-------------------------------------------------------+
+| INIT_F(f, s, t) {...} | Declare the setup and tear down functions for the	|
 |			| fixture						|
 +-----------------------+-------------------------------------------------------+
 | TEST_F(s, f, n) {...} | Define a test named 's.n' operating in fixture f	|

@@ -82,16 +82,16 @@ static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 static int send_test_data(struct sk_buff *resp_skb, struct ktf_case *tc)
 {
 	struct nlattr *nest_attr;
-	struct fun_hook *fh;
+	struct ktf_test *t;
 	int stat;
 
 	stat = nla_put_string(resp_skb, KTF_A_STR, tc_name(tc));
 	if (stat) return stat;
 	nest_attr = nla_nest_start(resp_skb, KTF_A_TEST);
-	list_for_each_entry(fh, &tc->fun_list, flist) {
-		if (fh->handle->id)
-			nla_put_u32(resp_skb, KTF_A_HID, fh->handle->id);
-		stat = nla_put_string(resp_skb, KTF_A_STR, fh->name);
+	list_for_each_entry(t, &tc->test_list, tlist) {
+		if (t->handle->id)
+			nla_put_u32(resp_skb, KTF_A_HID, t->handle->id);
+		stat = nla_put_string(resp_skb, KTF_A_STR, t->name);
 		if (stat) return stat;
 	}
 	nla_nest_end(resp_skb, nest_attr);
@@ -200,7 +200,7 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 	struct ktf_case* testset = ktf_case_find(setname);
 
 	/* Execute test functions */
-	struct fun_hook *fh;
+	struct ktf_test *t;
 	int i;
 	int tn = 0;
 
@@ -209,23 +209,26 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 		return -EFAULT;
 	}
 
-	list_for_each_entry(fh, &testset->fun_list, flist) {
-		if (fh->fun && strcmp(fh->name,testname) == 0) {
-			struct ktf_context *ctx = ktf_find_context(fh->handle, ctxname);
-			for (i = fh->start; i < fh->end; i++) {
+	list_for_each_entry(t, &testset->test_list, tlist) {
+		if (t->fun && strcmp(t->name,testname) == 0) {
+			struct ktf_context *ctx = ktf_find_context(t->handle, ctxname);
+			for (i = t->start; i < t->end; i++) {
+				t->handle->current_test = t;
+				t->log[0] = '\0';
+				t->skb = skb;
 				DM(T_DEBUG,
 					printk(KERN_INFO "Running test %s.%s",
-						fh->tclass, fh->name);
+						t->tclass, t->name);
 					if (ctx)
 						printk("_%s", ctxname);
-					printk("[%d:%d]\n", fh->start, fh->end);
+					printk("[%d:%d]\n", t->start, t->end);
 					);
-				fh->fun(skb,ctx,i,value);
-				flush_assert_cnt(skb);
+				t->fun(t,ctx,i,value);
+				flush_assert_cnt(t);
 			}
-		} else if (!fh->fun)
+		} else if (!t->fun)
 			DM(T_DEBUG, printk(KERN_INFO "** no function for test %s.%s **\n",
-						fh->tclass,fh->name));
+						t->tclass,t->name));
 		tn++;
 	}
 	DM(T_DEBUG, printk(KERN_INFO "Set %s contained %d tests\n",
