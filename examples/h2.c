@@ -13,15 +13,9 @@ struct hello_ctx {
 };
 struct hello_ctx myctx = { .value = { 0, 1, 4 }};
 
-struct hello_ctx *to_hctx(struct ktf_context *ctx)
-{
-	return container_of(ctx, struct hello_ctx, k);
-}
-
-
 TEST(examples, cmp)
 {
-	struct hello_ctx *hctx = to_hctx(ctx);
+	struct hello_ctx *hctx = KTF_CONTEXT_GET("value", struct hello_ctx);
 	EXPECT_INT_EQ(_i, hctx->value[_i]);
 }
 

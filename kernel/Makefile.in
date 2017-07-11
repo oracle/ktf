@@ -6,7 +6,7 @@ KVER = @KVER@
 
 obj-m := ktf.o
 
-ktf-y := kbase.o nl.o ktf_map.o kcheck.o
+ktf-y := kbase.o nl.o ktf_map.o kcheck.o ktf_debugfs.o
 
 KDIR   := /lib/modules/$(KVER)
 PWD    := $(shell pwd)

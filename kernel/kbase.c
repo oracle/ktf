@@ -16,6 +16,7 @@
 #include <linux/kallsyms.h>
 #include <rdma/ib_verbs.h>
 #include "ktf.h"
+#include "kcheck.h"
 #include "nl.h"
 
 MODULE_LICENSE("GPL");
@@ -57,6 +58,11 @@ int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx, const ch
 }
 EXPORT_SYMBOL(ktf_context_add);
 
+const char *ktf_context_name(struct ktf_context *ctx)
+{
+	return (ctx->elem.name);
+}
+EXPORT_SYMBOL(ktf_context_name);
 
 void ktf_context_remove(struct ktf_context *ctx)
 {
@@ -133,9 +139,11 @@ static int __init ktf_init(void)
 		return -EINVAL;
 	}
 
+	ktf_debugfs_init();
 	ret = ktf_nl_register();
 	if (ret) {
 		printk(KERN_ERR "Unable to register protocol with netlink");
+		ktf_debugfs_cleanup();
 		goto failure;
 	}
 

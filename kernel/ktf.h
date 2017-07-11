@@ -20,6 +20,7 @@ typedef void (*ktf_test_adder)(void);
 /* Generic setup function for client modules */
 void ktf_add_tests(ktf_test_adder f);
 int ktf_context_add(struct ktf_handle *handle, struct ktf_context* ctx, const char* name);
+const char *ktf_context_name(struct ktf_context *ctx);
 struct ktf_context* ktf_find_context(struct ktf_handle *handle, const char* name);
 struct ktf_context *ktf_find_first_context(struct ktf_handle *handle);
 struct ktf_context *ktf_find_next_context(struct ktf_context* ctx);
@@ -35,6 +36,8 @@ extern struct ktf_handle __test_handle;
 #define KTF_CONTEXT_ADD(__context, name) ktf_context_add(&__test_handle, __context, name)
 #define KTF_CONTEXT_REMOVE(__context) ktf_context_remove(__context)
 #define KTF_CONTEXT_FIND(name) ktf_find_context(&__test_handle, name)
+#define KTF_CONTEXT_GET(name, type) \
+	container_of(KTF_CONTEXT_FIND(name), type, k)
 
 /**
  * ASSERT_TRUE() - fail and return if @C evaluates to false

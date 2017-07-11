@@ -43,11 +43,29 @@
 #define CK_ATTRIBUTE_UNUSED
 #endif /* GCC 2.95 */
 
+/* A test context is an extendable object that a test client module
+ * can supply, and that all tests will be invoked with as an implicit
+ * 'ctx' argument:
+ */
 struct ktf_context;
 
 struct ktf_test;
 
 typedef void (*ktf_test_fun) (struct ktf_test *, struct ktf_context* tdev, int, u32);
+
+#define KTF_DEBUGFS_ROOT                        "ktf"
+#define KTF_DEBUGFS_RUN                         "run"
+#define KTF_DEBUGFS_RESULTS                     "results"
+#define KTF_DEBUGFS_TESTS_SUFFIX                "-tests"
+
+#define KTF_DEBUGFS_NAMESZ                      256
+
+struct ktf_debugfs {
+        struct dentry *debugfs_results_testset;
+        struct dentry *debugfs_results_test;
+        struct dentry *debugfs_run_testset;
+        struct dentry *debugfs_run_test;
+};
 
 struct ktf_test {
 	const char* tclass; /* test class name */
@@ -57,23 +75,40 @@ struct ktf_test {
 	int end;   /* Defines number of iterations */
 	struct sk_buff *skb; /* sk_buff for recording assertion results */
 	char *log; /* per-test log */
+	struct timespec lastrun; /* last time test was run */
+	struct ktf_debugfs debugfs; /* debugfs info for test */
 	struct ktf_handle *handle; /* Handler for owning module */
 	struct list_head tlist; /* linkage for all tests */
 	struct list_head hlist; /* linkage for tests for a specific module */
 };
 
+struct ktf_case {
+	struct ktf_map_elem kmap; /* Linkage for ktf_map */
+	struct list_head test_list; /* List of tests to run */
+	struct ktf_debugfs debugfs; /* debugfs handles for testset */
+};
+
+int ktf_debugfs_create_test(struct ktf_test *);
+void ktf_debugfs_destroy_test(struct ktf_test *);
+int ktf_debugfs_create_testset(struct ktf_case *);
+void ktf_debugfs_destroy_testset(struct ktf_case *);
+void ktf_debugfs_init(void);
+void ktf_debugfs_cleanup(void);
+
+extern struct ktf_map test_cases;
+
+/* Current total number of test cases defined */
+size_t ktf_case_count(void);
+const char *ktf_case_name(struct ktf_case *);
+
+void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
+		  struct ktf_test *t, u32 value);
 void flush_assert_cnt(struct ktf_test *self);
 
 /* Representation of a test case (a group of tests) */
 struct ktf_case;
 
 struct ktf_case *ktf_case_find(const char *name);
-
-/* A test context is an extendable object that a test client module
- * can supply, and that all tests will be invoked with as an implicit
- * 'ctx' argument:
- */
-struct ktf_context;
 
 /* Each module client of the test framework is required to
  * declare at least one ktf_handle via the macro
@@ -82,6 +117,12 @@ struct ktf_context;
  * can be embedded within the handle
  */
 struct ktf_handle;
+
+/* Called upon ktf unload to clean up test cases */
+int ktf_cleanup(void);
+
+/* The list of handles that have contexts associated with them */
+extern struct list_head context_handles;
 
 struct __test_desc
 {

@@ -85,7 +85,7 @@ static int send_test_data(struct sk_buff *resp_skb, struct ktf_case *tc)
 	struct ktf_test *t;
 	int stat;
 
-	stat = nla_put_string(resp_skb, KTF_A_STR, tc_name(tc));
+	stat = nla_put_string(resp_skb, KTF_A_STR, ktf_case_name(tc));
 	if (stat) return stat;
 	nest_attr = nla_nest_start(resp_skb, KTF_A_TEST);
 	list_for_each_entry(t, &tc->test_list, tlist) {
@@ -201,7 +201,6 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 
 	/* Execute test functions */
 	struct ktf_test *t;
-	int i;
 	int tn = 0;
 
 	if (!testset) {
@@ -212,27 +211,14 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 	list_for_each_entry(t, &testset->test_list, tlist) {
 		if (t->fun && strcmp(t->name,testname) == 0) {
 			struct ktf_context *ctx = ktf_find_context(t->handle, ctxname);
-			for (i = t->start; i < t->end; i++) {
-				t->handle->current_test = t;
-				t->log[0] = '\0';
-				t->skb = skb;
-				DM(T_DEBUG,
-					printk(KERN_INFO "Running test %s.%s",
-						t->tclass, t->name);
-					if (ctx)
-						printk("_%s", ctxname);
-					printk("[%d:%d]\n", t->start, t->end);
-					);
-				t->fun(t,ctx,i,value);
-				flush_assert_cnt(t);
-			}
+			ktf_run_hook(skb, ctx, t, value);
 		} else if (!t->fun)
 			DM(T_DEBUG, printk(KERN_INFO "** no function for test %s.%s **\n",
 						t->tclass,t->name));
 		tn++;
 	}
 	DM(T_DEBUG, printk(KERN_INFO "Set %s contained %d tests\n",
-				tc_name(testset), tn));
+				ktf_case_name(testset), tn));
 	return 0;
 }
 

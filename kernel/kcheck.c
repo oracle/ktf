@@ -1,4 +1,5 @@
 #include <linux/module.h>
+#include <linux/time.h>
 #include "kcheck.h"
 #include <net/netlink.h>
 #include <net/genetlink.h>
@@ -17,9 +18,14 @@ DEFINE_MUTEX(tc_lock);
 
 
 /* Current total number of test cases defined */
-size_t ktf_case_count()
+size_t ktf_case_count(void)
 {
 	return ktf_map_size(&test_cases);
+}
+
+const char *ktf_case_name(struct ktf_case *tc)
+{
+	return tc->kmap.name;
 }
 
 struct ktf_case *ktf_case_create(const char *name)
@@ -32,6 +38,8 @@ struct ktf_case *ktf_case_create(const char *name)
 
 	INIT_LIST_HEAD(&tc->test_list);
 	ret = ktf_map_elem_init(&tc->kmap, name);
+	if (!ret)
+		ret = ktf_debugfs_create_testset(tc);
 	if (ret) {
 		kfree(tc);
 		return NULL;
@@ -163,15 +171,37 @@ void  _tcase_add_test (struct __test_desc td,
 	t->handle = th;
 	t->log = log;
 
-	DM(T_LIST, printk(KERN_INFO "ktf: Added test \"%s.%s\""
-		" start = %d, end = %d\n",
-		td.tclass, td.name, start, end));
+	if (ktf_debugfs_create_test(t))
+		DM(T_LIST, printk(KERN_INFO "ktf: Added test \"%s.%s\""
+			" start = %d, end = %d\n",
+			td.tclass, td.name, start, end));
 	list_add(&t->tlist, &tc->test_list);
 	list_add(&t->hlist, &th->test_list);
 	mutex_unlock(&tc_lock);
 }
 EXPORT_SYMBOL(_tcase_add_test);
 
+void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
+		  struct ktf_test *t, u32 value)
+{
+	int i;
+
+	for (i = t->start; i < t->end; i++) {
+		t->handle->current_test = t;
+		t->log[0] = '\0';
+		DM(T_DEBUG,
+		   printk(KERN_INFO "Running test %s.%s",
+		   t->tclass, t->name);
+		   if (ctx)
+			printk("_%s", ktf_context_name(ctx));
+		   printk("[%d:%d]\n", t->start, t->end);
+		);
+		getnstimeofday(&t->lastrun);
+		t->fun(t, ctx, i, value);
+		flush_assert_cnt(t);
+	}
+	t->handle->current_test = NULL;
+}
 
 /* Clean up all tests associated with a ktf_handle */
 
@@ -186,6 +216,7 @@ void _tcase_cleanup(struct ktf_handle *th)
 		DM(T_LIST, printk(KERN_INFO "ktf: delete test %s.%s\n", t->tclass, t->name));
 		list_del(&t->tlist);
 		list_del(&t->hlist);
+		ktf_debugfs_destroy_test(t);
 		kfree(t->log);
 		kfree(t);
 	}
@@ -208,11 +239,13 @@ int ktf_cleanup(void)
 			t = list_entry(pos, struct ktf_test, tlist);
 			printk(KERN_WARNING
 				"ktf: (memory leak) test set %s still active with test %s at unload!\n",
-				tc_name(tc), t->name);
+				ktf_case_name(tc), t->name);
 			return -EBUSY;
 		}
+		ktf_debugfs_destroy_testset(tc);
 	}
 	ktf_map_delete_all(&test_cases, struct ktf_case, kmap);
+	ktf_debugfs_cleanup();
 	mutex_unlock(&tc_lock);
 	return 0;
 }
