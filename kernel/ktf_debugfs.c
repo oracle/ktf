@@ -56,7 +56,7 @@ static int ktf_debugfs_results_all(struct seq_file *seq, void *v)
 		return (0);
 
 	seq_printf(seq, "%s results:\n", ktf_case_name(testset));
-	list_for_each_entry(t, &testset->test_list, tlist)
+	ktf_testcase_for_each_test(t, testset)
 		ktf_debugfs_print_result(seq, t);
 
 	return (0);
@@ -86,7 +86,7 @@ static int ktf_debugfs_run_all(struct seq_file *seq, void *v)
 		return (0);
 
 	seq_printf(seq, "Running %s\n", ktf_case_name(testset));
-	list_for_each_entry(t, &testset->test_list, tlist) {
+	ktf_testcase_for_each_test(t, testset) {
 		ktf_run_hook(NULL, NULL, t, 0);
 		ktf_debugfs_print_result(seq, t);
 	}
@@ -138,11 +138,12 @@ static struct file_operations ktf_results_test_fops = {
 	.release = ktf_debugfs_release,
 };
 
-void ktf_debugfs_destroy_test(struct ktf_test *t)
+static void _ktf_debugfs_destroy_test(struct ktf_test *t)
 {
 	if (!t)
 		return;
 
+	DM(T_DEBUG, printk(KERN_INFO "Destroying debugfs test %s", t->name));
 	if (t->debugfs.debugfs_results_test)
 		debugfs_remove(t->debugfs.debugfs_results_test);
 	if (t->debugfs.debugfs_run_test)
@@ -150,12 +151,12 @@ void ktf_debugfs_destroy_test(struct ktf_test *t)
 	memset(&t->debugfs, 0, sizeof (t->debugfs));
 }
 
-int ktf_debugfs_create_test(struct ktf_test *t)
+void ktf_debugfs_create_test(struct ktf_test *t)
 {
 	struct ktf_case *testset = ktf_case_find(t->tclass);
 
 	if (!testset)
-		return 0;
+		return;
 
 	memset(&t->debugfs, 0, sizeof (t->debugfs));
 
@@ -164,16 +165,27 @@ int ktf_debugfs_create_test(struct ktf_test *t)
 				 testset->debugfs.debugfs_results_test,
 				 t, &ktf_results_test_fops);
 
-	if (!t->debugfs.debugfs_results_test)
-		return 0;
-
-	t->debugfs.debugfs_run_test =
-		debugfs_create_file(t->name, S_IFREG | 0444,
+	if (t->debugfs.debugfs_results_test) {
+		t->debugfs.debugfs_run_test =
+			debugfs_create_file(t->name, S_IFREG | 0444,
 				 testset->debugfs.debugfs_run_test,
 				 t, &ktf_run_test_fops);
-	if (!t->debugfs.debugfs_run_test)
-		ktf_debugfs_destroy_test(t);
-	return (0);
+		if (!t->debugfs.debugfs_run_test)
+			_ktf_debugfs_destroy_test(t);
+		else {
+			/* Take reference for test for debugfs */
+			ktf_test_get(t);
+		}
+	}
+	/* Drop reference to testset from ktf_case_find(). */
+	ktf_case_put(testset);
+}
+
+void ktf_debugfs_destroy_test(struct ktf_test *t)
+{
+	_ktf_debugfs_destroy_test(t);
+	/* Release reference now debugfs files are gone. */
+	ktf_test_put(t);
 }
 
 static int ktf_results_testset_open(struct inode *inode, struct file *file)
@@ -214,7 +226,19 @@ static struct file_operations ktf_run_testset_fops = {
 	.release = ktf_debugfs_release,
 };
 
-int ktf_debugfs_create_testset(struct ktf_case *testset)
+void _ktf_debugfs_destroy_testset(struct ktf_case *testset)
+{
+	if (testset->debugfs.debugfs_run_testset)
+		debugfs_remove(testset->debugfs.debugfs_run_testset);
+	if (testset->debugfs.debugfs_run_test)
+		debugfs_remove(testset->debugfs.debugfs_run_test);
+	if (testset->debugfs.debugfs_results_testset)
+		debugfs_remove(testset->debugfs.debugfs_results_testset);
+	if (testset->debugfs.debugfs_results_test)
+		debugfs_remove(testset->debugfs.debugfs_results_test);
+}
+
+void ktf_debugfs_create_testset(struct ktf_case *testset)
 {
 	char tests_subdir[KTF_DEBUGFS_NAMESZ];
 	const char *name = ktf_case_name(testset);
@@ -253,31 +277,27 @@ int ktf_debugfs_create_testset(struct ktf_case *testset)
 	if (!testset->debugfs.debugfs_run_test)
 		goto err;
 
-	return (0);
+	/* Take reference count for testset.  One will do as we will always
+	 * free testset debugfs resources together.
+	 */
+	ktf_case_get(testset);
+	return;
 err:
-	ktf_debugfs_destroy_testset(testset);
-
-	return -ENOMEM;
+	_ktf_debugfs_destroy_testset(testset);
 }
 
 void ktf_debugfs_destroy_testset(struct ktf_case *testset)
 {
-	printk(KERN_INFO "Destroying testset %s", ktf_case_name(testset));
-
-	if (testset->debugfs.debugfs_run_testset)
-		debugfs_remove(testset->debugfs.debugfs_run_testset);
-	if (testset->debugfs.debugfs_run_test)
-		debugfs_remove(testset->debugfs.debugfs_run_test);
-	if (testset->debugfs.debugfs_results_testset)
-		debugfs_remove(testset->debugfs.debugfs_results_testset);
-	if (testset->debugfs.debugfs_results_test)
-		debugfs_remove(testset->debugfs.debugfs_results_test);
-
+	DM(T_DEBUG, printk(KERN_INFO "Destroying debugfs testset %s",
+	       ktf_case_name(testset)));
+	_ktf_debugfs_destroy_testset(testset);
+	/* Remove our debugfs reference cout to testset */
+	ktf_case_put(testset);
 }
 
 void ktf_debugfs_cleanup(void)
 {
-	printk(KERN_INFO "Removing ktf debugfs dirs...");
+	DM(T_DEBUG, printk(KERN_INFO "Removing ktf debugfs dirs..."));
 	if (ktf_debugfs_rundir)
 		debugfs_remove(ktf_debugfs_rundir);
 	if (ktf_debugfs_resultsdir)

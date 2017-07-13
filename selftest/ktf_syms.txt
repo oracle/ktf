@@ -6,3 +6,6 @@ ktf_map_insert
 ktf_map_find
 ktf_map_find_first
 ktf_map_remove
+ktf_map_elem_get
+ktf_map_elem_put
+ktf_map_find_next

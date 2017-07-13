@@ -68,6 +68,7 @@ struct ktf_debugfs {
 };
 
 struct ktf_test {
+	struct ktf_map_elem kmap; /* linkage for test case list */
 	const char* tclass; /* test class name */
 	const char* name; /* Name of the test */
 	ktf_test_fun fun;
@@ -78,19 +79,17 @@ struct ktf_test {
 	struct timespec lastrun; /* last time test was run */
 	struct ktf_debugfs debugfs; /* debugfs info for test */
 	struct ktf_handle *handle; /* Handler for owning module */
-	struct list_head tlist; /* linkage for all tests */
-	struct list_head hlist; /* linkage for tests for a specific module */
 };
 
 struct ktf_case {
 	struct ktf_map_elem kmap; /* Linkage for ktf_map */
-	struct list_head test_list; /* List of tests to run */
+	struct ktf_map tests; /* List of tests to run */
 	struct ktf_debugfs debugfs; /* debugfs handles for testset */
 };
 
-int ktf_debugfs_create_test(struct ktf_test *);
+void ktf_debugfs_create_test(struct ktf_test *);
 void ktf_debugfs_destroy_test(struct ktf_test *);
-int ktf_debugfs_create_testset(struct ktf_case *);
+void ktf_debugfs_create_testset(struct ktf_case *);
 void ktf_debugfs_destroy_testset(struct ktf_case *);
 void ktf_debugfs_init(void);
 void ktf_debugfs_cleanup(void);
@@ -100,6 +99,9 @@ extern struct ktf_map test_cases;
 /* Current total number of test cases defined */
 size_t ktf_case_count(void);
 const char *ktf_case_name(struct ktf_case *);
+/* Manage test case refcount. */
+void ktf_case_get(struct ktf_case *);
+void ktf_case_put(struct ktf_case *);
 
 void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 		  struct ktf_test *t, u32 value);
@@ -131,6 +133,10 @@ struct __test_desc
 	const char* file;   /* File that implements test */
 	ktf_test_fun fun;
 };
+
+/* Manage refcount for tests. */
+void ktf_test_get(struct ktf_test *t);
+void ktf_test_put(struct ktf_test *t);
 
 /* Add a test function to a test case for a given handle (macro version) */
 #define tcase_add_test_to(td, __test_handle)					\
@@ -171,6 +177,18 @@ void tcase_fn_start (const char *fname, const char *file, int line);
 /* Remove a test previously added with ADD_TEST */
 #define DEL_TEST(__testname)\
 	tcase_del_test(__testname)
+
+/* Iterate over all test cases.  Implicitly bumps refcount for pos and
+ * decreases it after we iterate past it.
+ */
+#define ktf_for_each_testcase(pos)	\
+	ktf_map_for_each_entry(pos, &test_cases, kmap)
+
+/* Iterate over all tests for testcases.  Implicitly bumps refcount for pos
+ * and decreases it again after we iterate past it.
+ */
+#define ktf_testcase_for_each_test(pos, tc)	\
+	ktf_map_for_each_entry(pos, &tc->tests, kmap)
 
 /* A test_handle identifies the calling module:
  * Declare one in the module global scope using

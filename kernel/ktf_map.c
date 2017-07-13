@@ -13,10 +13,12 @@
 #include "ktf_map.h"
 #include "ktf.h"
 
-void ktf_map_init(struct ktf_map *map)
+void ktf_map_init(struct ktf_map *map, ktf_map_elem_freefn elem_freefn)
 {
 	map->root = RB_ROOT;
 	map->size = 0;
+	map->elem_freefn = elem_freefn;
+	spin_lock_init(&map->lock);
 }
 
 /* returns 0 upon success or -ENOMEM if key got truncated */
@@ -27,13 +29,46 @@ int ktf_map_elem_init(struct ktf_map_elem *elem, const char *name)
 		*(--dest) = '\0';
 		return -ENOMEM;
 	}
+	elem->map = NULL;
+	kref_init(&elem->refcount);
 	return 0;
 }
 
+/* Called when refcount of elem is 0. */
+void ktf_map_elem_release(struct kref *kref)
+{
+	struct ktf_map_elem *elem = container_of(kref, struct ktf_map_elem,
+						 refcount);
+	struct ktf_map *map = elem->map;
+
+	DM(T_DEBUG, printk(KERN_INFO "Releasing %s, %s free function\n",
+	   elem->name, map && map->elem_freefn ? "calling" : "no"));
+	if (map && map->elem_freefn)
+		map->elem_freefn(elem);
+}
+
+void ktf_map_elem_put(struct ktf_map_elem *elem)
+{
+	DM(T_DEBUG, printk(KERN_INFO "Decreasing refcount for %s to %d",
+	   elem->name, atomic_read(&elem->refcount.refcount) - 1));
+	kref_put(&elem->refcount, ktf_map_elem_release);
+}
+
+void ktf_map_elem_get(struct ktf_map_elem *elem)
+{
+	DM(T_DEBUG, printk(KERN_INFO "Increasing refcount for %s to %d",
+	   elem->name, atomic_read(&elem->refcount.refcount) + 1));
+	kref_get(&elem->refcount);
+}
 
 struct ktf_map_elem *ktf_map_find(struct ktf_map *map, const char *name)
 {
-	struct rb_node *node = map->root.rb_node;
+	struct rb_node *node;
+	unsigned long flags;
+
+	/* may be called in interrupt context */
+	spin_lock_irqsave(&map->lock, flags);
+	node = map->root.rb_node;
 
 	while (node) {
 		struct ktf_map_elem *elem = container_of(node, struct ktf_map_elem, node);
@@ -45,9 +80,13 @@ struct ktf_map_elem *ktf_map_find(struct ktf_map *map, const char *name)
 			node = node->rb_left;
 		else if (result > 0)
 			node = node->rb_right;
-		else
+		else {
+			ktf_map_elem_get(elem);
+			spin_unlock_irqrestore(&map->lock, flags);
 			return elem;
+		}
 	}
+	spin_unlock_irqrestore(&map->lock, flags);
         return NULL;
 }
 
@@ -55,25 +94,60 @@ struct ktf_map_elem *ktf_map_find(struct ktf_map *map, const char *name)
 /* Find the first map elem in 'map' */
 struct ktf_map_elem *ktf_map_find_first(struct ktf_map *map)
 {
-	struct rb_node *node = rb_first(&map->root);
-	if (node)
-		return container_of(node, struct ktf_map_elem, node);
-	return NULL;
+	struct ktf_map_elem *elem = NULL;
+	struct rb_node *node;
+	unsigned long flags;
+
+	spin_lock_irqsave(&map->lock, flags);
+	node = rb_first(&map->root);
+	if (node) {
+		elem = container_of(node, struct ktf_map_elem, node);
+		ktf_map_elem_get(elem);
+	}
+	spin_unlock_irqrestore(&map->lock, flags);
+	return elem;
 }
 
 /* Find the next element in the map after 'elem' if any */
 struct ktf_map_elem *ktf_map_find_next(struct ktf_map_elem *elem)
 {
-	struct rb_node *node = rb_next(&elem->node);
-	if (node)
-		return container_of(node, struct ktf_map_elem, node);
-	return NULL;
+	struct ktf_map_elem *next = NULL;
+	struct ktf_map *map = elem->map;
+	struct rb_node *node;
+	unsigned long flags;
+
+	if (!elem->map)
+		return NULL;
+	spin_lock_irqsave(&map->lock, flags);
+	node = rb_next(&elem->node);
+
+	/* Assumption here - we don't need ref to elem any more.
+	 * Common usage pattern is
+	 *
+	 * for (elem = ktf_map_elem_first(map); elem != NULL;
+	 *      elem = ktf_map_find_next(elem))
+	 *
+	 * but if other use cases occur we may need to revisit.
+	 * This assumption allows us to define our _for_each macros
+	 * and still manage refcounts.
+	 */
+	ktf_map_elem_put(elem);
+
+	if (node) {
+		next = container_of(node, struct ktf_map_elem, node);
+		ktf_map_elem_get(next);
+	}
+	spin_unlock_irqrestore(&map->lock, flags);
+	return next;
 }
 
 int ktf_map_insert(struct ktf_map *map, struct ktf_map_elem *elem)
 {
-	struct rb_node **newobj = &(map->root.rb_node), *parent = NULL;
+	struct rb_node **newobj, *parent = NULL;
+	unsigned long flags;
 
+	spin_lock_irqsave(&map->lock, flags);
+	newobj = &(map->root.rb_node);
 	while (*newobj) {
 		struct ktf_map_elem *this = container_of(*newobj, struct ktf_map_elem, node);
 		int result = strcmp(elem->name, this->name);
@@ -83,24 +157,59 @@ int ktf_map_insert(struct ktf_map *map, struct ktf_map_elem *elem)
 			newobj = &((*newobj)->rb_left);
 		else if 	(result > 0)
 			newobj = &((*newobj)->rb_right);
-		else
+		else {
+			spin_unlock_irqrestore(&map->lock, flags);
 			return -1;
+		}
 	}
 
 	/* Add newobj node and rebalance tree. */
 	rb_link_node(&elem->node, parent, newobj);
 	rb_insert_color(&elem->node, &map->root);
+	/* Bump reference count for map reference */
+	ktf_map_elem_get(elem);
+	elem->map = map;
 	map->size++;
+	spin_unlock_irqrestore(&map->lock, flags);
 	return 0;
+}
+
+void ktf_map_remove_elem(struct ktf_map *map, struct ktf_map_elem *elem)
+{
+	if (elem) {
+		rb_erase(&elem->node, &map->root);
+		map->size--;
+		ktf_map_elem_put(elem);
+	}
 }
 
 struct ktf_map_elem *ktf_map_remove(struct ktf_map *map, const char *name)
 {
-	struct ktf_map_elem *elem = ktf_map_find(map, name);
-	if (elem) {
-		rb_erase(&elem->node, &map->root);
-		map->size--;
-		return elem;
-	}
-	return NULL;
+	struct ktf_map_elem *elem;
+	unsigned long flags;
+
+	elem = ktf_map_find(map, name);
+	spin_lock_irqsave(&map->lock, flags);
+	ktf_map_remove_elem(map, elem);
+	spin_unlock_irqrestore(&map->lock, flags);
+	return elem;
+}
+
+void ktf_map_delete_all(struct ktf_map *map)
+{
+	struct ktf_map_elem *elem;
+	struct rb_node *node;
+	unsigned long flags;
+
+	spin_lock_irqsave(&map->lock, flags);
+	do {
+		node = rb_first(&(map)->root);
+		if (node) {
+			rb_erase(node, &(map)->root);
+			map->size--;
+			elem = container_of(node, struct ktf_map_elem, node);
+			ktf_map_elem_put(elem);
+		}
+	} while (node != NULL);
+	spin_unlock_irqrestore(&map->lock, flags);
 }

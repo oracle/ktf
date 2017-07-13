@@ -27,26 +27,33 @@ struct map_test_ctx *to_mctx(struct ktf_context *ctx)
 	return container_of(ctx, struct map_test_ctx, k);
 }
 
+struct myelem {
+	struct ktf_map_elem foo;
+	int freed;
+};
+
+/* should be called when refcount is 0. */
+void myelem_free(struct ktf_map_elem *elem)
+{
+	struct myelem *myelem = container_of(elem, struct myelem, foo);
+	myelem->freed = 1;
+}
 
 TEST(any, simplemap)
 {
 	int i;
 	const int nelems = 3;
 	struct map_test_ctx *mctx = to_mctx(ctx);
-
-	struct ktf_map tm;
-	struct myelem {
-		struct ktf_map_elem foo;
-	};
-
-	struct myelem e[nelems];
+	struct ktf_map tm, tm2;
+	struct myelem e[nelems], *ep;
+	struct ktf_map_elem *elem;
 
 	if (mctx) {
 		tlog(T_DEBUG, "ctx %s\n", mctx->k.elem.name);
 	} else
 		tlog(T_DEBUG, "ctx <none>\n");
 
-	ktf_map_init(&tm);
+	ktf_map_init(&tm, NULL);
 	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[0].foo, "foo"));
 	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[1].foo, "bar"));
 	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[2].foo, "zax"));
@@ -65,6 +72,31 @@ TEST(any, simplemap)
 		EXPECT_ADDR_EQ(&e[i].foo, ktf_map_remove(&tm, e[i].foo.name));
 	}
 	EXPECT_LONG_EQ(0, ktf_map_size(&tm));
+
+	/* Reference counting test */
+	ktf_map_init(&tm2, myelem_free);
+	/* Init map elems with "foo" "bar" "zax" */
+	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[0].foo, "foo"));
+	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[1].foo, "bar"));
+	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[2].foo, "zax"));
+
+	/* Insert elems and drop our refcounts (map still holds ref) */
+	for (i = 0; i < nelems; i++) {
+		EXPECT_INT_EQ(0, ktf_map_insert(&tm2, &e[i].foo));
+		ktf_map_elem_put(&e[i].foo);
+	}
+
+	/* This macro takes (and drops) refcount for each elem */
+	ktf_map_for_each_entry(ep, &tm2, foo)
+		ep->freed = 0;
+
+	for (i = 0; i < nelems; i++) {
+		elem = ktf_map_remove(&tm2, e[i].foo.name);
+		EXPECT_INT_EQ(0, e[i].freed);
+		/* free our ref, now free function should be called. */
+		ktf_map_elem_put(elem);
+		EXPECT_INT_EQ(1, e[i].freed);
+	}
 }
 
 TEST(any, dummy)

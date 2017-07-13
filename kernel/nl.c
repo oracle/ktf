@@ -88,11 +88,15 @@ static int send_test_data(struct sk_buff *resp_skb, struct ktf_case *tc)
 	stat = nla_put_string(resp_skb, KTF_A_STR, ktf_case_name(tc));
 	if (stat) return stat;
 	nest_attr = nla_nest_start(resp_skb, KTF_A_TEST);
-	list_for_each_entry(t, &tc->test_list, tlist) {
+	ktf_testcase_for_each_test(t, tc) {
 		if (t->handle->id)
 			nla_put_u32(resp_skb, KTF_A_HID, t->handle->id);
 		stat = nla_put_string(resp_skb, KTF_A_STR, t->name);
-		if (stat) return stat;
+		if (stat) {
+			/* we hold reference to t here - drop it! */
+			ktf_test_put(t);
+			return stat;
+		}
 	}
 	nla_nest_end(resp_skb, nest_attr);
 	return 0;
@@ -171,7 +175,7 @@ static int ktf_query(struct sk_buff *skb, struct genl_info *info)
 			retval = -ENOMEM;
 			goto resp_failure;
 		}
-		ktf_map_for_each_entry(tc, &test_cases, kmap) {
+		ktf_for_each_testcase(tc) {
 			retval = send_test_data(resp_skb, tc);
 			if (retval) {
 				retval = -ENOMEM;
@@ -198,8 +202,6 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 			const char *setname, const char *testname, u32 value)
 {
 	struct ktf_case* testset = ktf_case_find(setname);
-
-	/* Execute test functions */
 	struct ktf_test *t;
 	int tn = 0;
 
@@ -208,7 +210,8 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 		return -EFAULT;
 	}
 
-	list_for_each_entry(t, &testset->test_list, tlist) {
+	/* Execute test functions */
+	ktf_testcase_for_each_test(t, testset) {
 		if (t->fun && strcmp(t->name,testname) == 0) {
 			struct ktf_context *ctx = ktf_find_context(t->handle, ctxname);
 			ktf_run_hook(skb, ctx, t, value);
@@ -219,6 +222,7 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 	}
 	DM(T_DEBUG, printk(KERN_INFO "Set %s contained %d tests\n",
 				ktf_case_name(testset), tn));
+	ktf_case_put(testset);
 	return 0;
 }
 

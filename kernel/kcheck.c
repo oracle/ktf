@@ -8,14 +8,31 @@
 #include "unlproto.h"
 #include "ktf.h"
 
+#define MAX_PRINTF 4096
+
+/* Function called when global references to test case reach 0. */
+static void ktf_case_free(struct ktf_map_elem *elem)
+{
+	struct ktf_case *tc = container_of(elem, struct ktf_case, kmap);
+
+	kfree(tc);
+}
+
+void ktf_case_get(struct ktf_case *tc)
+{
+	ktf_map_elem_get(&tc->kmap);
+}
+
+void ktf_case_put(struct ktf_case *tc)
+{
+	ktf_map_elem_put(&tc->kmap);
+}
+
 /* The global map from name to ktf_case */
-DEFINE_KTF_MAP(test_cases);
+DEFINE_KTF_MAP(test_cases, ktf_case_free);
 
 /* a lock to protect this datastructure */
 DEFINE_MUTEX(tc_lock);
-
-#define MAX_PRINTF 4096
-
 
 /* Current total number of test cases defined */
 size_t ktf_case_count(void)
@@ -28,6 +45,30 @@ const char *ktf_case_name(struct ktf_case *tc)
 	return tc->kmap.name;
 }
 
+size_t ktf_case_test_count(struct ktf_case *tc)
+{
+	return ktf_map_size(&tc->tests);
+}
+
+/* Called when test refcount reaches 0. */
+static void ktf_test_free(struct ktf_map_elem *elem)
+{
+	struct ktf_test *t = container_of(elem, struct ktf_test, kmap);
+
+	kfree(t->log);
+	kfree(t);
+}
+
+void ktf_test_get(struct ktf_test *t)
+{
+	ktf_map_elem_get(&t->kmap);
+}
+
+void ktf_test_put(struct ktf_test *t)
+{
+	ktf_map_elem_put(&t->kmap);
+}
+
 struct ktf_case *ktf_case_create(const char *name)
 {
 	struct ktf_case *tc = kmalloc(sizeof(*tc), GFP_KERNEL);
@@ -36,14 +77,14 @@ struct ktf_case *ktf_case_create(const char *name)
 	if (!tc)
 		return tc;
 
-	INIT_LIST_HEAD(&tc->test_list);
+	/* Initialize test case map of tests. */
+	ktf_map_init(&tc->tests, ktf_test_free);
 	ret = ktf_map_elem_init(&tc->kmap, name);
-	if (!ret)
-		ret = ktf_debugfs_create_testset(tc);
 	if (ret) {
 		kfree(tc);
 		return NULL;
 	}
+	ktf_debugfs_create_testset(tc);
 	DM(T_DEBUG, printk(KERN_INFO "ktf: Added test set %s\n", name));
 	return tc;
 }
@@ -53,6 +94,7 @@ struct ktf_case *ktf_case_find(const char *name)
 	return ktf_map_find_entry(&test_cases, name, struct ktf_case, kmap);
 }
 
+/* Returns with case refcount increased.  Called with tc_lock held. */
 struct ktf_case *ktf_case_find_create(const char *name)
 {
 	struct ktf_case *tc;
@@ -61,18 +103,16 @@ struct ktf_case *ktf_case_find_create(const char *name)
 	tc = ktf_case_find(name);
 	if (!tc) {
 		tc = ktf_case_create(name);
-		ret = ktf_map_insert(&test_cases, &tc->kmap);
-		if (ret) {
-			kfree(tc);
-			tc = NULL;
+		if (tc) {
+			ret = ktf_map_insert(&test_cases, &tc->kmap);
+			if (ret) {
+				kfree(tc);
+				tc = NULL;
+			}
 		}
 	}
 	return tc;
 }
-
-/* TBD: access to 'test_cases' should be properly synchronized
- * to avoid crashes if someone tries to unload while a test in progress
- */
 
 u32 assert_cnt = 0;
 
@@ -93,7 +133,7 @@ long _fail_unless (struct ktf_test *self, int result, const char *file,
 	int len;
 	va_list ap;
 	char *buf;
-	char bufprefix[KTF_MAX_NAME];
+	char bufprefix[256];
 
 	if (result)
 		assert_cnt++;
@@ -127,11 +167,7 @@ EXPORT_SYMBOL(_fail_unless);
 
 /* Add a test to a testcase:
  * Tests are represented by ktf_test objects that are linked into
- * two lists: ktf_test::tlist in TCase::test_list and
- *            ktf_test::hlist in ktf_handle::test_list
- *
- * TCase::test_list is used for iterating through the tests.
- * ktf_handle::test_list is needed for cleanup.
+ * a per-test case map TCase:tests map.
  */
 void  _tcase_add_test (struct __test_desc td,
 				struct ktf_handle *th,
@@ -139,7 +175,7 @@ void  _tcase_add_test (struct __test_desc td,
 				int allowed_exit_value,
 				int start, int end)
 {
-	struct ktf_case *tc;
+	struct ktf_case *tc = NULL;
 	struct ktf_test *t;
 	char *log;
 
@@ -152,31 +188,41 @@ void  _tcase_add_test (struct __test_desc td,
 		kfree(log);
 		return;
 	}
-
-	mutex_lock(&tc_lock);
-	tc = ktf_case_find_create(td.tclass);
-	if (!tc) {
-		printk(KERN_INFO "ERROR: Failed to add test %s from %s to test case \"%s\"",
-			td.name, td.file, td.tclass);
-		mutex_unlock(&tc_lock);
-		kfree(log);
-		kfree(t);
-		return;
-	}
-	t->name = td.name;
 	t->tclass = td.tclass;
+	t->name = td.name;
 	t->fun = td.fun;
 	t->start = start;
 	t->end = end;
 	t->handle = th;
 	t->log = log;
 
-	if (ktf_debugfs_create_test(t))
-		DM(T_LIST, printk(KERN_INFO "ktf: Added test \"%s.%s\""
-			" start = %d, end = %d\n",
-			td.tclass, td.name, start, end));
-	list_add(&t->tlist, &tc->test_list);
-	list_add(&t->hlist, &th->test_list);
+	mutex_lock(&tc_lock);
+	tc = ktf_case_find_create(td.tclass);
+	if (!tc || ktf_map_elem_init(&t->kmap, td.name) ||
+	    ktf_map_insert(&tc->tests, &t->kmap)) {
+		printk(KERN_INFO "ERROR: Failed to add test %s from %s to test case \"%s\"",
+			td.name, td.file, td.tclass);
+		if (tc)
+			ktf_case_put(tc);
+		mutex_unlock(&tc_lock);
+		kfree(log);
+		kfree(t);
+		return;
+	}
+
+	ktf_debugfs_create_test(t);
+
+	DM(T_LIST, printk(KERN_INFO "ktf: Added test \"%s.%s\""
+			  " start = %d, end = %d\n",
+			  td.tclass, td.name, start, end));
+
+	/* Now since we no longer reference tc/t outside of global map of test
+	 * cases and per-testcase map of tests, drop their refcounts.  This
+	 * is safe to do as refcounts are > 0 due to references for map
+	 * storage and debugfs.
+	 */
+	ktf_test_put(t);
+	ktf_case_put(tc);
 	mutex_unlock(&tc_lock);
 }
 EXPORT_SYMBOL(_tcase_add_test);
@@ -186,9 +232,12 @@ void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 {
 	int i;
 
+	t->log[0] = '\0';
 	for (i = t->start; i < t->end; i++) {
+		/* No need to bump refcnt, this is just for debugging.  Nothing			 * should reference the testcase via the handle's current test
+		 * pointer.
+		 */
 		t->handle->current_test = t;
-		t->log[0] = '\0';
 		DM(T_DEBUG,
 		   printk(KERN_INFO "Running test %s.%s",
 		   t->tclass, t->name);
@@ -208,43 +257,73 @@ void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 void _tcase_cleanup(struct ktf_handle *th)
 {
 	struct ktf_test *t;
-	struct list_head *pos, *n;
+	struct ktf_case *tc;
 
+	/* Clean up tests which are associated with this handle.
+	 * It's possible multiple modules contribute tests to a test case,
+	 * so we can't just do this on a per-testcase basis.
+	 */
 	mutex_lock(&tc_lock);
-	list_for_each_safe(pos, n, &th->test_list) {
-		t = list_entry(pos, struct ktf_test, hlist);
-		DM(T_LIST, printk(KERN_INFO "ktf: delete test %s.%s\n", t->tclass, t->name));
-		list_del(&t->tlist);
-		list_del(&t->hlist);
-		ktf_debugfs_destroy_test(t);
-		kfree(t->log);
-		kfree(t);
+
+	tc = ktf_map_first_entry(&test_cases, struct ktf_case, kmap);
+	while (tc) {
+		/* FIXME - this is inefficient. */
+		t = ktf_map_first_entry(&tc->tests, struct ktf_test, kmap);
+		while (t) {
+			if (t->handle == th) {
+				DM(T_DEBUG,
+				   printk(KERN_INFO "ktf: delete test %s.%s\n",
+				   t->tclass, t->name));
+				/* removes ref for debugfs */
+				ktf_debugfs_destroy_test(t);
+				/* removes ref for testset map of tests */
+				ktf_map_remove_elem(&tc->tests, &t->kmap);
+				/* now remove our reference which we get
+				 * from ktf_map_[first|next]_entry().
+				 * This final reference should result in
+				 * the test being freed.
+				 */
+				ktf_test_put(t);
+				/* Need to reset to root */
+				t = ktf_map_first_entry(&tc->tests,
+							struct ktf_test, kmap);
+			} else
+				t = ktf_map_next_entry(t, kmap);
+		}
+		/* If no modules have tests for this test case, we can
+		 * free resources safely.
+		 */
+		if (ktf_case_test_count(tc) == 0) {
+			ktf_debugfs_destroy_testset(tc);
+			ktf_map_remove_elem(&test_cases, &tc->kmap);
+			ktf_case_put(tc);
+			tc = ktf_map_first_entry(&test_cases, struct ktf_case,
+						 kmap);
+		} else
+			tc = ktf_map_next_entry(tc, kmap);
 	}
 	mutex_unlock(&tc_lock);
 }
 EXPORT_SYMBOL(_tcase_cleanup);
-
-
-
 
 int ktf_cleanup(void)
 {
 	struct ktf_test *t;
 	struct ktf_case *tc;
 
+	/* Unloading of dependencies means we should have no testcases/tests. */
 	mutex_lock(&tc_lock);
-	ktf_map_for_each_entry(tc, &test_cases, kmap) {
-		struct list_head *pos;
-		list_for_each(pos, &tc->test_list) {
-			t = list_entry(pos, struct ktf_test, tlist);
+	ktf_for_each_testcase(tc) {
+		printk(KERN_WARNING
+		       "ktf: (memory leak) test set %s still active at unload!\n",
+		       ktf_case_name(tc));
+		ktf_testcase_for_each_test(t, tc) {
 			printk(KERN_WARNING
 				"ktf: (memory leak) test set %s still active with test %s at unload!\n",
 				ktf_case_name(tc), t->name);
-			return -EBUSY;
 		}
-		ktf_debugfs_destroy_testset(tc);
+		return -EBUSY;
 	}
-	ktf_map_delete_all(&test_cases, struct ktf_case, kmap);
 	ktf_debugfs_cleanup();
 	mutex_unlock(&tc_lock);
 	return 0;
