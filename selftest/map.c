@@ -21,6 +21,7 @@ KTF_INIT();
 KTF_HANDLE_INIT(dual_handle);
 KTF_HANDLE_INIT(single_handle);
 KTF_HANDLE_INIT(no_handle);
+KTF_HANDLE_INIT_VERSION(wrongversion_handle, 0);
 
 struct map_test_ctx *to_mctx(struct ktf_context *ctx)
 {
@@ -104,11 +105,18 @@ TEST(any, dummy)
 	EXPECT_TRUE(true);
 }
 
+TEST(any, wrongversion)
+{
+	tlog(T_INFO, "This test should never have run - wrong version\n!!!");
+	EXPECT_TRUE(false);
+}
 
 static void add_map_tests(void)
 {
 	ADD_TEST(dummy);
 	ADD_TEST_TO(dual_handle, simplemap);
+	/* This should fail */
+	ADD_TEST_TO(wrongversion_handle, wrongversion);
 }
 
 

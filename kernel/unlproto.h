@@ -19,6 +19,7 @@ enum ktf_cmd_type {
 enum ktf_attr {
 	KTF_A_UNSPEC,
 	KTF_A_TYPE,
+	KTF_A_VERSION,
 	KTF_A_SNAM,
 	KTF_A_TNAM,
 	KTF_A_NUM,
@@ -36,6 +37,7 @@ enum ktf_attr {
 #ifdef NL_INTERNAL
 struct nla_policy ktf_gnl_policy[KTF_A_MAX] = {
 	[KTF_A_TYPE]  = { .type = NLA_U32 },
+	[KTF_A_VERSION] = { .type = NLA_U64 },
 	[KTF_A_SNAM]  = { .type = NLA_STRING },
 	[KTF_A_TNAM]  = { .type = NLA_STRING },
 	[KTF_A_NUM]   = { .type = NLA_U32 },
@@ -57,6 +59,22 @@ enum ktf_cmd {
 	KTF_C_MAX
 };
 
+enum ktf_vshift {
+	KTF_VSHIFT_BUILD = 0,
+	KTF_VSHIFT_MICRO = 8,
+	KTF_VSHIFT_MINOR = 16,
+	KTF_VSHIFT_MAJOR = 24
+};
+
+#define KTF_VERSION(__field, __v) \
+	((unsigned long long)((__v & (0xffff << KTF_VSHIFT_##__field)) \
+	>> KTF_VSHIFT_##__field))
+
+#define KTF_VERSION_SET(__field, __v) \
+	((unsigned long long)(__v << KTF_VSHIFT_##__field))
+
+#define	KTF_VERSION_LATEST	\
+	(KTF_VERSION_SET(MAJOR, 0) | KTF_VERSION_SET(MINOR, 1))
 
 #ifdef __cplusplus
 }

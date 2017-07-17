@@ -344,6 +344,7 @@ stringvec& query_testsets()
   genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
 	      KTF_C_REQ, 1);
   nla_put_u32(msg, KTF_A_TYPE, KTF_CT_QUERY);
+  nla_put_u64(msg, KTF_A_VERSION, KTF_VERSION_LATEST);
 
   // Send message over netlink socket
   nl_send_auto_complete(sock, msg);
@@ -406,6 +407,7 @@ void run_kernel_test(KernelTest* kt, std::string& context)
   genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
 	      KTF_C_REQ, 1);
   nla_put_u32(msg, KTF_A_TYPE, KTF_CT_RUN);
+  nla_put_u64(msg, KTF_A_VERSION, KTF_VERSION_LATEST);
   nla_put_string(msg, KTF_A_SNAM, kt->setname.c_str());
   nla_put_string(msg, KTF_A_TNAM, kt->testname.c_str());
 

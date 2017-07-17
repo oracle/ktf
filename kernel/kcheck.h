@@ -28,6 +28,7 @@
 #include <net/netlink.h>
 #include <linux/version.h>
 #include "ktf_map.h"
+#include "unlproto.h"
 
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
 #define GCC_VERSION_AT_LEAST(major, minor) \
@@ -102,6 +103,8 @@ const char *ktf_case_name(struct ktf_case *);
 /* Manage test case refcount. */
 void ktf_case_get(struct ktf_case *);
 void ktf_case_put(struct ktf_case *);
+
+int ktf_version_check(u64 version);
 
 void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 		  struct ktf_test *t, u32 value);
@@ -201,18 +204,24 @@ struct ktf_handle {
 	struct list_head handle_list; /* Linkage for the global list of all handles with context */
 	struct ktf_map ctx_map;     /* a (possibly empty) map from name to context for this handle */
 	unsigned int id; 	      /* A unique nonzero ID for this handle, set iff contexts */
+	u64 version;		      /* version assoc. with handle */
 	struct ktf_test *current_test;/* Current test running */
 };
 
 void _tcase_cleanup(struct ktf_handle *th);
 
-#define KTF_HANDLE_INIT(__test_handle)	    \
+#define KTF_HANDLE_INIT_VERSION(__test_handle, __version)	    \
 	struct ktf_handle __test_handle = { \
 		.test_list = LIST_HEAD_INIT(__test_handle.test_list), \
 		.handle_list = LIST_HEAD_INIT(__test_handle.handle_list), \
 		.ctx_map = { .root = RB_ROOT, .size = 0, },		\
 		.id = 0, \
+		.version = __version, \
 	};
+
+#define	KTF_HANDLE_INIT(__test_handle)	\
+	KTF_HANDLE_INIT_VERSION(__test_handle, KTF_VERSION_LATEST)
+
 #define KTF_INIT() KTF_HANDLE_INIT(__test_handle)
 
 #define KTF_HANDLE_CLEANUP(__test_handle) \

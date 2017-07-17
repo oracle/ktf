@@ -10,6 +10,29 @@
 
 #define MAX_PRINTF 4096
 
+int ktf_version_check(u64 version)
+{
+	if (version != KTF_VERSION_LATEST) {
+		printk(KERN_INFO
+		       "KTF version mismatch - expected %llu.%llu.%llu.%llu, got %llu.%llu.%llu.%llu\n",
+		       KTF_VERSION(MAJOR, KTF_VERSION_LATEST),
+		       KTF_VERSION(MINOR, KTF_VERSION_LATEST),
+		       KTF_VERSION(MICRO, KTF_VERSION_LATEST),
+		       KTF_VERSION(BUILD, KTF_VERSION_LATEST),
+		       KTF_VERSION(MAJOR, version),
+		       KTF_VERSION(MINOR, version),
+		       KTF_VERSION(MICRO, version),
+		       KTF_VERSION(BUILD, version));
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static int ktf_handle_version_check(struct ktf_handle *th)
+{
+	return ktf_version_check(th->version);
+}
+
 /* Function called when global references to test case reach 0. */
 static void ktf_case_free(struct ktf_map_elem *elem)
 {
@@ -179,6 +202,9 @@ void  _tcase_add_test (struct __test_desc td,
 	struct ktf_test *t;
 	char *log;
 
+	if (ktf_handle_version_check(th))
+		return;
+
 	log = kzalloc(KTF_MAX_LOG, GFP_KERNEL);
 	if (!log)
 		return;
@@ -233,6 +259,7 @@ void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 	int i;
 
 	t->log[0] = '\0';
+	t->skb = skb;
 	for (i = t->start; i < t->end; i++) {
 		/* No need to bump refcnt, this is just for debugging.  Nothing			 * should reference the testcase via the handle's current test
 		 * pointer.

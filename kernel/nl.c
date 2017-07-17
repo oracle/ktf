@@ -57,14 +57,20 @@ static struct genl_family ktf_gnl_family = {
 static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 {
 	enum ktf_cmd_type type;
+	u64 version;
+
 	/* Dispatch on type of request */
 
-	if (!info->attrs[KTF_A_TYPE]) {
-		printk(KERN_ERR "received netlink msg with no type!");
+	if (!info->attrs[KTF_A_TYPE] || !info->attrs[KTF_A_VERSION]) {
+		printk(KERN_ERR "received netlink msg with no type/version!");
 		return -EINVAL;
 	}
-	type = nla_get_u32(info->attrs[KTF_A_TYPE]);
 
+	version = nla_get_u64(info->attrs[KTF_A_VERSION]);
+	if (ktf_version_check(version))
+		return -EINVAL;
+
+	type = nla_get_u32(info->attrs[KTF_A_TYPE]);
 	switch(type) {
 	case KTF_CT_QUERY:
 		return ktf_query(skb, info);

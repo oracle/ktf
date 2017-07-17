@@ -4,6 +4,7 @@
 #include <linux/completion.h>
 #include "kcheck.h"
 #include "ktf_map.h"
+#include "unlproto.h"
 
 #define	KTF_MAX_LOG			2048
 

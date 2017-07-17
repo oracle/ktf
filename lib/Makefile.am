@@ -21,7 +21,8 @@ KTF_K_HDRS = \
     ktf.h \
     kcheck.h \
     ktf_map.h \
-    nl.h
+    nl.h \
+    unlproto.h
 
 kernel_headers_src = $(KTF_K_HDRS:%=$(top_srcdir)/kernel/%)
 kernel_headers = $(KTF_K_HDRS:%=$(includedir)/ktf/%)
