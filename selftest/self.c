@@ -37,10 +37,11 @@ struct myelem {
 void myelem_free(struct ktf_map_elem *elem)
 {
 	struct myelem *myelem = container_of(elem, struct myelem, foo);
+
 	myelem->freed = 1;
 }
 
-TEST(any, simplemap)
+TEST(selftest, simplemap)
 {
 	int i;
 	const int nelems = 3;
@@ -100,12 +101,12 @@ TEST(any, simplemap)
 	}
 }
 
-TEST(any, dummy)
+TEST(selftest, dummy)
 {
 	EXPECT_TRUE(true);
 }
 
-TEST(any, wrongversion)
+TEST(selftest, wrongversion)
 {
 	tlog(T_INFO, "This test should never have run - wrong version\n!!!");
 	EXPECT_TRUE(false);
@@ -119,10 +120,55 @@ static void add_map_tests(void)
 	ADD_TEST_TO(wrongversion_handle, wrongversion);
 }
 
+static int probecount;
+static int proberet;
 
-static int __init maptest_init(void)
+KTF_ENTRY_PROBE(printk, int, const char *fmt, ...)
+{
+	probecount++;
+
+	KTF_ENTRY_PROBE_RETURN(0);
+}
+
+TEST(selftest, probeentry)
+{
+	probecount = 0;
+	ASSERT_INT_EQ_GOTO(KTF_REGISTER_ENTRY_PROBE(printk), 0, done);
+	printk(KERN_INFO "Testing kprobe entry...");
+	ASSERT_INT_GT_GOTO(probecount, 0, done);
+done:
+	KTF_UNREGISTER_ENTRY_PROBE(printk);
+}
+
+KTF_RETURN_PROBE(printk)
+{
+	proberet = KTF_RETURN_VALUE();
+
+	return 0;
+}
+
+TEST(selftest, probereturn)
+{
+	char *teststr = "Testing kprobe return...";
+
+	proberet = -1;
+	ASSERT_INT_EQ_GOTO(KTF_REGISTER_RETURN_PROBE(printk), 0, done);
+	printk(KERN_INFO "%s", teststr);
+	ASSERT_INT_EQ_GOTO(proberet, strlen(teststr), done);
+done:
+	KTF_UNREGISTER_RETURN_PROBE(printk);
+}
+
+static void add_probe_tests(void)
+{
+	ADD_TEST(probeentry);
+	ADD_TEST(probereturn);
+}
+
+static int __init selftest_init(void)
 {
 	int ret = ktf_context_add(&dual_handle, &s_mctx[0].k, "map1");
+
 	if (ret)
 		return ret;
 
@@ -137,20 +183,21 @@ static int __init maptest_init(void)
 	resolve_symbols();
 
 	add_map_tests();
-	tlog(T_INFO, "maptest: loaded\n");
+	add_probe_tests();
+	tlog(T_INFO, "selftest: loaded\n");
 	return 0;
 }
 
-static void __exit maptest_exit(void)
+static void __exit selftest_exit(void)
 {
 	KTF_HANDLE_CLEANUP(single_handle);
 	KTF_HANDLE_CLEANUP(dual_handle);
 	KTF_HANDLE_CLEANUP(no_handle);
 	KTF_CLEANUP();
-	tlog(T_INFO, "map: unloaded\n");
+	tlog(T_INFO, "selftest: unloaded\n");
 	/* Nothing to do here */
 }
 
 
-module_init(maptest_init);
-module_exit(maptest_exit);
+module_init(selftest_init);
+module_exit(selftest_exit);

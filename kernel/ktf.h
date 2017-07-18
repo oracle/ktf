@@ -2,6 +2,7 @@
 #define _KTF_H
 
 #include <linux/completion.h>
+#include <linux/kprobes.h>
 #include "kcheck.h"
 #include "ktf_map.h"
 #include "unlproto.h"
@@ -39,6 +40,69 @@ extern struct ktf_handle __test_handle;
 #define KTF_CONTEXT_FIND(name) ktf_find_context(&__test_handle, name)
 #define KTF_CONTEXT_GET(name, type) \
 	container_of(KTF_CONTEXT_FIND(name), type, k)
+
+/* KTF support for entry probes (via kprobes jprobes) */
+#define KTF_ENTRY_PROBE(func, ret, ...) \
+	static ret ktf_entry_##func(__VA_ARGS__); \
+	static struct jprobe __ktf_entry_##func = { \
+		.entry = ktf_entry_##func, \
+		.kp = { \
+			.symbol_name    = #func, \
+		}, \
+	}; \
+	static ret ktf_entry_##func(__VA_ARGS__)
+
+#define KTF_REGISTER_ENTRY_PROBE(func) \
+	register_jprobe(&__ktf_entry_##func)
+
+/* Note on the complexity below - to re-use a statically-defined jprobe for
+ * registration, we need to clean up state in the struct jprobe.  Hence
+ * we zero out the jprobe and re-set the symbol name/entry.  Not doing
+ * this means that re-registering fails with -EINVAL.  Same process below
+ * for unregistering return probes.
+ */
+#define KTF_UNREGISTER_ENTRY_PROBE(func) \
+	do { \
+		unregister_jprobe(&__ktf_entry_##func); \
+		memset(&__ktf_entry_##func, 0, sizeof(struct jprobe)); \
+		__ktf_entry_##func.kp.symbol_name = #func; \
+		__ktf_entry_##func.entry = ktf_entry_##func; \
+	} while (0)
+
+/* all return points in jprobe need to call jprobe_return() */
+#define KTF_ENTRY_PROBE_RETURN(retval) \
+	do { \
+		jprobe_return(); \
+		return retval; \
+	} while (0)
+
+/* KTF support for return probes (via kprobes kretprobes) */
+#define KTF_RETURN_PROBE(func) \
+	static int ktf_return_##func(struct kretprobe_instance *, \
+				     struct pt_regs *); \
+	static struct kretprobe __ktf_return_##func = { \
+		.handler        = ktf_return_##func, \
+		.data_size      = 0, \
+		.kp = { \
+			.symbol_name    = #func, \
+		}, \
+	}; \
+	static int ktf_return_##func(struct kretprobe_instance *ri, \
+				     struct pt_regs *regs)
+
+
+#define KTF_RETURN_VALUE()	regs_return_value(regs)
+
+#define KTF_REGISTER_RETURN_PROBE(func) \
+	register_kretprobe(&__ktf_return_##func)
+
+#define KTF_UNREGISTER_RETURN_PROBE(func) \
+	do { \
+		unregister_kretprobe(&__ktf_return_##func); \
+		memset(&__ktf_return_##func, 0, sizeof(struct kretprobe)); \
+		__ktf_return_##func.kp.symbol_name = #func; \
+		__ktf_return_##func.handler = ktf_return_##func; \
+	} while (0)
 
 /**
  * ASSERT_TRUE() - fail and return if @C evaluates to false

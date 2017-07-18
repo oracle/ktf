@@ -50,6 +50,31 @@ abstractions provided by KTF:
 +-----------------------+-------------------------------------------------------+
 | TEST_F(s, f, n) {...} | Define a test named 's.n' operating in fixture f	|
 +-----------------------+-------------------------------------------------------+
+| KTF_ENTRY_PROBE       | Define function entry probe for function f with
+|  (f, r, ...) {...}    | return value r.  Arguments following r must match
+|                       | function arguments.  Must be used at global level.
++-----------------------+-------------------------------------------------------+
+| KTF_ENTRY_PROBE_RETURN| Return from probed function with return value r.
+|  (r)			| Must be called within KTF_ENTRY_PROBE().
++-----------------------+-------------------------------------------------------+
+| KTF_REGISTER_ENTRY_PROBE
+|  (f)                  | Enable probe for kernel function f.
++-----------------------+-------------------------------------------------------+
+| KTF_UNREGISTER_ENTRY_PROBE
+|  (f)                  | Disable probe for kernel function f.
++-----------------------+-------------------------------------------------------+
+| KTF_RETURN_PROBE(f)   | Define function return probe for function f.
+|  {...}                | Must be used at a global level.
++-----------------------+-------------------------------------------------------+
+| KTF_RETURN_VALUE()    | Retrieve return value within body of return probe.
++-----------------------+-------------------------------------------------------+
+| KTF_REGISTER_RETURN_PROBE
+|  (f)                  | Enable probe for return of function f.
++-----------------------+-------------------------------------------------------+
+| KTF_UNREGISTER_RETURN_PROBE
+|  (f)                  | Disable probe for return of function f.
++-----------------------+-------------------------------------------------------+
+
 
 The ``KTF_INIT()`` macro must be called at a global level as it just
 defines a variable ``__test_handle`` which is referred to which existence

@@ -10,7 +10,7 @@ ccflags-y += -I$(KTF_DIR)
 
 obj-m := selftest.o
 
-selftest-y := map.o
+selftest-y := self.o
 
 KDIR   := /lib/modules/$(KVER)
 PWD    := $(shell pwd)
