@@ -6,7 +6,7 @@
  * it under the terms of the GNU General Public License version 2
  * as published by the Free Software Foundation.
  *
- * ktf_map.h: simple objects with name lookup to be inlined into a
+ * ktf_map.h: simple objects with key lookup to be inlined into a
  *    larger object
  */
 
@@ -16,9 +16,17 @@
 #include <linux/version.h>
 #include <linux/rbtree.h>
 
-#define KTF_MAX_NAME 64
+#define	KTF_MAX_KEY 64
+#define KTF_MAX_NAME (KTF_MAX_KEY - 1)
 
 struct ktf_map_elem;
+
+/* Compare function called to compare element keys - optional and if
+ * not specified we revert to string comparison.  Should return < 0
+ * if first key < second, > 0 if first key > second, and 0 if they are
+ * identical.
+ */
+typedef int (*ktf_map_elem_comparefn)(const char *, const char *);
 
 /* Free function called when elem refcnt is 0 - optional and of course for
  * dynamically-allocated elems only.
@@ -29,28 +37,32 @@ struct ktf_map {
 	struct rb_root root; /* The rb tree holding the map */
 	size_t size;	     /* Current size (number of elements) of the map */
 	spinlock_t lock;     /* held for map lookup etc */
+	ktf_map_elem_comparefn elem_comparefn; /* Key comparison function */
 	ktf_map_elem_freefn elem_freefn; /* Free function */
 };
 
 struct ktf_map_elem {
 	struct rb_node node;	      /* Linkage for the map */
-	char name[KTF_MAX_NAME+1];  /* Name of the element - must be unique within the same map */
+	char key[KTF_MAX_NAME+1] __aligned(8);
+		/* Key of the element - must be unique within the same map */
 	struct ktf_map *map;  /* owning map */
 	struct kref refcount; /* reference count for element */
 };
 
 
-#define DEFINE_KTF_MAP(_mapname, _elem_freefn) \
+#define DEFINE_KTF_MAP(_mapname, _elem_comparefn, _elem_freefn) \
 	struct ktf_map _mapname = { \
 		.root = RB_ROOT, \
 		.size = 0, \
+		.elem_comparefn = _elem_comparefn, \
 		.elem_freefn = _elem_freefn, \
 	}
 
-void ktf_map_init(struct ktf_map *map, ktf_map_elem_freefn elem_freefn);
+void ktf_map_init(struct ktf_map *map, ktf_map_elem_comparefn elem_comparefn,
+	ktf_map_elem_freefn elem_freefn);
 
 /* returns 0 upon success or -errno upon error */
-int ktf_map_elem_init(struct ktf_map_elem *elem, const char *name);
+int ktf_map_elem_init(struct ktf_map_elem *elem, const char *key);
 
 /* increase/reduce reference count to element.  If count reaches 0, the
  * free function associated with map (if any) is called.
@@ -63,8 +75,8 @@ void ktf_map_elem_put(struct ktf_map_elem *elem);
  */
 int ktf_map_insert(struct ktf_map *map, struct ktf_map_elem *elem);
 
-/* Find and return the element 'name' */
-struct ktf_map_elem *ktf_map_find(struct ktf_map *map, const char *name);
+/* Find and return the element with 'key' */
+struct ktf_map_elem *ktf_map_find(struct ktf_map *map, const char *key);
 
 /* Find the first map elem in 'map' with reference count increased. */
 struct ktf_map_elem *ktf_map_find_first(struct ktf_map *map);
@@ -75,10 +87,10 @@ struct ktf_map_elem *ktf_map_find_first(struct ktf_map *map);
  */
 struct ktf_map_elem *ktf_map_find_next(struct ktf_map_elem *elem);
 
-/* Remove the element 'name' from the map and return a pointer to it with
+/* Remove the element 'key' from the map and return a pointer to it with
  * refcount increased.
  */
-struct ktf_map_elem *ktf_map_remove(struct ktf_map *map, const char *name);
+struct ktf_map_elem *ktf_map_remove(struct ktf_map *map, const char *key);
 
 /* Remove specific element elem from the map. Refcount is not increased
  * as caller must already have had a reference.

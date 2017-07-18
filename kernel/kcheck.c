@@ -52,7 +52,7 @@ void ktf_case_put(struct ktf_case *tc)
 }
 
 /* The global map from name to ktf_case */
-DEFINE_KTF_MAP(test_cases, ktf_case_free);
+DEFINE_KTF_MAP(test_cases, NULL, ktf_case_free);
 
 /* a lock to protect this datastructure */
 DEFINE_MUTEX(tc_lock);
@@ -65,7 +65,7 @@ size_t ktf_case_count(void)
 
 const char *ktf_case_name(struct ktf_case *tc)
 {
-	return tc->kmap.name;
+	return tc->kmap.key;
 }
 
 size_t ktf_case_test_count(struct ktf_case *tc)
@@ -101,7 +101,7 @@ struct ktf_case *ktf_case_create(const char *name)
 		return tc;
 
 	/* Initialize test case map of tests. */
-	ktf_map_init(&tc->tests, ktf_test_free);
+	ktf_map_init(&tc->tests, NULL, ktf_test_free);
 	ret = ktf_map_elem_init(&tc->kmap, name);
 	if (ret) {
 		kfree(tc);

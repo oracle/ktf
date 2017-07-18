@@ -61,20 +61,20 @@ enum ktf_cmd {
 
 enum ktf_vshift {
 	KTF_VSHIFT_BUILD = 0,
-	KTF_VSHIFT_MICRO = 8,
-	KTF_VSHIFT_MINOR = 16,
-	KTF_VSHIFT_MAJOR = 24
+	KTF_VSHIFT_MICRO = 16,
+	KTF_VSHIFT_MINOR = 32,
+	KTF_VSHIFT_MAJOR = 48
 };
 
 #define KTF_VERSION(__field, __v) \
-	((unsigned long long)((__v & (0xffff << KTF_VSHIFT_##__field)) \
-	>> KTF_VSHIFT_##__field))
+	((__v & (0xffffULL << KTF_VSHIFT_##__field)) \
+	>> KTF_VSHIFT_##__field)
 
 #define KTF_VERSION_SET(__field, __v) \
-	((unsigned long long)(__v << KTF_VSHIFT_##__field))
+	((__v & 0xffffULL) << KTF_VSHIFT_##__field)
 
 #define	KTF_VERSION_LATEST	\
-	(KTF_VERSION_SET(MAJOR, 0) | KTF_VERSION_SET(MINOR, 1))
+	(KTF_VERSION_SET(MAJOR, 0ULL) | KTF_VERSION_SET(MINOR, 1ULL))
 
 #ifdef __cplusplus
 }

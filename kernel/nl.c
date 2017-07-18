@@ -129,7 +129,7 @@ static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
 
 	ctx = ktf_find_first_context(handle);
 	while (ctx) {
-		nla_put_string(resp_skb, KTF_A_STR, ctx->elem.name);
+		nla_put_string(resp_skb, KTF_A_STR, ktf_context_name(ctx));
 		ctx = ktf_find_next_context(ctx);
 	}
 	nla_nest_end(resp_skb, nest_attr);

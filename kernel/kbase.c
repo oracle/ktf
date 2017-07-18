@@ -41,7 +41,8 @@ int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx, const ch
 	unsigned long flags;
 	int ret;
 
-	printk ("ktf: added context %s (at %p)\n", name, ctx);
+	DM(T_DEBUG,
+	   printk(KERN_INFO "ktf: added context %s (at %p)\n", name, ctx));
 	ktf_map_elem_init(&ctx->elem, name);
 
 	spin_lock_irqsave(&context_lock, flags);
@@ -60,7 +61,7 @@ EXPORT_SYMBOL(ktf_context_add);
 
 const char *ktf_context_name(struct ktf_context *ctx)
 {
-	return (ctx->elem.name);
+	return ctx->elem.key;
 }
 EXPORT_SYMBOL(ktf_context_name);
 
@@ -77,12 +78,14 @@ void ktf_context_remove(struct ktf_context *ctx)
 
 	/* ktf_find_context might be called from interrupt level */
 	spin_lock_irqsave(&context_lock,flags);
-	ktf_map_remove(&handle->ctx_map, ctx->elem.name);
+	ktf_map_remove(&handle->ctx_map, ctx->elem.key);
 
 	if (!ktf_has_contexts(handle))
 		list_del(&handle->handle_list);
 	spin_unlock_irqrestore(&context_lock,flags);
-	printk ("ktf: removed context %s at %p\n", ctx->elem.name, ctx);
+	DM(T_DEBUG,
+	   printk(KERN_INFO "ktf: removed context %s at %p\n",
+	   ctx->elem.key, ctx));
 }
 EXPORT_SYMBOL(ktf_context_remove);
 

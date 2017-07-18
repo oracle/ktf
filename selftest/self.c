@@ -31,6 +31,7 @@ struct map_test_ctx *to_mctx(struct ktf_context *ctx)
 struct myelem {
 	struct ktf_map_elem foo;
 	int freed;
+	int order;
 };
 
 /* should be called when refcount is 0. */
@@ -41,21 +42,34 @@ void myelem_free(struct ktf_map_elem *elem)
 	myelem->freed = 1;
 }
 
+/* key comparison function */
+int myelem_cmp(const char *key1, const char *key2)
+{
+	int i1 = *((int *)key1);
+	int i2 = *((int *)key2);
+
+	if (i1 < i2)
+		return -1;
+	else if (i1 > i2)
+		return 1;
+	return 0;
+}
+
 TEST(selftest, simplemap)
 {
 	int i;
 	const int nelems = 3;
 	struct map_test_ctx *mctx = to_mctx(ctx);
-	struct ktf_map tm, tm2;
+	struct ktf_map tm, tm2, tm3;
 	struct myelem e[nelems], *ep;
 	struct ktf_map_elem *elem;
 
 	if (mctx) {
-		tlog(T_DEBUG, "ctx %s\n", mctx->k.elem.name);
+		tlog(T_DEBUG, "ctx %s\n", mctx->k.elem.key);
 	} else
 		tlog(T_DEBUG, "ctx <none>\n");
 
-	ktf_map_init(&tm, NULL);
+	ktf_map_init(&tm, NULL, NULL);
 	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[0].foo, "foo"));
 	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[1].foo, "bar"));
 	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[2].foo, "zax"));
@@ -71,12 +85,12 @@ TEST(selftest, simplemap)
 
 	for (i = 0; i < nelems; i++) {
 		EXPECT_LONG_EQ(nelems - i, ktf_map_size(&tm));
-		EXPECT_ADDR_EQ(&e[i].foo, ktf_map_remove(&tm, e[i].foo.name));
+		EXPECT_ADDR_EQ(&e[i].foo, ktf_map_remove(&tm, e[i].foo.key));
 	}
 	EXPECT_LONG_EQ(0, ktf_map_size(&tm));
 
 	/* Reference counting test */
-	ktf_map_init(&tm2, myelem_free);
+	ktf_map_init(&tm2, NULL, myelem_free);
 	/* Init map elems with "foo" "bar" "zax" */
 	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[0].foo, "foo"));
 	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[1].foo, "bar"));
@@ -93,12 +107,29 @@ TEST(selftest, simplemap)
 		ep->freed = 0;
 
 	for (i = 0; i < nelems; i++) {
-		elem = ktf_map_remove(&tm2, e[i].foo.name);
+		elem = ktf_map_remove(&tm2, e[i].foo.key);
 		EXPECT_INT_EQ(0, e[i].freed);
 		/* free our ref, now free function should be called. */
 		ktf_map_elem_put(elem);
 		EXPECT_INT_EQ(1, e[i].freed);
 	}
+
+	/* Compare function test */
+	ktf_map_init(&tm3, myelem_cmp, NULL);
+
+	/* Insert elems with order values 3, 2, 1. Ensure we see order
+	 * 1, 2, 3 on retrieval.
+	 */
+	for (i = 0; i < nelems; i++) {
+		e[i].order = nelems - i;
+		EXPECT_INT_EQ(0, ktf_map_elem_init(&e[i].foo,
+			      (char *)&e[i].order));
+		EXPECT_INT_EQ(0, ktf_map_insert(&tm3, &e[i].foo));
+	}
+	i = 1;
+	/* Ensure ordering via compare function is respected */
+	ktf_map_for_each_entry(ep, &tm3, foo)
+		EXPECT_INT_EQ(ep->order, i++);
 }
 
 TEST(selftest, dummy)

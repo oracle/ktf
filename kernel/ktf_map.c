@@ -13,25 +13,43 @@
 #include "ktf_map.h"
 #include "ktf.h"
 
-void ktf_map_init(struct ktf_map *map, ktf_map_elem_freefn elem_freefn)
+void ktf_map_init(struct ktf_map *map, ktf_map_elem_comparefn elem_comparefn,
+	ktf_map_elem_freefn elem_freefn)
 {
 	map->root = RB_ROOT;
 	map->size = 0;
+	map->elem_comparefn = elem_comparefn;
 	map->elem_freefn = elem_freefn;
 	spin_lock_init(&map->lock);
 }
 
 /* returns 0 upon success or -ENOMEM if key got truncated */
-int ktf_map_elem_init(struct ktf_map_elem *elem, const char *name)
+int ktf_map_elem_init(struct ktf_map_elem *elem, const char *key)
 {
-	char *dest = strncpy(elem->name, name, KTF_MAX_NAME + 1);
-	if (dest - elem->name == KTF_MAX_NAME + 1) {
-		*(--dest) = '\0';
-		return -ENOMEM;
-	}
+	memcpy(elem->key, key, KTF_MAX_KEY);
 	elem->map = NULL;
 	kref_init(&elem->refcount);
 	return 0;
+}
+
+/* Copy "elem"s key representation into "name".  For cases where no
+ * compare function is defined - i.e. string keys - just copy string,
+ * otherwise name is hexascii of first 8 bytes of key.
+ */
+static char *
+ktf_map_elem_name(struct ktf_map_elem *elem, char *name)
+{
+	if (!name)
+		return NULL;
+
+	if (!elem || !elem->map)
+		(void) strlcpy(name, "<none>", KTF_MAX_NAME);
+	else if (!elem->map->elem_comparefn)
+		(void) strlcpy(name, elem->key, KTF_MAX_NAME);
+	else
+		(void) snprintf(name, KTF_MAX_NAME, "'%*ph'", 8, elem->key);
+
+	return name;
 }
 
 /* Called when refcount of elem is 0. */
@@ -40,28 +58,36 @@ void ktf_map_elem_release(struct kref *kref)
 	struct ktf_map_elem *elem = container_of(kref, struct ktf_map_elem,
 						 refcount);
 	struct ktf_map *map = elem->map;
+	char name[KTF_MAX_KEY];
 
 	DM(T_DEBUG, printk(KERN_INFO "Releasing %s, %s free function\n",
-	   elem->name, map && map->elem_freefn ? "calling" : "no"));
+	   ktf_map_elem_name(elem, name),
+	   map && map->elem_freefn ? "calling" : "no"));
 	if (map && map->elem_freefn)
 		map->elem_freefn(elem);
 }
 
 void ktf_map_elem_put(struct ktf_map_elem *elem)
 {
+	char name[KTF_MAX_KEY];
+
 	DM(T_DEBUG, printk(KERN_INFO "Decreasing refcount for %s to %d",
-	   elem->name, atomic_read(&elem->refcount.refcount) - 1));
+	   ktf_map_elem_name(elem, name),
+	   atomic_read(&elem->refcount.refcount) - 1));
 	kref_put(&elem->refcount, ktf_map_elem_release);
 }
 
 void ktf_map_elem_get(struct ktf_map_elem *elem)
 {
+	char name[KTF_MAX_KEY];
+
 	DM(T_DEBUG, printk(KERN_INFO "Increasing refcount for %s to %d",
-	   elem->name, atomic_read(&elem->refcount.refcount) + 1));
+	   ktf_map_elem_name(elem, name),
+	   atomic_read(&elem->refcount.refcount) + 1));
 	kref_get(&elem->refcount);
 }
 
-struct ktf_map_elem *ktf_map_find(struct ktf_map *map, const char *name)
+struct ktf_map_elem *ktf_map_find(struct ktf_map *map, const char *key)
 {
 	struct rb_node *node;
 	unsigned long flags;
@@ -74,7 +100,10 @@ struct ktf_map_elem *ktf_map_find(struct ktf_map *map, const char *name)
 		struct ktf_map_elem *elem = container_of(node, struct ktf_map_elem, node);
 		int result;
 
-		result = strcmp(name, elem->name);
+		if (map->elem_comparefn)
+			result = map->elem_comparefn(key, elem->key);
+		else
+			result = strncmp(key, elem->key, KTF_MAX_KEY);
 
 		if (result < 0)
 			node = node->rb_left;
@@ -150,7 +179,12 @@ int ktf_map_insert(struct ktf_map *map, struct ktf_map_elem *elem)
 	newobj = &(map->root.rb_node);
 	while (*newobj) {
 		struct ktf_map_elem *this = container_of(*newobj, struct ktf_map_elem, node);
-		int result = strcmp(elem->name, this->name);
+		int result;
+
+		if (map->elem_comparefn)
+			result = map->elem_comparefn(elem->key, this->key);
+		else
+			result = strncmp(elem->key, this->key, KTF_MAX_KEY);
 
 		parent = *newobj;
 		if (result < 0)
@@ -166,10 +200,10 @@ int ktf_map_insert(struct ktf_map *map, struct ktf_map_elem *elem)
 	/* Add newobj node and rebalance tree. */
 	rb_link_node(&elem->node, parent, newobj);
 	rb_insert_color(&elem->node, &map->root);
-	/* Bump reference count for map reference */
-	ktf_map_elem_get(elem);
 	elem->map = map;
 	map->size++;
+	/* Bump reference count for map reference */
+	ktf_map_elem_get(elem);
 	spin_unlock_irqrestore(&map->lock, flags);
 	return 0;
 }
@@ -183,12 +217,12 @@ void ktf_map_remove_elem(struct ktf_map *map, struct ktf_map_elem *elem)
 	}
 }
 
-struct ktf_map_elem *ktf_map_remove(struct ktf_map *map, const char *name)
+struct ktf_map_elem *ktf_map_remove(struct ktf_map *map, const char *key)
 {
 	struct ktf_map_elem *elem;
 	unsigned long flags;
 
-	elem = ktf_map_find(map, name);
+	elem = ktf_map_find(map, key);
 	spin_lock_irqsave(&map->lock, flags);
 	ktf_map_remove_elem(map, elem);
 	spin_unlock_irqrestore(&map->lock, flags);
