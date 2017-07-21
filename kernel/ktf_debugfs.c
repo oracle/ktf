@@ -4,6 +4,7 @@
 #include <linux/debugfs.h>
 #include "ktf.h"
 #include "kcheck.h"
+#include "ktf_cov.h"
 
 /* Create a debugfs representation of test sets/tests.  Hierarchy looks like
  * this:
@@ -23,6 +24,7 @@
 struct dentry *ktf_debugfs_rootdir = NULL;
 struct dentry *ktf_debugfs_rundir = NULL;
 struct dentry *ktf_debugfs_resultsdir = NULL;
+struct dentry *ktf_debugfs_cov_file = NULL;
 
 static void ktf_debugfs_print_result(struct seq_file *seq, struct ktf_test *t)
 {
@@ -295,9 +297,34 @@ void ktf_debugfs_destroy_testset(struct ktf_case *testset)
 	ktf_case_put(testset);
 }
 
+/* /sys/kernel/debug/ktf/coverage shows coverage statistics. */
+static int ktf_debugfs_cov(struct seq_file *seq, void *v)
+{
+	ktf_cov_seq_print(seq);
+
+	return 0;
+}
+
+static int ktf_cov_open(struct inode *inode, struct file *file)
+{
+	if (!try_module_get(THIS_MODULE))
+		return -EIO;
+
+	return single_open(file, ktf_debugfs_cov, NULL);
+}
+
+static struct file_operations ktf_cov_fops = {
+	.open = ktf_cov_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = ktf_debugfs_release,
+};
+
 void ktf_debugfs_cleanup(void)
 {
 	DM(T_DEBUG, printk(KERN_INFO "Removing ktf debugfs dirs..."));
+	if (ktf_debugfs_cov_file)
+		debugfs_remove(ktf_debugfs_cov_file);
 	if (ktf_debugfs_rundir)
 		debugfs_remove(ktf_debugfs_rundir);
 	if (ktf_debugfs_resultsdir)
@@ -317,7 +344,15 @@ void ktf_debugfs_init(void)
 		goto err;
 	ktf_debugfs_resultsdir = debugfs_create_dir(KTF_DEBUGFS_RESULTS,
 						    ktf_debugfs_rootdir);
-	if (ktf_debugfs_resultsdir)
+	if (!ktf_debugfs_resultsdir)
+		goto err;
+
+	ktf_debugfs_cov_file = debugfs_create_file(KTF_DEBUGFS_COV,
+						   S_IFREG | 0444,
+						   ktf_debugfs_rootdir,
+						   NULL,
+						   &ktf_cov_fops);
+	if (ktf_debugfs_cov_file)
 		return;
 err:
 	printk(KERN_INFO "Could not init %s\n", KTF_DEBUGFS_ROOT);

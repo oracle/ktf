@@ -1,6 +1,7 @@
 #include <linux/module.h>
 #include "ktf.h"
 #include "ktf_map.h"
+#include "ktf_cov.h"
 #include "ktf_syms.h"
 
 MODULE_LICENSE("GPL");
@@ -196,6 +197,31 @@ static void add_probe_tests(void)
 	ADD_TEST(probereturn);
 }
 
+noinline void cov_counted(void)
+{
+	printk(KERN_INFO "cov_counted ran!\n");
+}
+
+TEST(selftest, cov_count)
+{
+	struct ktf_cov_entry *e;
+
+	ASSERT_INT_EQ(0, ktf_cov_enable((THIS_MODULE)->name));
+	cov_counted();
+	e = ktf_cov_entry_find((unsigned long)cov_counted);
+	ASSERT_ADDR_NE(e, NULL);
+	if (e) {
+		ASSERT_INT_EQ(e->count, 1);
+		ktf_cov_entry_put(e);
+	}
+	ktf_cov_disable((THIS_MODULE)->name);
+}
+
+static void add_cov_tests(void)
+{
+	ADD_TEST(cov_count);
+}
+
 static int __init selftest_init(void)
 {
 	int ret = ktf_context_add(&dual_handle, &s_mctx[0].k, "map1");
@@ -215,6 +241,7 @@ static int __init selftest_init(void)
 
 	add_map_tests();
 	add_probe_tests();
+	add_cov_tests();
 	tlog(T_INFO, "selftest: loaded\n");
 	return 0;
 }

@@ -7,6 +7,7 @@
 #include "nl.h"
 #include "unlproto.h"
 #include "ktf.h"
+#include "ktf_cov.h"
 
 #define MAX_PRINTF 4096
 
@@ -353,5 +354,6 @@ int ktf_cleanup(void)
 	}
 	ktf_debugfs_cleanup();
 	mutex_unlock(&tc_lock);
+	ktf_cov_cleanup();
 	return 0;
 }

@@ -36,7 +36,7 @@ int ktf_map_elem_init(struct ktf_map_elem *elem, const char *key)
  * compare function is defined - i.e. string keys - just copy string,
  * otherwise name is hexascii of first 8 bytes of key.
  */
-static char *
+char *
 ktf_map_elem_name(struct ktf_map_elem *elem, char *name)
 {
 	if (!name)

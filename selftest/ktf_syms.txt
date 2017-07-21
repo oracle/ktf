@@ -9,3 +9,8 @@ ktf_map_remove
 ktf_map_elem_get
 ktf_map_elem_put
 ktf_map_find_next
+#header ktf_cov.h
+ktf_cov_entry_find
+ktf_cov_entry_put
+ktf_cov_enable
+ktf_cov_disable

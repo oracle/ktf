@@ -5,6 +5,7 @@
 #include "kcheck.h"
 #include "nl.h"
 #include "ktf.h"
+#include "ktf_cov.h"
 
 /* Generic netlink support to communicate with user level
  * test framework.
@@ -15,6 +16,8 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info);
 static int ktf_query(struct sk_buff *skb, struct genl_info *info);
 static int ktf_req(struct sk_buff *skb, struct genl_info *info);
 static int ktf_resp(struct sk_buff *skb, struct genl_info *info);
+static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
+	struct genl_info *info);
 
 /* operation definition */
 static struct genl_ops ktf_ops[] = {
@@ -76,6 +79,9 @@ static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 		return ktf_query(skb, info);
 	case KTF_CT_RUN:
 		return ktf_run(skb, info);
+	case KTF_CT_COV_ENABLE:
+	case KTF_CT_COV_DISABLE:
+		return ktf_cov_cmd(type, skb, info);
 	default:
 		printk(KERN_ERR "received netlink msg with invalid type (%d)",
 			type);
@@ -311,6 +317,58 @@ static int ktf_resp(struct sk_buff *skb, struct genl_info *info)
 	/* not to expect this message here */
 	printk(KERN_INFO "unexpected netlink RESP msg received");
 	return 0;
+}
+
+static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
+	struct genl_info *info)
+{
+	char *cmd = type == KTF_CT_COV_ENABLE ? "COV_ENABLE" : "COV_DISABLE";
+	char module[KTF_MAX_NAME+1];
+	struct sk_buff *resp_skb;
+	int retval = 0;
+	void *data;
+
+	if (!info->attrs[KTF_A_MOD])   {
+		printk(KERN_ERR "received KTF_CT_%s msg without module name!\n",
+		       cmd);
+		return -EINVAL;
+	}
+	nla_strlcpy(module, info->attrs[KTF_A_MOD], KTF_MAX_NAME);
+
+	/* Start building a response */
+	resp_skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
+	if (!resp_skb)
+		return -ENOMEM;
+
+	if (type == KTF_CT_COV_ENABLE)
+		retval = ktf_cov_enable(module);
+	else
+		ktf_cov_disable(module);
+
+	data = genlmsg_put_reply(resp_skb, info, &ktf_gnl_family,
+				 0, KTF_C_REQ);
+	if (data == NULL) {
+		retval = -ENOMEM;
+		goto put_fail;
+	}
+	nla_put_u32(resp_skb, KTF_A_TYPE, type);
+	nla_put_u32(resp_skb, KTF_A_STAT, retval);
+	/* Recompute message header */
+	genlmsg_end(resp_skb, data);
+
+	retval = genlmsg_reply(resp_skb, info);
+	if (!retval)
+		tlog(T_DEBUG, "Sent reply for %s module %s\n",
+		     cmd, module);
+	else
+		printk(KERN_WARNING
+		       "ktf_cov_cmd: Failed to send reply for %s module %s - value %d\n",
+		       cmd, module, retval);
+put_fail:
+	/* Free buffer if failure */
+	if (retval)
+		nlmsg_free(resp_skb);
+	return retval;
 }
 
 int ktf_nl_register(void)

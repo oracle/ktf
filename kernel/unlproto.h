@@ -8,6 +8,8 @@ enum ktf_cmd_type {
 	KTF_CT_UNSPEC,
 	KTF_CT_QUERY,
 	KTF_CT_RUN,
+	KTF_CT_COV_ENABLE,
+	KTF_CT_COV_DISABLE,
 	KTF_CT_MAX,
 };
 
@@ -30,6 +32,7 @@ enum ktf_attr {
 	KTF_A_TEST,
 	KTF_A_HID,    /* Test handle ID */
 	KTF_A_HLIST,  /* List of handles repr. as a LIST of contexts for a given HID */
+	KTF_A_MOD,    /* module for coverage analysis */
 	KTF_A_MAX
 };
 
@@ -48,6 +51,7 @@ struct nla_policy ktf_gnl_policy[KTF_A_MAX] = {
 	[KTF_A_HLIST] = { .type = NLA_NESTED },
 	[KTF_A_STR]   = { .type = NLA_STRING },
 	[KTF_A_FILE]  = { .type = NLA_STRING },
+	[KTF_A_MOD]   = { .type = NLA_STRING },
 };
 #endif
 

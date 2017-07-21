@@ -70,6 +70,8 @@ int ktf_map_elem_init(struct ktf_map_elem *elem, const char *key);
 void ktf_map_elem_get(struct ktf_map_elem *elem);
 void ktf_map_elem_put(struct ktf_map_elem *elem);
 
+char *ktf_map_elem_name(struct ktf_map_elem *elem, char *name);
+
 /* Insert a new element in map - return 0 iff 'elem' was inserted or -1 if
  * the key already existed - duplicates are not insterted.
  */

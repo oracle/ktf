@@ -57,6 +57,7 @@ typedef void (*ktf_test_fun) (struct ktf_test *, struct ktf_context* tdev, int, 
 #define KTF_DEBUGFS_ROOT                        "ktf"
 #define KTF_DEBUGFS_RUN                         "run"
 #define KTF_DEBUGFS_RESULTS                     "results"
+#define KTF_DEBUGFS_COV				"coverage"
 #define KTF_DEBUGFS_TESTS_SUFFIX                "-tests"
 
 #define KTF_DEBUGFS_NAMESZ                      256

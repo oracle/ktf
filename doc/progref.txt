@@ -74,7 +74,12 @@ abstractions provided by KTF:
 | KTF_UNREGISTER_RETURN_PROBE
 |  (f)                  | Disable probe for return of function f.
 +-----------------------+-------------------------------------------------------+
-
+| ktf_cov_enable(m)	| Enable coverage analytics for module m.
+|			|
++-----------------------+-------------------------------------------------------+
+| ktf_cov_disable(m)	| Disable coverage analytics for module m.
+|			|
++-----------------------+-------------------------------------------------------
 
 The ``KTF_INIT()`` macro must be called at a global level as it just
 defines a variable ``__test_handle`` which is referred to which existence

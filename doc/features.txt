@@ -110,3 +110,32 @@ KTF_RETURN_PROBE(<kernel function name>)
 See example h4.c in examples/ for a simple case where we verify return value
 of printk().
 
+Coverage analytics
+******************
+
+While other coverage tools exist, they generally involve gcc-level support
+which is required at compile-time.  KTF offers kernel module coverage
+support via kprobes instead.  Tests can enable/disable coverage on a
+per-module basis, and coverage data can be retrieved from
+
+/sys/kernel/debug/ktf/coverage
+
+For a given module we show how many of its functions were called versus the
+total, e.g.
+
+# cat /sys/kernel/debug/ktf/coverage
+                  MODULE               #FUNCTIONS    #CALLED
+                selftest                       14          1
+
+We see 1 out of 14 functions was called when coverage was enabled.
+
+We can also see how many times each function was called:
+
+                  MODULE                 FUNCTION      COUNT
+                selftest              myelem_free          0
+                selftest               myelem_cmp          0
+                selftest        ktf_return_printk          0
+                selftest              cov_counted          1
+                selftest                    dummy          0
+
+
