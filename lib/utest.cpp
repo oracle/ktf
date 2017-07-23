@@ -245,6 +245,36 @@ stringvec KernelTestMgr::get_test_names()
   return v;
 }
 
+int set_coverage(std::string module, bool enabled)
+{
+  struct nl_msg *msg;
+  int err;
+
+  msg = nlmsg_alloc();
+  genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
+              KTF_C_REQ, 1);
+  nla_put_u32(msg, KTF_A_TYPE,
+  	      enabled ? KTF_CT_COV_ENABLE : KTF_CT_COV_DISABLE);
+  nla_put_u64(msg, KTF_A_VERSION, KTF_VERSION_LATEST);
+  nla_put_string(msg, KTF_A_MOD, module.c_str());
+
+  // Send message over netlink socket
+  nl_send_auto_complete(sock, msg);
+
+  // Free message
+  nlmsg_free(msg);
+
+  //Wait for acknowledgement:
+  // This function also returns error status if the message
+  // was not deemed ok by the kernel.
+  //
+  err = nl_wait_for_ack(sock);
+  if (err == 0) {
+	// Then wait for the answer and receive it
+	nl_recvmsgs_default(sock);
+  }
+  return err;
+}
 
   KernelTest::KernelTest(const std::string& sn, const char* tn, unsigned int handle_id)
   : setname(sn),

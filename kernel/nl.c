@@ -340,6 +340,8 @@ static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 	if (!resp_skb)
 		return -ENOMEM;
 
+	DM(T_DEBUG, printk(KERN_INFO "%s coverage for %s\n",
+	   cmd, module));
 	if (type == KTF_CT_COV_ENABLE)
 		retval = ktf_cov_enable(module);
 	else

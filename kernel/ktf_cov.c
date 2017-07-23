@@ -190,15 +190,15 @@ void ktf_cov_seq_print(struct seq_file *seq)
 	struct ktf_cov_entry *entry;
 	struct ktf_cov *cov;
 
-	seq_printf(seq, "%24s %24s %10s\n", "MODULE", "#FUNCTIONS",
+	seq_printf(seq, "%20s %44s %10s\n", "MODULE", "#FUNCTIONS",
 		   "#CALLED");
 	ktf_map_for_each_entry(cov, &cov_map, kmap)
-		seq_printf(seq, "%24s %24d %10d\n",
+		seq_printf(seq, "%20s %44d %10d\n",
 			   cov->kmap.key, cov->total, cov->count);
 
-	seq_printf(seq, "\n%24s %24s %10s\n", "MODULE", "FUNCTION", "COUNT");
+	seq_printf(seq, "\n%20s %44s %10s\n", "MODULE", "FUNCTION", "COUNT");
 	ktf_map_for_each_entry(entry, &cov_entry_map, kmap)
-		seq_printf(seq, "%24s %24s %10d\n",
+		seq_printf(seq, "%20s %44s %10d\n",
 			   entry->cov ? entry->cov->kmap.key : "-",
 			   entry->name, entry->count);
 }

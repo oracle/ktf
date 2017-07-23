@@ -72,6 +72,9 @@ namespace utest
 
   /* Function for adding a user level test wrapper */
   void add_wrapper(const std::string setname, const std::string testname, test_cb* tcb);
+
+  /* Function for enabling/disabling coverage for module */
+  int set_coverage(std::string module, bool enabled);
 } // end namespace utest
 
 
