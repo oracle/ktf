@@ -64,17 +64,21 @@ struct ktf_cov *ktf_cov_find(const char *module)
 	return ktf_map_find_entry(&cov_map, module, struct ktf_cov, kmap);
 }
 
+/* Do not use ktf_cov_entry_find() here as we can get entry directly
+ * from probe address (as probe is first field in struct ktf_cov_entry).
+ * No reference counting issues should apply as when entry refcnt drops
+ * to 0 we unregister the kprobe prior to freeing the entry.
+ */
 static int ktf_cov_handler(struct kprobe *p, struct pt_regs *regs)
 {
-	struct ktf_cov_entry *entry;
+	struct ktf_cov_entry *entry = (struct ktf_cov_entry *)p;
 
-	entry = ktf_cov_entry_find((unsigned long)p->addr);
-	if (entry) {
-		entry->count++;
-		if (entry->count == 1 && entry->cov)
-			entry->cov->count++;
-		ktf_cov_entry_put(entry);
-	}
+	/* Make sure probe is ours... */
+	if (!entry || entry->magic != KTF_COV_ENTRY_MAGIC)
+		return 0;
+	entry->count++;
+	if (entry->count == 1 && entry->cov)
+		entry->cov->count++;
 	return 0;
 }
 
@@ -105,6 +109,7 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 	}
 	entry = kzalloc(sizeof(struct ktf_cov_entry), GFP_KERNEL);
 	(void) strlcpy(entry->name, name, sizeof(entry->name));
+	entry->magic = KTF_COV_ENTRY_MAGIC;
 	entry->cov = cov;
 
 	entry->kprobe.pre_handler = ktf_cov_handler;

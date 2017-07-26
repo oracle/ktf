@@ -16,11 +16,13 @@ struct ktf_cov {
 	int total;			/* total number of functions */
 };
 
+#define	KTF_COV_ENTRY_MAGIC		0xc07e8a5e
 struct ktf_cov_entry {
+	struct kprobe kprobe;
+	int magic;			/* magic number identifying entry */
 	struct ktf_map_elem kmap;
 	char name[KTF_MAX_KEY];
 	struct ktf_cov *cov;
-	struct kprobe kprobe;
 	int refcnt;
 	int count;
 };
