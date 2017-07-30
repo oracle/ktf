@@ -110,6 +110,19 @@ KTF_RETURN_PROBE(<kernel function name>)
 See example h4.c in examples/ for a simple case where we verify return value
 of printk().
 
+We can also modify return values in return probes; this is particularly useful
+for error injection.  For example, we can instrument foo() which returns
+integer 0 on success to return an error instead:
+
+KTF_RETURN_PROBE(foo)
+{
+	KTF_SET_RETURN_VALUE(-1);
+
+	return 0;
+}
+
+This feature is currently only supported on x86_64.
+
 Coverage analytics
 ******************
 

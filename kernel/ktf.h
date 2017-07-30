@@ -90,8 +90,15 @@ extern struct ktf_handle __test_handle;
 	static int ktf_return_##func(struct kretprobe_instance *ri, \
 				     struct pt_regs *regs)
 
+/* KTF_*RETURN_VALUE() definitions for use within KTF_RETURN_PROBE() {} only. */
 
 #define KTF_RETURN_VALUE()	regs_return_value(regs)
+
+#ifdef CONFIG_X86_64
+#define KTF_SET_RETURN_VALUE(value)     regs->ax = (value)
+#else
+#define KTF_SET_RETURN_VALUE(value)     do { } while (0)
+#endif /* CONFIG_X86_64 */
 
 #define KTF_REGISTER_RETURN_PROBE(func) \
 	register_kretprobe(&__ktf_return_##func)

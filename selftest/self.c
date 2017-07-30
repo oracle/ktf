@@ -172,6 +172,22 @@ done:
 	KTF_UNREGISTER_ENTRY_PROBE(printk);
 }
 
+noinline int probesum(int a, int b)
+{
+	printk(KERN_INFO "probesum: Adding %d + %d\n", a, b);
+	return a + b;
+}
+
+KTF_RETURN_PROBE(probesum)
+{
+	printk(KERN_INFO "probesum: return value before modifying %ld\n",
+	       regs_return_value(regs));
+	KTF_SET_RETURN_VALUE(-1);
+	printk(KERN_INFO "probesum: return value after modifying %ld\n",
+	       regs_return_value(regs));
+	return 0;
+}
+
 KTF_RETURN_PROBE(printk)
 {
 	proberet = KTF_RETURN_VALUE();
@@ -187,8 +203,14 @@ TEST(selftest, probereturn)
 	ASSERT_INT_EQ_GOTO(KTF_REGISTER_RETURN_PROBE(printk), 0, done);
 	printk(KERN_INFO "%s", teststr);
 	ASSERT_INT_EQ_GOTO(proberet, strlen(teststr), done);
+
+	/* Now test modification of return value */
+	ASSERT_INT_EQ_GOTO(probesum(1, 1), 2, done);
+	ASSERT_INT_EQ_GOTO(KTF_REGISTER_RETURN_PROBE(probesum), 0, done);
+	ASSERT_INT_EQ_GOTO(probesum(1, 1), -1, done);
 done:
 	KTF_UNREGISTER_RETURN_PROBE(printk);
+	KTF_UNREGISTER_RETURN_PROBE(probesum);
 }
 
 static void add_probe_tests(void)
