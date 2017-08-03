@@ -11,75 +11,70 @@ KTF API Overview
 For reference, the following table lists a few terms and classes of
 abstractions provided by KTF:
 
-+-----------------------+-------------------------------------------------------+
-| **Item**		| **description** 					|
-+=======================+=======================================================+
-| Test module		| A kernel object file (.ko) with ktf tests in it	|
-+-----------------------+-------------------------------------------------------+
-| struct ktf_handle	| At least 1 per test module.				|
-|		   	| Use macros KTF_INIT() and KTF_CLEANUP() to set up	|
-|			| and tear down handles.				|
-+-----------------------+-------------------------------------------------------+
-| struct ktf_context	| 0-n per test module - test module specific context	|
-|		     	| for the test, such as eg. a device or another      	|
-|		     	| kernel object.					|
-+-----------------------+-------------------------------------------------------+
-| KTF_INIT()		| Call this at the global level in the main file	|
-|			| for each test module.					|
-+-----------------------+-------------------------------------------------------+
-| KTF_CLEANUP()		| Call this in the __exit function to clean up		|
-+-----------------------+-------------------------------------------------------+
-| EXPECT_*		| non-fatal assertions				  	|
-+-----------------------+-------------------------------------------------------+
-| ASSERT_*		| "fatal" assertions that would cause return or goto	|
-+-----------------------+-------------------------------------------------------+
-| TEST(s, n) {...}	| Define a simple test named 's.n' with implicit 	|
-|		     	| arguments 'ctx' and '_i' for context and iteration	|
-+-----------------------+-------------------------------------------------------+
-| DECLARE_F(f) {...}	| Declare a new test fixture named 'f' with		|
-|		     	| additional data structure				|
-+-----------------------+-------------------------------------------------------+
-| SETUP_F(f, s) {...}	| Define setup function for the fixture
-|			|
-+-----------------------+-------------------------------------------------------+
-| TEARDOWN_F(f, t) {...}| Define teardown function for the fixture
-|			|
-+-----------------------+-------------------------------------------------------+
-| INIT_F(f, s, t) {...} | Declare the setup and tear down functions for the	|
-|			| fixture						|
-+-----------------------+-------------------------------------------------------+
-| TEST_F(s, f, n) {...} | Define a test named 's.n' operating in fixture f	|
-+-----------------------+-------------------------------------------------------+
-| KTF_ENTRY_PROBE       | Define function entry probe for function f with
-|  (f, r, ...) {...}    | return value r.  Arguments following r must match
-|                       | function arguments.  Must be used at global level.
-+-----------------------+-------------------------------------------------------+
-| KTF_ENTRY_PROBE_RETURN| Return from probed function with return value r.
-|  (r)			| Must be called within KTF_ENTRY_PROBE().
-+-----------------------+-------------------------------------------------------+
-| KTF_REGISTER_ENTRY_PROBE
-|  (f)                  | Enable probe for kernel function f.
-+-----------------------+-------------------------------------------------------+
-| KTF_UNREGISTER_ENTRY_PROBE
-|  (f)                  | Disable probe for kernel function f.
-+-----------------------+-------------------------------------------------------+
-| KTF_RETURN_PROBE(f)   | Define function return probe for function f.
-|  {...}                | Must be used at a global level.
-+-----------------------+-------------------------------------------------------+
-| KTF_RETURN_VALUE()    | Retrieve return value within body of return probe.
-+-----------------------+-------------------------------------------------------+
-| KTF_REGISTER_RETURN_PROBE
-|  (f)                  | Enable probe for return of function f.
-+-----------------------+-------------------------------------------------------+
-| KTF_UNREGISTER_RETURN_PROBE
-|  (f)                  | Disable probe for return of function f.
-+-----------------------+-------------------------------------------------------+
-| ktf_cov_enable(m)	| Enable coverage analytics for module m.
-|			|
-+-----------------------+-------------------------------------------------------+
-| ktf_cov_disable(m)	| Disable coverage analytics for module m.
-|			|
-+-----------------------+-------------------------------------------------------
++----------------------------+--------------------------------------------------+
+| **Item**		     | **description** 				        |
++============================+==================================================+
+| Test module		     | A kernel object file (.ko) with ktf tests in it	|
++----------------------------+--------------------------------------------------+
+| struct ktf_handle	     | At least 1 per test module.                      |
+|		   	     | Use macros KTF_INIT() and KTF_CLEANUP() to set up|
+|			     | and tear down handles.				|
++----------------------------+--------------------------------------------------+
+| struct ktf_context	     | 0-n per test module - test module specific       |
+|		     	     | context for the test, such as eg. a device or    |
+|		     	     | another kernel object.		                |
++----------------------------+--------------------------------------------------+
+| KTF_INIT()		     | Call this at the global level in the main file   |
+|			     | for each test module.                            |
++----------------------------+--------------------------------------------------+
+| KTF_CLEANUP()		     | Call this in the __exit function to clean up     |
++----------------------------+--------------------------------------------------+
+| EXPECT_*		     | non-fatal assertions                             |
++----------------------------+--------------------------------------------------+
+| ASSERT_*		     | "fatal" assertions that would cause return/goto	|
++----------------------------+--------------------------------------------------+
+| TEST(s, n) {...}	     | Define a simple test named 's.n' with implicit 	|
+|		     	     | arguments 'ctx' and '_i' for context/iteration.  |
++----------------------------+--------------------------------------------------+
+| DECLARE_F(f) {...}	     | Declare a new test fixture named 'f' with        |
+|		     	     | additional data structure	                |
++----------------------------+--------------------------------------------------+
+| SETUP_F(f, s) {...}	     | Define setup function for the fixture            |
++----------------------------+--------------------------------------------------+
+| TEARDOWN_F(f, t) {...}     | Define teardown function for the fixture         |
++----------------------------+--------------------------------------------------+
+| INIT_F(f, s, t) {...}      | Declare the setup and tear down functions for the|
+|			     | fixture						|
++----------------------------+--------------------------------------------------+
+| TEST_F(s, f, n) {...}      | Define a test named 's.n' operating in fixture f	|
++----------------------------+--------------------------------------------------+
+| KTF_ENTRY_PROBE            | Define function entry probe for function f with  |
+|  (f, r, ...) {...}         | return value r.  Arguments following r must match|
+|                            | function arguments. Must be used at global level.|
++----------------------------+--------------------------------------------------+
+| KTF_ENTRY_PROBE_RETURN(r)  | Return from probed function with return value r. |
+|  			     | Must be called within KTF_ENTRY_PROBE().         |
++----------------------------+--------------------------------------------------+
+| KTF_REGISTER_ENTRY_PROBE(f)| Enable probe on entry to kernel function f.      |
++----------------------------+--------------------------------------------------+
+| KTF_UNREGISTER_ENTRY_PROBE | Disable probe on entry to kernel function f.     |
+|  (f)			     |                                                  |
++----------------------------+--------------------------------------------------+
+| KTF_RETURN_PROBE(f) {...}  | Define function return probe for function f.     |
+|			     | Must be used at a global level.                  |
++----------------------------+--------------------------------------------------+
+| KTF_RETURN_VALUE()         | Retrieve return value in body of return probe.   |
++----------------------------+--------------------------------------------------+
+| KTF_REGISTER_RETURN_PROBE  | Enable probe for return of function f.           |
+|  (f)                       |                                                  |
++----------------------------+--------------------------------------------------+
+| KTF_UNREGISTER_RETURN_PROBE| Disable probe for return of function f.          |
+|  (f)                       |                                                  |
++----------------------------+--------------------------------------------------+
+| ktf_cov_enable(m)	     | Enable coverage analytics for module m.          |
++----------------------------+--------------------------------------------------+
+| ktf_cov_disable(m)	     | Disable coverage analytics for module m.         |
++----------------------------+--------------------------------------------------+
 
 The ``KTF_INIT()`` macro must be called at a global level as it just
 defines a variable ``__test_handle`` which is referred to which existence

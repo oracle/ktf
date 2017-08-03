@@ -78,50 +78,35 @@ Requesting callbacks when a certain function gets called/returns
 Tap into function entry using KTF entry probes.  Many tests need to
 move beyond kernel APIs and ensure that side effects (logging a
 message etc) occur.  A good way to do this is to probe entry of relevant
-functions.  In order to do so in KTF you need to
+functions.  In order to do so in KTF you need to:
 
-1. define an entry probe function with the same return value and arguments
-   as the function to be probed
+    - define an entry probe function with the same return value and arguments
+      as the function to be probed
 
-2. within the body of the entry probe function, ensure return is wrapped with
-   KTF_ENTRY_PROBE_RETURN(<return value>);
+    - within the body of the entry probe function, ensure return is wrapped with
+      KTF_ENTRY_PROBE_RETURN(<return value>);
 
-3. entry probes need to registered for use and de-registered when done via
-   KTF_[UN]REGISTER_ENTRY_PROBE(<kernel function name>).
+    - entry probes need to registered for use and de-registered when done via
+      KTF_[UN]REGISTER_ENTRY_PROBE(<kernel function name>).
 
 See example h4.c in examples/ for a simple case where we probe printk() and
 ensure it is called.
 
 Sometimes is is also useful to check that an intermediate function is returning
 an expected value.  Return probes can be used to register/probe function
-return.  In order to probe function return
+return.  In order to probe function return:
 
-1. define a return probe point
+    - define a return probe point; i.e KTF_RETURN_PROBE(<kernel function>)
 
-KTF_RETURN_PROBE(<kernel function name>)
+    - within the body of the return probe the return value can be retrieved
+      via KTF_RETURN_VALUE().  Type will obviously depend on the function
+      probed so should be cast if dereferencing is required.
 
-2. within the body of the return probe the return value can be retrieved
-   via KTF_RETURN_VALUE().  Type will obviously depend on the function
-   probed so should be cast if dereferencing is required.
-
-3. return probes need to be registered for use and unregistered when done
-   via KTF_[UN]REGISTER_RETURN_PROBE(<kernel function name>).
+    - return probes need to be registered for use and unregistered when done
+      via KTF_[UN]REGISTER_RETURN_PROBE(<kernel function name>).
 
 See example h4.c in examples/ for a simple case where we verify return value
 of printk().
-
-We can also modify return values in return probes; this is particularly useful
-for error injection.  For example, we can instrument foo() which returns
-integer 0 on success to return an error instead:
-
-KTF_RETURN_PROBE(foo)
-{
-	KTF_SET_RETURN_VALUE(-1);
-
-	return 0;
-}
-
-This feature is currently only supported on x86_64.
 
 Coverage analytics
 ******************
@@ -129,26 +114,25 @@ Coverage analytics
 While other coverage tools exist, they generally involve gcc-level support
 which is required at compile-time.  KTF offers kernel module coverage
 support via kprobes instead.  Tests can enable/disable coverage on a
-per-module basis, and coverage data can be retrieved from
+per-module basis, and coverage data can be retrieved via::
 
-/sys/kernel/debug/ktf/coverage
+    # more /sys/kernel/debug/ktf/coverage
 
 For a given module we show how many of its functions were called versus the
-total, e.g.
+total, e.g.::
 
-# cat /sys/kernel/debug/ktf/coverage
-                  MODULE               #FUNCTIONS    #CALLED
-                selftest                       14          1
+    # cat /sys/kernel/debug/ktf/coverage
+    MODULE               #FUNCTIONS    #CALLED
+    selftest             14            1
 
 We see 1 out of 14 functions was called when coverage was enabled.
 
-We can also see how many times each function was called:
+We can also see how many times each function was called::
 
-                  MODULE                 FUNCTION      COUNT
-                selftest              myelem_free          0
-                selftest               myelem_cmp          0
-                selftest        ktf_return_printk          0
-                selftest              cov_counted          1
-                selftest                    dummy          0
-
+    MODULE          FUNCTION                   COUNT
+    selftest        myelem_free                0
+    selftest        myelem_cmp                 0
+    selftest        ktf_return_printk          0
+    selftest        cov_counted                1
+    selftest        dummy                      0
 
