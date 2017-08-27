@@ -71,7 +71,8 @@ abstractions provided by KTF:
 | KTF_UNREGISTER_RETURN_PROBE| Disable probe for return of function f.          |
 |  (f)                       |                                                  |
 +----------------------------+--------------------------------------------------+
-| ktf_cov_enable(m)	     | Enable coverage analytics for module m.          |
+| ktf_cov_enable(m, flags)   | Enable coverage analytics for module m.          |
+|			     | Flag must be either 0 or KTF_COV_OPT_MEM.        |
 +----------------------------+--------------------------------------------------+
 | ktf_cov_disable(m)	     | Disable coverage analytics for module m.         |
 +----------------------------+--------------------------------------------------+

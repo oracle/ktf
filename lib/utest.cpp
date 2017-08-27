@@ -245,7 +245,7 @@ stringvec KernelTestMgr::get_test_names()
   return v;
 }
 
-int set_coverage(std::string module, bool enabled)
+int set_coverage(std::string module, unsigned int opts, bool enabled)
 {
   struct nl_msg *msg;
   int err;
@@ -255,6 +255,7 @@ int set_coverage(std::string module, bool enabled)
               KTF_C_REQ, 1);
   nla_put_u32(msg, KTF_A_TYPE,
   	      enabled ? KTF_CT_COV_ENABLE : KTF_CT_COV_DISABLE);
+  nla_put_u32(msg, KTF_A_COVOPT, opts);
   nla_put_u64(msg, KTF_A_VERSION, KTF_VERSION_LATEST);
   nla_put_string(msg, KTF_A_MOD, module.c_str());
 

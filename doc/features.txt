@@ -136,3 +136,18 @@ We can also see how many times each function was called::
     selftest        cov_counted                1
     selftest        dummy                      0
 
+In addition, we can track memory allocated via kmem_cache_alloc()/kmalloc()
+originating from module functions we have enabled coverage for.  This
+allows us to track memory associated with the module specifically to find
+leaks etc.  If memory tracking is enabled, /sys/kernel/debug/ktf/coverage
+will show outstanding allocations - the stack at allocation time; the
+memory address and size.
+
+Coverage can be enabled via the "ktfcov" utility.  Syntax is as follows:
+
+ktfcov [-d module] [-e module [-m]]
+
+"-e" enables coverage for the specified module; "-d" disables coverage.
+"-m" in combination with "-e" enables memory tracking for the module under
+test.
+

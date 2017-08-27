@@ -1,4 +1,7 @@
 #include <linux/module.h>
+#include <linux/slab.h>
+#include <linux/slab_def.h>
+
 #include "ktf.h"
 #include "ktf_map.h"
 #include "ktf_cov.h"
@@ -224,24 +227,99 @@ noinline void cov_counted(void)
 	printk(KERN_INFO "cov_counted ran!\n");
 }
 
-TEST(selftest, cov_count)
+noinline void *doalloc(struct kmem_cache *c, size_t sz)
 {
-	struct ktf_cov_entry *e;
+	if (c)
+		return kmem_cache_alloc(c, GFP_KERNEL);
+	return kmalloc(sz, GFP_KERNEL);
+}
 
-	ASSERT_INT_EQ(0, ktf_cov_enable((THIS_MODULE)->name));
+TEST(selftest, cov)
+{
+	int foundp1 = 0, foundp2 = 0, foundp3 = 0, foundp4 = 0;
+	struct ktf_cov_entry *e;
+	struct ktf_cov_mem *m;
+	char *p1 = NULL, *p2 = NULL, *p3 = NULL, *p4 = NULL;
+	struct kmem_cache *c = NULL;
+
+	c = kmem_cache_create("selftest_cov_cache",
+			     32, 0,
+			     SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_NOTRACK, NULL);
+
+	ASSERT_ADDR_NE(NULL, c);
+
+	printk(KERN_INFO "Allocated cache %p : %s %u\n",
+	    c, c->name, c->object_size);
+	ASSERT_INT_EQ(0, ktf_cov_enable((THIS_MODULE)->name, KTF_COV_OPT_MEM));
+
 	cov_counted();
-	e = ktf_cov_entry_find((unsigned long)cov_counted);
-	ASSERT_ADDR_NE(e, NULL);
+	e = ktf_cov_entry_find((unsigned long)cov_counted, 0);
+	ASSERT_ADDR_NE_GOTO(e, NULL, done);
 	if (e) {
 		ASSERT_INT_EQ(e->count, 1);
 		ktf_cov_entry_put(e);
 	}
+
+	/* Need to call a noinline fn to do allocs since this test function
+	 * will be inlined; and to track allocations they need to come
+	 * from this module.  Don't need to do the same for kfree since
+	 * we check every kfree() to see if it is freeing a tracked allocation.
+	 */
+	p1 = doalloc(NULL, 8);
+	ASSERT_ADDR_NE_GOTO(p1, NULL, done);
+	p2 = doalloc(NULL, 16);
+	ASSERT_ADDR_NE_GOTO(p2, NULL, done);
+	p3 = doalloc(c, 0);
+	ASSERT_ADDR_NE_GOTO(p3, NULL, done);
+	p4 = doalloc(c, 0);
+	ASSERT_ADDR_NE_GOTO(p4, NULL, done);
+
+	ktf_for_each_cov_mem(m) {
+		if (m->key.address == (unsigned long)p1 && m->key.size == 8)
+			foundp1 = 1;
+		if (m->key.address == (unsigned long)p2 && m->key.size == 16)
+			foundp2 = 1;
+		if (m->key.address == (unsigned long)p3 && m->key.size == 32)
+			foundp3 = 1;
+		if (m->key.address == (unsigned long)p4 && m->key.size == 32)
+			foundp4 = 1;
+	}
+	ASSERT_INT_EQ_GOTO(foundp1, 1, done);
+	ASSERT_INT_EQ_GOTO(foundp2, 1, done);
+	ASSERT_INT_EQ_GOTO(foundp3, 1, done);
+	ASSERT_INT_EQ_GOTO(foundp4, 1, done);
+	kfree(p1);
+	kmem_cache_free(c, p4);
+	/* Didn't free p2/p3 - should still be on our cov_mem list */
+	foundp1 = 0;
+	foundp2 = 0;
+	foundp3 = 0;
+	foundp4 = 0;
+	ktf_for_each_cov_mem(m) {
+		if (m->key.address == (unsigned long)p1)
+			foundp1 = 1;
+		if (m->key.address == (unsigned long)p2)
+			foundp2 = 1;
+		if (m->key.address == (unsigned long)p3)
+			foundp3 = 1;
+		if (m->key.address == (unsigned long)p4)
+			foundp4 = 1;
+	}
+	ASSERT_INT_EQ_GOTO(foundp2, 1, done);
+	ASSERT_INT_EQ_GOTO(foundp3, 1, done);
+	ASSERT_INT_EQ_GOTO(foundp1, 0, done);
+	ASSERT_INT_EQ_GOTO(foundp4, 0, done);
+done:
+	kfree(p2);
+	if (p3)
+		kmem_cache_free(c, p3);
 	ktf_cov_disable((THIS_MODULE)->name);
+	kmem_cache_destroy(c);
 }
 
 static void add_cov_tests(void)
 {
-	ADD_TEST(cov_count);
+	ADD_TEST(cov);
 }
 
 static int __init selftest_init(void)

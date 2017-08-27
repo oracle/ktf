@@ -193,7 +193,7 @@ int ktf_map_insert(struct ktf_map *map, struct ktf_map_elem *elem)
 			newobj = &((*newobj)->rb_right);
 		else {
 			spin_unlock_irqrestore(&map->lock, flags);
-			return -1;
+			return -EEXIST;
 		}
 	}
 

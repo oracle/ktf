@@ -74,7 +74,7 @@ namespace utest
   void add_wrapper(const std::string setname, const std::string testname, test_cb* tcb);
 
   /* Function for enabling/disabling coverage for module */
-  int set_coverage(std::string module, bool enabled);
+  int set_coverage(std::string module, unsigned int opts, bool enabled);
 } // end namespace utest
 
 

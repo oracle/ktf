@@ -33,6 +33,7 @@ enum ktf_attr {
 	KTF_A_HID,    /* Test handle ID */
 	KTF_A_HLIST,  /* List of handles repr. as a LIST of contexts for a given HID */
 	KTF_A_MOD,    /* module for coverage analysis */
+	KTF_A_COVOPT, /* options for coverage analysis */
 	KTF_A_MAX
 };
 
@@ -52,6 +53,7 @@ struct nla_policy ktf_gnl_policy[KTF_A_MAX] = {
 	[KTF_A_STR]   = { .type = NLA_STRING },
 	[KTF_A_FILE]  = { .type = NLA_STRING },
 	[KTF_A_MOD]   = { .type = NLA_STRING },
+	[KTF_A_COVOPT] = { .type = NLA_U32 },
 };
 #endif
 
@@ -79,6 +81,9 @@ enum ktf_vshift {
 
 #define	KTF_VERSION_LATEST	\
 	(KTF_VERSION_SET(MAJOR, 0ULL) | KTF_VERSION_SET(MINOR, 1ULL))
+
+/* Coverage options */
+#define	KTF_COV_OPT_MEM		0x1
 
 #ifdef __cplusplus
 }

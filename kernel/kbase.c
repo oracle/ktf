@@ -122,6 +122,9 @@ EXPORT_SYMBOL(ktf_has_contexts);
 struct ktf_kernel_internals {
 	/* From module.h: Look up a module symbol - supports syntax module:name */
 	unsigned long (*module_kallsyms_lookup_name)(const char *);
+	unsigned long (*kallsyms_lookup_size_offset)(unsigned long,
+						     unsigned long *,
+						     unsigned long *);
 };
 
 static struct ktf_kernel_internals ki;
@@ -130,7 +133,7 @@ static struct ktf_kernel_internals ki;
 static int __init ktf_init(void)
 {
 	int ret;
-	const char* ks = "module_kallsyms_lookup_name";
+	char *ks = "module_kallsyms_lookup_name";
 
 	/* We rely on being able to resolve this symbol for looking up module
 	 * specific internal symbols (multiple modules may define the same symbol):
@@ -139,6 +142,13 @@ static int __init ktf_init(void)
 	if (!ki.module_kallsyms_lookup_name) {
 		printk(KERN_ERR "Unable to look up \"%s\" in kallsyms - maybe interface has changed?",
 			ks);
+		return -EINVAL;
+	}
+	ks = "kallsyms_lookup_size_offset";
+	ki.kallsyms_lookup_size_offset = (void *)kallsyms_lookup_name(ks);
+	if (!ki.kallsyms_lookup_size_offset) {
+		printk(KERN_ERR "Unable to look up \"%s\" in kallsyms - maybe interface has changed?",
+		       ks);
 		return -EINVAL;
 	}
 
@@ -194,6 +204,16 @@ void* ktf_find_symbol(const char *mod, const char *sym)
 	return (void*)addr;
 }
 EXPORT_SYMBOL(ktf_find_symbol);
+
+unsigned long ktf_symbol_size(unsigned long addr)
+{
+	unsigned long size = 0;
+
+	(void) ki.kallsyms_lookup_size_offset(addr, &size, NULL);
+
+	return size;
+}
+EXPORT_SYMBOL(ktf_symbol_size);
 
 
 module_init(ktf_init);

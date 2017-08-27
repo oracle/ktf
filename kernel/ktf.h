@@ -285,6 +285,8 @@ extern ulong ktf_debug_mask;
  */
 void* ktf_find_symbol(const char *mod, const char *sym);
 
+unsigned long ktf_symbol_size(unsigned long addr);
+
 #define ktf_resolve_symbol(mname, sname) \
 	do { \
 		sname = ktf_find_symbol(#mname, #sname);	\

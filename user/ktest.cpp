@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "ktf_run.h"
-#include "debug.h"
+#include "lib/ktf_run.h"
+#include "lib/debug.h"
 
 /* This program is a generic
  * user level application to run kernel tests

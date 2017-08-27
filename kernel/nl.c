@@ -327,6 +327,7 @@ static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 	struct sk_buff *resp_skb;
 	int retval = 0;
 	void *data;
+	u32 opts = 0;
 
 	if (!info->attrs[KTF_A_MOD])   {
 		printk(KERN_ERR "received KTF_CT_%s msg without module name!\n",
@@ -334,6 +335,8 @@ static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 		return -EINVAL;
 	}
 	nla_strlcpy(module, info->attrs[KTF_A_MOD], KTF_MAX_NAME);
+	if (info->attrs[KTF_A_COVOPT])
+		opts = nla_get_u32(info->attrs[KTF_A_COVOPT]);
 
 	/* Start building a response */
 	resp_skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
@@ -343,7 +346,7 @@ static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 	DM(T_DEBUG, printk(KERN_INFO "%s coverage for %s\n",
 	   cmd, module));
 	if (type == KTF_CT_COV_ENABLE)
-		retval = ktf_cov_enable(module);
+		retval = ktf_cov_enable(module, opts);
 	else
 		ktf_cov_disable(module);
 
