@@ -12,6 +12,9 @@
 
 #include "ktf_map.h"
 #include "ktf.h"
+#if (KERNEL_VERSION(4, 11, 0) > LINUX_VERSION_CODE)
+#define refcount_read atomic_read
+#endif
 
 void ktf_map_init(struct ktf_map *map, ktf_map_elem_comparefn elem_comparefn,
 	ktf_map_elem_freefn elem_freefn)
@@ -73,7 +76,7 @@ void ktf_map_elem_put(struct ktf_map_elem *elem)
 
 	DM(T_DEBUG, printk(KERN_INFO "Decreasing refcount for %s to %d",
 	   ktf_map_elem_name(elem, name),
-	   atomic_read(&elem->refcount.refcount) - 1));
+	   refcount_read(&elem->refcount.refcount) - 1));
 	kref_put(&elem->refcount, ktf_map_elem_release);
 }
 
@@ -83,7 +86,7 @@ void ktf_map_elem_get(struct ktf_map_elem *elem)
 
 	DM(T_DEBUG, printk(KERN_INFO "Increasing refcount for %s to %d",
 	   ktf_map_elem_name(elem, name),
-	   atomic_read(&elem->refcount.refcount) + 1));
+	   refcount_read(&elem->refcount.refcount) + 1));
 	kref_get(&elem->refcount);
 }
 
