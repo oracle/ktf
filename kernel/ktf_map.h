@@ -50,13 +50,17 @@ struct ktf_map_elem {
 };
 
 
-#define DEFINE_KTF_MAP(_mapname, _elem_comparefn, _elem_freefn) \
-	struct ktf_map _mapname = { \
+#define __KTF_MAP_INITIALIZER(_mapname, _elem_comparefn, _elem_freefn) \
+        { \
 		.root = RB_ROOT, \
 		.size = 0, \
+		.lock = __SPIN_LOCK_UNLOCKED(_mapname), \
 		.elem_comparefn = _elem_comparefn, \
 		.elem_freefn = _elem_freefn, \
 	}
+
+#define DEFINE_KTF_MAP(_mapname, _elem_comparefn, _elem_freefn) \
+	struct ktf_map _mapname = __KTF_MAP_INITIALIZER(_mapname, _elem_comparefn, _elem_freefn)
 
 void ktf_map_init(struct ktf_map *map, ktf_map_elem_comparefn elem_comparefn,
 	ktf_map_elem_freefn elem_freefn);

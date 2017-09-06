@@ -215,7 +215,7 @@ void _tcase_cleanup(struct ktf_handle *th);
 	struct ktf_handle __test_handle = { \
 		.test_list = LIST_HEAD_INIT(__test_handle.test_list), \
 		.handle_list = LIST_HEAD_INIT(__test_handle.handle_list), \
-		.ctx_map = { .root = RB_ROOT, .size = 0, },		\
+		.ctx_map = __KTF_MAP_INITIALIZER(__test_handle, NULL, NULL), \
 		.id = 0, \
 		.version = __version, \
 	};
