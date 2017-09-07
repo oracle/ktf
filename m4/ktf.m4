@@ -87,6 +87,8 @@ ktf_symfile = $ktf_symfile
 ktf_syms = \$(ktf_symfile:%.txt=%.h)
 ktf_scripts = $ktf_scripts
 
+obj-installed = \$(obj-m:%.o=$prefix/kernel/%.ko)
+
 all: \$(ktf_syms) \$(src_links) module
 
 Makefile: \$(srcdir)/Makefile.in \$(top_builddir)/config.status
@@ -101,7 +103,12 @@ Makefile: \$(srcdir)/Makefile.in \$(top_builddir)/config.status
 ktf_syms.h: \$(srcdir)/ktf_syms.txt
 	\$(ktf_scripts)/resolve \$(ccflags-y) \$< \$[]@
 
-install: all
+install: \$(obj-installed)
+
+\$(obj-installed): $prefix/kernel/%: %
+	@(test -d $prefix/kernel || mkdir -p $prefix/kernel)
+	cp \$< \$[]@
+
 uninstall:
 	@rm -f \$(src_links)
 

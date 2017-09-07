@@ -4,11 +4,11 @@ KVER = @KVER@
 KTF_DIR = @KTF_DIR@
 KTF_BDIR = @KTF_BDIR@
 
--include ktf_gen.mk
-
 ccflags-y += -I$(KTF_DIR)
 
 obj-m := selftest.o
+
+-include ktf_gen.mk
 
 selftest-y := self.o
 

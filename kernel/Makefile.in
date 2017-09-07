@@ -2,9 +2,9 @@ ccflags-y += -Wno-declaration-after-statement
 
 KVER = @KVER@
 
--include ktf_gen.mk
-
 obj-m := ktf.o
+
+-include ktf_gen.mk
 
 ktf-y := kbase.o nl.o ktf_map.o kcheck.o ktf_debugfs.o ktf_cov.o
 
@@ -17,4 +17,3 @@ clean:
 	$(MAKE) -C $(KDIR)/build M=$(PWD) clean
 
 check: all
-install: all
