@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ *    Author: Knut Omang <knut.omang@oracle.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation.
+ *
+ * ktf_run.cpp:
+ *  Gtest integration of ktf kernel tests -
+ *  e.g. tests that are fully implemented on the test driver side
+ *  and only initiated via run_test below
+ */
+
 #include "ktf_run.h"
 #include <assert.h>
 #include <errno.h>
@@ -5,11 +19,6 @@
 
 namespace utest
 {
-
-/* Gtest integration of kernel tests -
- * e.g. tests that are fully implemented on the test driver side
- * and only initiated via run_test below
- */
 
 class KernelMetaFactory;
 

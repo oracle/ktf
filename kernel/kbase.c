@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  *    Author: Knut Omang <knut.omang@oracle.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -9,7 +9,6 @@
  * kbase.c: Main part of ktf kernel module that implements a generic unit test
  *   framework for tests written in kernel code, with support for gtest
  *   (googletest) user space tools for invocation and reporting.
- *
  */
 
 #include <linux/module.h>

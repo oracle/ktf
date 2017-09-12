@@ -1,14 +1,16 @@
-/* Copyright (c) 2011 Oracle Corporation. All rights reserved.
+/*
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ *    Author: Knut Omang <knut.omang@oracle.com>
  *
- * Oracle SIF Infiniband PCI Express host channel adapter (HCA)
- *   device driver for Linux
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation.
  *
- * ktf_run.h: Gtest integration of kernel tests
- *
+ * ktf_run.h: googletest integration of KTF - interface towards googletest
  */
 
-#ifndef SIF_KTF_RUN_H
-#define SIF_KTF_RUN_H
+#ifndef KTF_RUN_H
+#define KTF_RUN_H
 #include "utest.h"
 #include <gtest/gtest.h>
 
@@ -20,4 +22,3 @@ namespace utest
 }
 
 #endif
-

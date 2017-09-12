@@ -1,3 +1,5 @@
+:Author: Knut Omang <knut.omang@oracle.com>
+:Last Updated: Alan Maguire <alan.maguire@oracle.com>
 
 1. Background and motivation
 ----------------------------

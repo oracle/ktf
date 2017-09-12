@@ -1,15 +1,23 @@
-#ifndef KTF_UTEST_H
-#define KTF_UTEST_H
-#include <string>
-#include <vector>
-
-/* User mode side of extension to the gtest unit test framework:
+/*
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ *    Author: Knut Omang <knut.omang@oracle.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation.
+ *
+ * utest.h: User mode side of extension to the gtest unit test framework:
  *  1) Kernel test support via netlink
  *  2) Standard command line parameters
  *
  * This is now a generic interface.
  * For gtest integration of kernel tests, see ktf_run.{cpp,h}
  */
+
+#ifndef KTF_UTEST_H
+#define KTF_UTEST_H
+#include <string>
+#include <vector>
 
 typedef std::vector<std::string> stringvec;
 

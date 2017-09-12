@@ -1,12 +1,18 @@
+/*
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ *    Author: Knut Omang <knut.omang@oracle.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation.
+ *
+ * ktest.cpp: Generic user level application to run kernel tests
+ *   provided by modules subscribing to ktf services.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include "lib/ktf_run.h"
 #include "lib/debug.h"
-
-/* This program is a generic
- * user level application to run kernel tests
- * provided by modules subscribing to ktf services:
- */
 
 int main (int argc, char** argv)
 {

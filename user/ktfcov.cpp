@@ -1,3 +1,14 @@
+/*
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ *    Author: Alan Maguire <alan.maguire@oracle.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation.
+ *
+ * ktfcov.cpp:
+ *   User level application to enable/disable coverage of kernel modules.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,10 +18,6 @@
 #include "kernel/unlproto.h"
 
 using namespace std;
-
-/* This program is a generic
- * user level application to enable/disable coverage of kernel modules.
- */
 
 void
 usage(char *progname)

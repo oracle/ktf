@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ *    Author: Knut Omang <knut.omang@oracle.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation.
+ *
+ * kcheck.c: Kernel side code for tracking and reporting ktf test results
+ */
 #include <linux/module.h>
 #include <linux/time.h>
 #include "kcheck.h"

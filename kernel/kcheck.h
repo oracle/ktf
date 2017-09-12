@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2001, 2002, Arien Malec
- * Copyright (C) 2011-2017, Knut Omang, Oracle Inc.
+ * Copyright (C) 2011, 2017, Oracle and/or its affiliates.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
  *
  *
  * This file originates from check.h from the Check C unit test
- * framework, then adapted to build with the linux kernel.
+ * framework, adapted by Knut Omang to build with the linux kernel.
  */
 
 #ifndef KCHECK_H

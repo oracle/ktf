@@ -1,3 +1,14 @@
+/*
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ *    Author: Knut Omang <knut.omang@oracle.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation.
+ *
+ * unlproto.h: implements interfaces for user-kernel netlink interactions
+ *   for querying/running tests.
+ */
 #ifndef _KTF_UNLPROTO_H
 #define _KTF_UNLPROTO_H
 #ifdef __cplusplus

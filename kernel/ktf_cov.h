@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ *    Author: Alan Maguire <alan.maguire@oracle.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation.
+ *
+ * ktf_cov.h: Code coverage support interface for KTF.
+ */
 #include <linux/debugfs.h>
 #include <linux/module.h>
 #include <linux/kprobes.h>
