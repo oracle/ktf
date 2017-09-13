@@ -6,7 +6,7 @@
  * it under the terms of the GNU General Public License version 2
  * as published by the Free Software Foundation.
  *
- * ktest.cpp: Generic user level application to run kernel tests
+ * ktfrun.cpp: Generic user level application to run kernel tests
  *   provided by modules subscribing to ktf services.
  */
 #include <stdio.h>
@@ -16,7 +16,7 @@
 
 int main (int argc, char** argv)
 {
-  testing::GTEST_FLAG(output) = "xml:ktest.xml";
+  testing::GTEST_FLAG(output) = "xml:ktfrun.xml";
   testing::InitGoogleTest(&argc,argv);
 
   return RUN_ALL_TESTS();

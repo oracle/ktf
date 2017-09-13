@@ -15,12 +15,12 @@ the module that provides the test::
     insmod examples/hello.ko
 
 Now you should be able to run one or more of the tests by running the
-application ``ktest`` built in ``user/ktest``. You should be able to run
+application ``ktfrun`` built in ``user/ktfrun``. You should be able to run
 that application as an ordinary user::
 
-    ktest --gtest_list_tests
-    ktest --gtest_filter='*fail'
-    ktest --gtest_filter='*ok'
+    ktfrun --gtest_list_tests
+    ktfrun --gtest_filter='*fail'
+    ktfrun --gtest_filter='*ok'
 
 There are more examples in the examples directory. KTF also includes a
 ``selftest`` directory used to test/check the KTF implementation itself.

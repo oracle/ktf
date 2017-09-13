@@ -9,10 +9,10 @@ AM_CXXFLAGS = -I$(top_srcdir) $(LIBNL3_CFLAGS) \
 		-Wno-pointer-arith -Werror \
 		-D__FILENAME__=\"`basename $<`\"
 
-bin_PROGRAMS = ktest ktfcov
+bin_PROGRAMS = ktfrun ktfcov
 
 ## Simple kernel test runner sample program:
-ktest_SOURCES = ktest.cpp
-ktest_LDADD = -L$(top_builddir)/lib -lktf $(NETLINK_LIBS) $(GTEST_LIBS)
+ktfrun_SOURCES = ktfrun.cpp
+ktfrun_LDADD = -L$(top_builddir)/lib -lktf $(NETLINK_LIBS) $(GTEST_LIBS)
 ktfcov_SOURCES = ktfcov.cpp
 ktfcov_LDADD = -L$(top_builddir)/lib -lktf $(NETLINK_LIBS) $(GTEST_LIBS)
