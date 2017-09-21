@@ -87,7 +87,7 @@ functions.  In order to do so in KTF you need to:
       KTF_ENTRY_PROBE_RETURN(<return value>);
 
     - entry probes need to registered for use and de-registered when done via
-      KTF_[UN]REGISTER_ENTRY_PROBE(<kernel function name>).
+      KTF_[UN]REGISTER_ENTRY_PROBE(<kernel function name>, <handler function>).
 
 See example h4.c in examples/ for a simple case where we probe printk() and
 ensure it is called.
@@ -96,14 +96,15 @@ Sometimes is is also useful to check that an intermediate function is returning
 an expected value.  Return probes can be used to register/probe function
 return.  In order to probe function return:
 
-    - define a return probe point; i.e KTF_RETURN_PROBE(<kernel function>)
+    - define a return probe point; i.e
+      KTF_RETURN_PROBE(<kernel function>, <handler>)
 
     - within the body of the return probe the return value can be retrieved
       via KTF_RETURN_VALUE().  Type will obviously depend on the function
       probed so should be cast if dereferencing is required.
 
     - return probes need to be registered for use and unregistered when done
-      via KTF_[UN]REGISTER_RETURN_PROBE(<kernel function name>).
+      via KTF_[UN]REGISTER_RETURN_PROBE(<kernel function name>, <handler>).
 
 See example h4.c in examples/ for a simple case where we verify return value
 of printk().

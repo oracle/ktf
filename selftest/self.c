@@ -167,7 +167,7 @@ static void add_map_tests(void)
 static int probecount;
 static int proberet;
 
-KTF_ENTRY_PROBE(printk, int, const char *fmt, ...)
+KTF_ENTRY_PROBE(printk, printkhandler)
 {
 	probecount++;
 
@@ -177,11 +177,12 @@ KTF_ENTRY_PROBE(printk, int, const char *fmt, ...)
 TEST(selftest, probeentry)
 {
 	probecount = 0;
-	ASSERT_INT_EQ_GOTO(KTF_REGISTER_ENTRY_PROBE(printk), 0, done);
+	ASSERT_INT_EQ_GOTO(KTF_REGISTER_ENTRY_PROBE(printk, printkhandler),
+			   0, done);
 	printk(KERN_INFO "Testing kprobe entry...");
 	ASSERT_INT_GT_GOTO(probecount, 0, done);
 done:
-	KTF_UNREGISTER_ENTRY_PROBE(printk);
+	KTF_UNREGISTER_ENTRY_PROBE(printk, printkhandler);
 }
 
 noinline int probesum(int a, int b)
@@ -190,7 +191,7 @@ noinline int probesum(int a, int b)
 	return a + b;
 }
 
-KTF_RETURN_PROBE(probesum)
+KTF_RETURN_PROBE(probesum, probesumhandler)
 {
 	printk(KERN_INFO "probesum: return value before modifying %ld\n",
 	       regs_return_value(regs));
@@ -200,7 +201,7 @@ KTF_RETURN_PROBE(probesum)
 	return 0;
 }
 
-KTF_RETURN_PROBE(printk)
+KTF_RETURN_PROBE(printk, printkrethandler)
 {
 	proberet = KTF_RETURN_VALUE();
 
@@ -212,17 +213,19 @@ TEST(selftest, probereturn)
 	char *teststr = "Testing kprobe return...";
 
 	proberet = -1;
-	ASSERT_INT_EQ_GOTO(KTF_REGISTER_RETURN_PROBE(printk), 0, done);
+	ASSERT_INT_EQ_GOTO(KTF_REGISTER_RETURN_PROBE(printk, printkrethandler),
+			   0, done);
 	printk(KERN_INFO "%s", teststr);
 	ASSERT_INT_EQ_GOTO(proberet, strlen(teststr), done);
 
 	/* Now test modification of return value */
 	ASSERT_INT_EQ_GOTO(probesum(1, 1), 2, done);
-	ASSERT_INT_EQ_GOTO(KTF_REGISTER_RETURN_PROBE(probesum), 0, done);
+	ASSERT_INT_EQ_GOTO(KTF_REGISTER_RETURN_PROBE(probesum, probesumhandler),
+			   0, done);
 	ASSERT_INT_EQ_GOTO(probesum(1, 1), -1, done);
 done:
-	KTF_UNREGISTER_RETURN_PROBE(printk);
-	KTF_UNREGISTER_RETURN_PROBE(probesum);
+	KTF_UNREGISTER_RETURN_PROBE(printk, printkrethandler);
+	KTF_UNREGISTER_RETURN_PROBE(probesum, probesumhandler);
 }
 
 static void add_probe_tests(void)

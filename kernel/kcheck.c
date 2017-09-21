@@ -349,6 +349,8 @@ int ktf_cleanup(void)
 	struct ktf_test *t;
 	struct ktf_case *tc;
 
+	ktf_cov_cleanup();
+
 	/* Unloading of dependencies means we should have no testcases/tests. */
 	mutex_lock(&tc_lock);
 	ktf_for_each_testcase(tc) {
@@ -364,6 +366,5 @@ int ktf_cleanup(void)
 	}
 	ktf_debugfs_cleanup();
 	mutex_unlock(&tc_lock);
-	ktf_cov_cleanup();
 	return 0;
 }

@@ -26,19 +26,6 @@
 #include "ktf_map.h"
 #include "ktf_cov.h"
 
-/* x86_64 calling conventions specify rdi contains first argument for
- * kretprobes entry handlers.  We cannot use jprobes since we wish to
- * correlate entry/return, and the only way to do that is via kretprobes
- * data field.
- */
-#ifdef CONFIG_X86_64
-#define	regs_first_arg(regs)	(regs->di)
-#define	regs_second_arg(regs)	(regs->si)
-#else
-#define	regs_first_arg(regs)	(0)
-#define	regs_second_arg(regs)	(0)
-#endif /* CONFIG_X86_64 */
-
 /* It may seem odd that we use a refcnt field in ktf_cov_entry structures
  * in addition to using krefcount management via the ktf_map.  The reasoning
  * here is that if we enable and then disable coverage, we do not want to
@@ -62,7 +49,7 @@ static void ktf_cov_entry_free(struct ktf_map_elem *elem)
  * case it has an address and size; or it may be an object offset, in which
  * case k1's address will be the address with offset of size 0.  In both
  * cases for the -1 case we can simply check if k1's address is less than
- * k2's.  For the 1 case, we need to ensure that the address is >
+ * k2's.  For the 1 case, we need to ensure that the address is >=
  * k2's address and it's size, since this ensures the address does not
  * fall within the object bounds.  Finally we are left with the case
  * that k1.address >= k2.address _and_ it falls within the bounds of k2,
@@ -80,7 +67,7 @@ static int ktf_cov_obj_compare(const char *key1, const char *key2)
 
 	if (k1->address < k2->address)
 		return -1;
-	if (k1->address > (k2->address + k2->size))
+	if (k1->address >= (k2->address + k2->size))
 		return 1;
 	return 0;
 }
@@ -213,6 +200,9 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 	/* Check if we're already covered for this module/symbol. */
 	entry = ktf_cov_entry_find(addr, 0);
 	if (entry) {
+		DM(T_DEBUG,
+		   printk(KERN_INFO "%s already present in coverage: %s\n",
+		   name, entry->name));
 		ktf_cov_entry_put(entry);
 		return 0;
 	}
@@ -314,7 +304,7 @@ static int ktf_cov_kmalloc_entry_handler(struct kretprobe_instance *ri,
 	struct pt_regs *regs)
 {
 	struct ktf_cov_mem *m = (struct ktf_cov_mem *)ri->data;
-	unsigned long bytes = (unsigned long)regs_first_arg(regs);
+	unsigned long bytes = (unsigned long)KTF_ENTRY_PROBE_ARG0;
 
 	return ktf_cov_kmem_alloc_entry(m, bytes);
 }
@@ -322,7 +312,8 @@ static int ktf_cov_kmalloc_entry_handler(struct kretprobe_instance *ri,
 static int ktf_cov_kmem_cache_alloc_entry_handler(struct kretprobe_instance *ri,
 	struct pt_regs *regs)
 {
-	struct kmem_cache *cache = (struct kmem_cache *)regs_first_arg(regs);
+	struct kmem_cache *cache =
+		(struct kmem_cache *)KTF_ENTRY_PROBE_ARG0;
 	struct ktf_cov_mem *m = (struct ktf_cov_mem *)ri->data;
 	unsigned long bytes;
 
@@ -407,7 +398,7 @@ static int ktf_cov_kmem_free_entry(unsigned long tofree)
 static int ktf_cov_kfree_entry_handler(struct kretprobe_instance *ri,
 	struct pt_regs *regs)
 {
-	unsigned long tofree = (unsigned long)regs_first_arg(regs);
+	unsigned long tofree = (unsigned long)KTF_ENTRY_PROBE_ARG0;
 
 	if (!tofree)
 		return 0;
@@ -418,8 +409,9 @@ static int ktf_cov_kfree_entry_handler(struct kretprobe_instance *ri,
 static int ktf_cov_kmem_cache_free_entry_handler(struct kretprobe_instance *ri,
 	struct pt_regs *regs)
 {
-	struct kmem_cache *cache = (struct kmem_cache *)regs_first_arg(regs);
-	unsigned long tofree = (unsigned long)regs_second_arg(regs);
+	struct kmem_cache *cache =
+		(struct kmem_cache *)KTF_ENTRY_PROBE_ARG0;
+	unsigned long tofree = (unsigned long)KTF_ENTRY_PROBE_ARG1;
 
 	if (!tofree || cache == cov_mem_cache)
 		return 0;

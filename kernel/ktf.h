@@ -51,54 +51,76 @@ extern struct ktf_handle __test_handle;
 #define KTF_CONTEXT_GET(name, type) \
 	container_of(KTF_CONTEXT_FIND(name), type, k)
 
-/* KTF support for entry probes (via kprobes jprobes) */
-#define KTF_ENTRY_PROBE(func, ret, ...) \
-	static ret ktf_entry_##func(__VA_ARGS__); \
-	static struct jprobe __ktf_entry_##func = { \
-		.entry = ktf_entry_##func, \
+/* KTF support for entry/return probes (via kprobes kretprobes).  We use
+ * kretprobes as they support entry/return and do not induce panics when
+ * mixed with gkdb usage.
+ */
+
+/* Entry/return probe - type is handler type (entry_handler for entry,
+ * handler for return), func is function to be probed; probehandler is name
+ * of probe handling function we will invoke on entry/return.
+ */
+#define KTF_PROBE(type, func, probehandler) \
+	static int probehandler(struct kretprobe_instance *, struct pt_regs *);\
+	static struct kretprobe __ktf_##type##_##probehandler = { \
+		.type = probehandler, \
+		.data_size = 0, \
+		.maxactive = 0, \
 		.kp = { \
 			.symbol_name    = #func, \
 		}, \
 	}; \
-	static ret ktf_entry_##func(__VA_ARGS__)
+	static int probehandler(struct kretprobe_instance *ri, \
+				struct pt_regs *regs)
 
-#define KTF_REGISTER_ENTRY_PROBE(func) \
-	register_jprobe(&__ktf_entry_##func)
+#define KTF_REGISTER_PROBE(type, func, probehandler) \
+	register_kretprobe(&__ktf_##type##_##probehandler)
 
-/* Note on the complexity below - to re-use a statically-defined jprobe for
- * registration, we need to clean up state in the struct jprobe.  Hence
- * we zero out the jprobe and re-set the symbol name/entry.  Not doing
- * this means that re-registering fails with -EINVAL.  Same process below
- * for unregistering return probes.
+/* Note on the complexity below - to re-use a statically-defined kretprobe for
+ * registration, we need to clean up state in the struct kretprobe.  Hence
+ * we zero out the kretprobe and re-set the symbol name/handler.  Not doing
+ * this means that re-registering fails with -EINVAL.
  */
-#define KTF_UNREGISTER_ENTRY_PROBE(func) \
+#define KTF_UNREGISTER_PROBE(type, func, probehandler) \
 	do { \
-		unregister_jprobe(&__ktf_entry_##func); \
-		memset(&__ktf_entry_##func, 0, sizeof(struct jprobe)); \
-		__ktf_entry_##func.kp.symbol_name = #func; \
-		__ktf_entry_##func.entry = ktf_entry_##func; \
+		unregister_kretprobe(&__ktf_##type##_##probehandler); \
+		memset(&__ktf_##type##_##probehandler, 0, \
+		       sizeof(struct kretprobe)); \
+		__ktf_##type##_##probehandler.kp.symbol_name = #func; \
+		__ktf_##type##_##probehandler.type = probehandler; \
 	} while (0)
 
-/* all return points in jprobe need to call jprobe_return() */
+#define KTF_ENTRY_PROBE(func, probehandler)     \
+	KTF_PROBE(entry_handler, func, probehandler)
+
+#define KTF_REGISTER_ENTRY_PROBE(func, probehandler) \
+	KTF_REGISTER_PROBE(entry_handler, func, probehandler)
+
+/* x86_64 calling conventions specify rdi/rsi contains first/second arguments
+ * kretprobes entry handlers.  Define more if needed.
+ */
+#ifdef CONFIG_X86_64
+#define	KTF_ENTRY_PROBE_ARG0		(regs->di)
+#define	KTF_ENTRY_PROBE_ARG1		(regs->si)
+#else
+#define	KTF_ENTRY_PROBE_ARG0		(0)
+#define	KTF_ENTRY_PROBE_ARG1		(0)
+#endif /* CONFIG_X86_64 */
+
 #define KTF_ENTRY_PROBE_RETURN(retval) \
 	do { \
-		jprobe_return(); \
 		return retval; \
 	} while (0)
 
+#define	KTF_UNREGISTER_ENTRY_PROBE(func, probehandler) \
+	KTF_UNREGISTER_PROBE(entry_handler, func, probehandler)
+
 /* KTF support for return probes (via kprobes kretprobes) */
-#define KTF_RETURN_PROBE(func) \
-	static int ktf_return_##func(struct kretprobe_instance *, \
-				     struct pt_regs *); \
-	static struct kretprobe __ktf_return_##func = { \
-		.handler        = ktf_return_##func, \
-		.data_size      = 0, \
-		.kp = { \
-			.symbol_name    = #func, \
-		}, \
-	}; \
-	static int ktf_return_##func(struct kretprobe_instance *ri, \
-				     struct pt_regs *regs)
+#define	KTF_RETURN_PROBE(func, probehandler)	\
+	KTF_PROBE(handler, func, probehandler)
+
+#define	KTF_REGISTER_RETURN_PROBE(func, probehandler) \
+	KTF_REGISTER_PROBE(handler, func, probehandler)
 
 /* KTF_*RETURN_VALUE() definitions for use within KTF_RETURN_PROBE() {} only. */
 
@@ -110,16 +132,8 @@ extern struct ktf_handle __test_handle;
 #define KTF_SET_RETURN_VALUE(value)     do { } while (0)
 #endif /* CONFIG_X86_64 */
 
-#define KTF_REGISTER_RETURN_PROBE(func) \
-	register_kretprobe(&__ktf_return_##func)
-
-#define KTF_UNREGISTER_RETURN_PROBE(func) \
-	do { \
-		unregister_kretprobe(&__ktf_return_##func); \
-		memset(&__ktf_return_##func, 0, sizeof(struct kretprobe)); \
-		__ktf_return_##func.kp.symbol_name = #func; \
-		__ktf_return_##func.handler = ktf_return_##func; \
-	} while (0)
+#define KTF_UNREGISTER_RETURN_PROBE(func, probehandler) \
+	KTF_UNREGISTER_PROBE(handler, func, probehandler)
 
 /**
  * ASSERT_TRUE() - fail and return if @C evaluates to false
