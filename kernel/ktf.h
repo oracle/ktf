@@ -38,6 +38,7 @@ struct ktf_context *ktf_find_first_context(struct ktf_handle *handle);
 struct ktf_context *ktf_find_next_context(struct ktf_context* ctx);
 void ktf_context_remove(struct ktf_context *ctx);
 size_t ktf_has_contexts(struct ktf_handle *handle);
+void ktf_context_remove_all(struct ktf_handle *handle);
 
 /* Declare the implicit __test_handle as extern for .c files that use it
  * when adding tests with ADD_TEST but where definition is in another .c file:

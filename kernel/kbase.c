@@ -50,6 +50,7 @@ int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx, const ch
 		ctx->handle = handle;
 		if (ktf_map_size(&handle->ctx_map) == 1) {
 			handle->id = ++ktf_context_maxid;
+			INIT_LIST_HEAD(&handle->handle_list);
 			list_add(&handle->handle_list, &context_handles);
 		}
 	}
@@ -64,10 +65,10 @@ const char *ktf_context_name(struct ktf_context *ctx)
 }
 EXPORT_SYMBOL(ktf_context_name);
 
-void ktf_context_remove(struct ktf_context *ctx)
+static void __ktf_context_remove(struct ktf_context *ctx, bool locked)
 {
-	unsigned long flags;
 	struct ktf_handle *handle;
+	unsigned long flags = 0;
 
 	if (!ctx) {
 		tlog(T_ERROR, "A test case tried to remove an invalid context!");
@@ -76,16 +77,25 @@ void ktf_context_remove(struct ktf_context *ctx)
 	handle = ctx->handle;
 
 	/* ktf_find_context might be called from interrupt level */
-	spin_lock_irqsave(&context_lock,flags);
-	ktf_map_remove(&handle->ctx_map, ctx->elem.key);
+	if (!locked)
+		spin_lock_irqsave(&context_lock, flags);
 
+	ktf_map_remove(&handle->ctx_map, ctx->elem.key);
 	if (!ktf_has_contexts(handle))
 		list_del(&handle->handle_list);
-	spin_unlock_irqrestore(&context_lock,flags);
+
+	if (!locked)
+		spin_unlock_irqrestore(&context_lock, flags);
 	DM(T_DEBUG,
 	   printk(KERN_INFO "ktf: removed context %s at %p\n",
 	   ctx->elem.key, ctx));
 }
+
+void ktf_context_remove(struct ktf_context *ctx)
+{
+	__ktf_context_remove(ctx, false);
+}
+
 EXPORT_SYMBOL(ktf_context_remove);
 
 struct ktf_context *ktf_find_first_context(struct ktf_handle *handle)
@@ -117,6 +127,47 @@ size_t ktf_has_contexts(struct ktf_handle *handle)
 	return ktf_map_size(&handle->ctx_map) > 0;
 }
 EXPORT_SYMBOL(ktf_has_contexts);
+
+void ktf_context_remove_all(struct ktf_handle *handle)
+{
+	struct ktf_context *curr, *next;
+	unsigned long flags;
+
+	if (!ktf_has_contexts(handle))
+		return;
+
+	spin_lock_irqsave(&context_lock, flags);
+
+	curr = ktf_find_first_context(handle);
+
+	while (curr) {
+		next = ktf_find_next_context(curr);
+		__ktf_context_remove(curr, true);
+		curr = next;
+	}
+	spin_unlock_irqrestore(&context_lock, flags);
+}
+EXPORT_SYMBOL(ktf_context_remove_all);
+
+void ktf_handle_cleanup_check(struct ktf_handle *handle)
+{
+	struct ktf_context *curr;
+	unsigned long flags;
+
+	if (!ktf_has_contexts(handle))
+		return;
+
+	spin_lock_irqsave(&context_lock, flags);
+
+	for (curr = ktf_find_first_context(handle);
+	     curr != NULL;
+	     curr = ktf_find_next_context(curr)) {
+		printk(KERN_WARNING "ktf: context %s found during handle %p cleanup\n",
+		       curr->elem.key, handle);
+	}
+	spin_unlock_irqrestore(&context_lock, flags);
+}
+EXPORT_SYMBOL(ktf_handle_cleanup_check);
 
 struct ktf_kernel_internals {
 	/* From module.h: Look up a module symbol - supports syntax module:name */

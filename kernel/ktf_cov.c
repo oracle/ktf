@@ -499,6 +499,57 @@ static void ktf_cov_cleanup_opts(struct ktf_cov *cov)
 	}
 }
 
+/* If the module we are monitoring coverage for was unloaded/reloaded
+ * while coverage was disabled, we can end up re-enabling kprobes at
+ * different addresses for the same function.  The problem is however
+ * we reference coverage entries by their address in the coverage
+ * entry map, so we need to clean it up to reflect the new locations
+ * of the probes.  So we remove/re-add the entries with the updated
+ * addresses.  It would obviously be easier to just remove the entries
+ * on coverage disable, but that limits our ability to examine coverage
+ * data - a common pattern is enable coverage, run test(s), disable
+ * coverage, check coverage data.
+ */
+static void ktf_cov_update_entries(const char *name, struct ktf_cov *cov)
+{
+	struct ktf_cov_entry *entry = ktf_map_first_entry(&cov_entry_map,
+							  struct ktf_cov_entry,
+							  kmap);
+
+	while (entry) {
+		if (entry->cov != cov ||
+		    (unsigned long)entry->kprobe.addr == entry->key.address) {
+			entry = ktf_map_next_entry(entry, kmap);
+			continue;
+		}
+
+		/* Address has changed; remove entry with old address as key
+		 * and re-add with new address/size as key (size may have
+		 * changed if module was re-compiled).
+		 */
+		ktf_map_remove_elem(&cov_entry_map, &entry->kmap);
+		entry->key.address = (unsigned long)entry->kprobe.addr;
+		entry->key.size = ktf_symbol_size(entry->key.address);
+		if (ktf_map_elem_init(&entry->kmap, (char *)&entry->key) < 0 ||
+		    ktf_map_insert(&cov_entry_map, &entry->kmap) < 0) {
+			DM(T_DEBUG,
+			   printk(KERN_INFO "Failed to add %s/%s\n",
+			   name, entry->name));
+			unregister_kprobe(&entry->kprobe);
+			entry->refcnt--;
+			entry = ktf_map_next_entry(entry, kmap);
+		} else {
+			DM(T_DEBUG,
+			   printk(KERN_INFO "Added %s/%s (%p, size %lu) to coverage\n",
+			   name, entry->name, (void *)entry->key.address,
+			   entry->key.size));
+			/* Map has changed, reset to root. */
+			entry = ktf_map_first_entry(&cov_entry_map,
+						    struct ktf_cov_entry, kmap);
+		}
+	}
+}
+
 int ktf_cov_enable(const char *name, unsigned int opts)
 {
 	struct ktf_cov *cov = ktf_cov_find(name);
@@ -527,17 +578,25 @@ int ktf_cov_enable(const char *name, unsigned int opts)
 			if (entry->cov != cov)
 				continue;
 			if (++entry->refcnt == 1) {
-				/* reset as we're re-registering */
-				entry->kprobe.addr = NULL;
+				/* reset kprobe as we're re-registering */
+				memset(&entry->kprobe, 0,
+				       sizeof(entry->kprobe));
+				entry->kprobe.pre_handler = ktf_cov_handler;
+				entry->kprobe.symbol_name = entry->name;
 				ret = register_kprobe(&entry->kprobe);
 				if (ret) {
 					DM(T_DEBUG,
 					   printk(KERN_INFO "Failed to add %s/%s\n",
 					   name, entry->name));
-					return ret;
+					entry->refcnt--;
 				}
 			}
 		}
+		/* Probe addresses/function sizes for functions may have
+		 * changed if module was unloaded/reloaded - entry map
+		 * needs to be updated to use new address/size as key.
+		 */
+		ktf_cov_update_entries(name, cov);
 	}
 
 
@@ -558,8 +617,12 @@ void ktf_cov_disable(const char *module)
 
 	ktf_map_for_each_entry(entry, &cov_entry_map, kmap) {
 		if (entry->cov == cov) {
-			if (--entry->refcnt == 0)
+			if (--entry->refcnt == 0) {
 				unregister_kprobe(&entry->kprobe);
+				DM(T_DEBUG,
+				   printk(KERN_INFO "Removed coverage %s/%s\n",
+				   cov->kmap.key, entry->name));
+			}
 		}
 	}
 	ktf_cov_cleanup_opts(cov);

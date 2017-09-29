@@ -253,6 +253,7 @@ TEST(selftest, cov)
 	struct ktf_cov_mem *m;
 	char *p1 = NULL, *p2 = NULL, *p3 = NULL, *p4 = NULL;
 	struct kmem_cache *c = NULL;
+	int oldcount;
 
 	c = kmem_cache_create("selftest_cov_cache",
 			     32, 0,
@@ -264,11 +265,15 @@ TEST(selftest, cov)
 	    c, c->name, c->object_size);
 	ASSERT_INT_EQ(0, ktf_cov_enable((THIS_MODULE)->name, KTF_COV_OPT_MEM));
 
+	e = ktf_cov_entry_find((unsigned long)cov_counted, 0);
+	ASSERT_ADDR_NE_GOTO(e, NULL, done);
+	oldcount = e->count;
+	ktf_cov_entry_put(e);
 	cov_counted();
 	e = ktf_cov_entry_find((unsigned long)cov_counted, 0);
 	ASSERT_ADDR_NE_GOTO(e, NULL, done);
 	if (e) {
-		ASSERT_INT_EQ(e->count, 1);
+		ASSERT_INT_EQ(e->count, oldcount + 1);
 		ktf_cov_entry_put(e);
 	}
 
@@ -360,6 +365,8 @@ static int __init selftest_init(void)
 
 static void __exit selftest_exit(void)
 {
+	ktf_context_remove_all(&single_handle);
+	ktf_context_remove_all(&dual_handle);
 	KTF_HANDLE_CLEANUP(single_handle);
 	KTF_HANDLE_CLEANUP(dual_handle);
 	KTF_HANDLE_CLEANUP(no_handle);

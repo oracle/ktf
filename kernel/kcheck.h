@@ -201,7 +201,6 @@ void tcase_fn_start (const char *fname, const char *file, int line);
  */
 
 struct ktf_handle {
-	struct list_head test_list;   /* Linkage for the list of all tests assoc.with this handle */
 	struct list_head handle_list; /* Linkage for the global list of all handles with context */
 	struct ktf_map ctx_map;     /* a (possibly empty) map from name to context for this handle */
 	unsigned int id; 	      /* A unique nonzero ID for this handle, set iff contexts */
@@ -210,10 +209,10 @@ struct ktf_handle {
 };
 
 void _tcase_cleanup(struct ktf_handle *th);
+void ktf_handle_cleanup_check(struct ktf_handle *handle);
 
 #define KTF_HANDLE_INIT_VERSION(__test_handle, __version)	    \
 	struct ktf_handle __test_handle = { \
-		.test_list = LIST_HEAD_INIT(__test_handle.test_list), \
 		.handle_list = LIST_HEAD_INIT(__test_handle.handle_list), \
 		.ctx_map = __KTF_MAP_INITIALIZER(__test_handle, NULL, NULL), \
 		.id = 0, \
@@ -226,7 +225,11 @@ void _tcase_cleanup(struct ktf_handle *th);
 #define KTF_INIT() KTF_HANDLE_INIT(__test_handle)
 
 #define KTF_HANDLE_CLEANUP(__test_handle) \
-	_tcase_cleanup(&__test_handle)
+	do { \
+		ktf_handle_cleanup_check(&__test_handle); \
+		_tcase_cleanup(&__test_handle); \
+	} while (0)
+
 #define KTF_CLEANUP() KTF_HANDLE_CLEANUP(__test_handle)
 
 /* Start a unit test with TEST(suite_name,unit_name)
