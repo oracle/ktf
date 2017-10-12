@@ -49,8 +49,7 @@ abstractions provided by KTF:
 | TEST_F(s, f, n) {...}      | Define a test named 's.n' operating in fixture f	|
 +----------------------------+--------------------------------------------------+
 | KTF_ENTRY_PROBE            | Define function entry probe for function f with  |
-|  (f, h) {...}              | handler function h. Must be used at global level.
-|                            |
+|  (f, h) {...}              | handler function h. Must be used at global level.|
 +----------------------------+--------------------------------------------------+
 | KTF_ENTRY_PROBE_RETURN(r)  | Return from probed function with return value r. |
 |  			     | Must be called within KTF_ENTRY_PROBE().         |
@@ -63,7 +62,7 @@ abstractions provided by KTF:
 |  (f, h)		     | which used handler h.                            |
 +----------------------------+--------------------------------------------------+
 | KTF_RETURN_PROBE(f, h)     | Define function return probe for function f with |
-|  {..}			     | handler h.  Must be used at a global level.                  |
+|  {..}			     | handler h.  Must be used at a global level.      |
 +----------------------------+--------------------------------------------------+
 | KTF_RETURN_VALUE()         | Retrieve return value in body of return probe.   |
 +----------------------------+--------------------------------------------------+
