@@ -1,21 +1,41 @@
 4. Building and installing KTF
 ------------------------------
 
-To build KTF, clone the ktf project, then::
+KTF's user land side depends on googletest, which should be available via
+your package manager. On Redhat or Fedora it is available as ``gtest`` and ``gtest-devel``.
 
+To build KTF, cd to your source tree (let's assume ~/src for this) then clone the ktf project.
+
+	cd ~/src
+	<clone ktf>
 	cd ktf
 	autoreconf
 
-Create a build directory somewhere outside the source tree to allow the same KTF source tree to be used
-against multiple versions of the kernel. Assuming for simplicity that you
-want to build for the running kernel but you can build for any installed ``kernel-*-devel``::
+Create a build directory somewhere outside the source tree to allow the
+same KTF source tree to be used against multiple versions of the
+kernel. Assuming for simplicity that you want to build for the running
+kernel but you can build for any installed ``kernel-*-devel``::
 
-	cd <a dedicated build tree for this kernel>
-	mkdir build
-	cd build
-	~/<path_to_source_root>/ktf/configure KVER=`uname -r`
+	mkdir -p ~/build/`uname -r`
+	cd ~/build/`uname -r`
+	mkdir ktf
+	cd ktf
+	~/src/ktf/configure KVER=`uname -r`
 	make
+
+Optionally, ktf also supports ``make install`` and the ``--prefix`` configuration option to
+allow you to use a custom install directory. Kernel objects will be
+installed under ``kernel/``.
 
 Now you should have got a ``kernel/ktf.ko`` that works with your test kernel
 and modules for the ``examples`` and KTF ``selftest`` directories.
-You are ready to create your own test modules based on KTF!
+
+Setting up your own test suite based on KTF
+*******************************************
+You are now ready to create your own test modules based on KTF.
+KTF provides a script for setting up KTF based modules in a similar
+way as KTF, using the autotools measures implemented in KTF. The script
+assumes for simplicity that you want to have your source tree beside the
+ktf source::
+
+	~/src/ktf/scripts/ktfnew mysuite

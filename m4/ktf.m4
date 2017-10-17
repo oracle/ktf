@@ -7,8 +7,16 @@
 # as published by the Free Software Foundation.
 #
 #
-# Require ktest and its dependencies:
-# AM_LIB_KTEST
+# Dependent modules should make this file available in their m4 path
+# and call this from their configure.ac:
+#
+# Require ktf and its dependencies (setting up KTF):
+#
+# AM_LIB_KTF
+#
+# For each subdirectory where kernel test modules are located within the project, call:
+# AM_KTF_DIR([subdirectory])
+#
 #
 AC_DEFUN([AM_LIB_KTF],
 [
@@ -52,6 +60,12 @@ KTF_LIBS="-L$ktf_build/lib -lktf"
 AC_ARG_VAR([KTF_CFLAGS],[Include files options needed for C/C++ user space program clients])
 AC_ARG_VAR([KTF_LIBS],[Library options for tests accessing KTF functionality])
 
+AS_IF([ test x$KVER != x ],dnl
+	[AC_MSG_NOTICE(building against kernel version $KVER)],dnl
+	[AC_MSG_ERROR("Kernel version (KVER) not set")])
+
+AC_ARG_VAR([KVER],[Kernel version to use])
+
 ])
 
 AC_DEFUN([AM_CONFIG_KTF],
@@ -68,6 +82,7 @@ ktf_scripts="$srcdir/scripts"
 
 AC_SUBST([KTF_DIR],[$KTF_DIR])
 AC_SUBST([KTF_BDIR],[$KTF_BDIR])
+
 ])
 
 AC_DEFUN([AM_KTF_DIR],dnl Usage: AM_KTF_DIR([subdir]) where subdir contains kernel test defs

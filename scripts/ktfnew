@@ -1,0 +1,144 @@
+#!/usr/bin/python
+
+# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+#    Author: Knut Omang <knut.omang@oracle.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2
+# as published by the Free Software Foundation.
+
+import sys, os, shutil
+
+def usage():
+    print "Usage: %s [-p <path>] <projectname>" % sys.argv[0]
+    print "  - Initialize a new ktf based test project called <projectname>"
+    print "    Default is to populate a new directory called <projectname> in the same directory"
+    print "    as where the ktf source tree is placed, assuming we are called from the source"
+    exit(0)
+
+
+path_n = False
+usage_h = False
+my_argv = []
+path = None
+
+for arg in sys.argv[1:]:
+    if arg == "-h":
+        usage_h = True
+    elif arg == "-p":
+        path_n = True
+    elif path_n:
+        path = arg
+        path_n = False
+    else:
+        my_argv.append(arg)
+
+if len(my_argv) != 1 or usage_h:
+    usage()
+
+name = my_argv[0]
+ktf_scripts = os.path.dirname(sys.argv[0])
+ktf_root = os.path.realpath(ktf_scripts + "/..")
+src_root = os.path.realpath(ktf_scripts + "/../..")
+
+if path == None:
+    path = src_root
+target_root = "%s/%s" % (path, name)
+email = "myemail@example.com"
+
+print "Creating a new project under " + target_root
+
+try:
+    os.makedirs(target_root)
+except OSError as exc:
+    if exc.errno == os.errno.EEXIST:
+        print " ** Project path %s already exists - giving up! **" % target_root
+        exit(17)
+    else:
+        raise
+
+try:
+    os.makedirs("%s/m4" % target_root)
+    os.makedirs("%s/kernel" % target_root)
+    # Install ktf.m4 from the ktf source:
+    ktf_m4 = "%s/m4/ktf.m4"
+    shutil.copyfile(ktf_m4 % ktf_root, ktf_m4 % target_root)
+
+    # Create a minimal configure.ac
+    #
+    cfg_file = open("%s/configure.ac" % target_root, "w")
+    cfg_file.write('''# Process this file with autoconf to produce a configure script.\n
+# Prelude:\nAC_PREREQ([2.59])\nAC_INIT([%s], [0.1], [%s])\n
+# unique source file --- primitive safety check
+    AC_CONFIG_SRCDIR([kernel/%s.c])\n
+# place to put some extra build scripts installed
+AC_CONFIG_AUX_DIR([ac])\n
+# Look for/generate m4 files under top/m4
+AC_CONFIG_MACRO_DIR([m4])\n
+AM_INIT_AUTOMAKE([foreign -Wall -Werror])\n
+# Silent rules by default - use make V=1 for verbose
+AM_SILENT_RULES([yes])\n
+# Check for dependencies:
+AM_LIB_KTF\n
+# List directories containing ktf kernel module source:
+# (You can have more than one of these if you have modules in more than one directory:)
+AM_KTF_DIR([kernel])
+AC_CONFIG_FILES([Makefile
+		 kernel/Makefile
+])
+AC_OUTPUT
+''' % (name, email, name))
+    cfg_file.close()
+
+    # Create a minimal toplevel automake file:
+    am_file = open("%s/Makefile.am" % target_root, "w")
+    am_file.write('''## Process this file with automake to produce Makefile.in\n
+ACLOCAL_AMFLAGS= -I m4\n
+SUBDIRS = kernel
+''')
+    am_file.close()
+
+    # Create a kernel module Makefile input to autoconf as Makefile.in,
+    # assume a single module source file <projectname>.c :
+    mfile = open("%s/kernel/Makefile.in" % target_root, "w")
+    mfile.write('''
+KVER = @KVER@
+KTF_DIR = @KTF_DIR@
+KTF_BDIR = @KTF_BDIR@
+
+ccflags-y += -I$(KTF_DIR)
+
+obj-m := %s.o\n
+-include ktf_gen.mk\n
+KDIR   := /lib/modules/$(KVER)
+PWD    := $(shell pwd)\n
+EXTRASYMS := KBUILD_EXTRA_SYMBOLS="$(KTF_BDIR)/Module.symvers"\n
+module:
+	$(MAKE) -C $(KDIR)/build SUBDIRS=$(PWD) $(EXTRASYMS) modules\n
+clean:
+	$(MAKE) -C $(KDIR)/build M=$(PWD) clean\n
+check: all
+install: all
+''' % name)
+    mfile.close()
+
+    # Create a simple module template:
+    module = open("%s/kernel/%s.c" % (target_root, name), "w")
+    module.write('''
+#include <linux/module.h>\n#include "ktf.h"\n
+MODULE_LICENSE("GPL");\n
+KTF_INIT();\n
+TEST(simple, t1)\n{\n\tEXPECT_TRUE(true);\n}\n
+static void add_tests(void)\n{\n\tADD_TEST(t1);\n}\n
+static int __init %s_init(void)\n{\n\tadd_tests();\n\treturn 0;\n}
+static void __exit %s_exit(void)\n{\n\tKTF_CLEANUP();\n}\n
+module_init(%s_init);
+module_exit(%s_exit);
+''' % (name, name, name, name) )
+    module.close()
+
+    # Now run an intitial autoreconf to set things up:
+    os.system("(cd %s && autoreconf -i 2> /dev/null)" % target_root)
+except:
+    print " ** Error: ** "
+    raise

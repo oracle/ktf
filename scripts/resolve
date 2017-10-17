@@ -113,7 +113,7 @@ for arg in sys.argv[1:]:
 
 # Main program:
 
-if len(my_argv) != 2:
+if len(my_argv) != 2 or usage_h:
     usage()
 
 symfile = my_argv[0]
