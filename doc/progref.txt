@@ -77,6 +77,17 @@ abstractions provided by KTF:
 +----------------------------+--------------------------------------------------+
 | ktf_cov_disable(m)	     | Disable coverage analytics for module m.         |
 +----------------------------+--------------------------------------------------+
+| KTF_THREAD_INIT(name, t)   | Initialize thread name, struct ktf_thread * t.   |
++----------------------------+--------------------------------------------------+
+| KTF_THREAD_RUN(t)          | Run initialized struct ktf_thread *t.            |
++----------------------------+--------------------------------------------------+
+| KTF_THREAD_STOP(t)         | Stop thread via kthread_stop()                   |
++----------------------------+--------------------------------------------------+
+| KTF_THREAD_WAIT_STARTED(t) | Wait for start of struct ktf_thread *t.          |
++----------------------------+--------------------------------------------------+
+| KTF_THREAD_WAIT_COMPLETED  | Wait for completion of struct ktf_thread *t.     |
+|  (t)                       |                                                  |
++----------------------------+--------------------------------------------------+
 
 The ``KTF_INIT()`` macro must be called at a global level as it just
 defines a variable ``__test_handle`` which is referred to which existence

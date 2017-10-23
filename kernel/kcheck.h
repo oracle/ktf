@@ -89,6 +89,17 @@ struct ktf_case {
 	struct ktf_debugfs debugfs; /* debugfs handles for testset */
 };
 
+/* Used for tests that spawn kthreads to pass state.  We should probably
+ * look at passing data to tests like this to make things more extensible,
+ * but will defer for now as this would disrupt KTF consumers.
+ */
+struct ktf_test_state {
+	struct ktf_test *self;
+	struct ktf_context *ctx;
+	int iter;
+	u32 value;
+};
+
 void ktf_debugfs_create_test(struct ktf_test *);
 void ktf_debugfs_destroy_test(struct ktf_test *);
 void ktf_debugfs_create_testset(struct ktf_case *);

@@ -160,6 +160,13 @@ void flush_assert_cnt(struct ktf_test *self)
 	}
 }
 
+u32 ktf_get_assertion_count(void)
+{
+	return assert_cnt;
+}
+EXPORT_SYMBOL(ktf_get_assertion_count);
+
+DEFINE_SPINLOCK(assert_lock);
 
 long _fail_unless (struct ktf_test *self, int result, const char *file,
 			int line, const char *fmt, ...)
@@ -168,6 +175,10 @@ long _fail_unless (struct ktf_test *self, int result, const char *file,
 	va_list ap;
 	char *buf;
 	char bufprefix[256];
+	unsigned long flags;
+
+	/* Multiple threads may try to update log/count */
+	spin_lock_irqsave(&assert_lock, flags);
 
 	if (result)
 		assert_cnt++;
@@ -175,7 +186,7 @@ long _fail_unless (struct ktf_test *self, int result, const char *file,
 		flush_assert_cnt(self);
 		buf = (char*)kmalloc(MAX_PRINTF, GFP_KERNEL);
 		if (!buf)
-			return result;
+			goto out;
 		va_start(ap,fmt);
 		len = vsnprintf(buf,MAX_PRINTF-1,fmt,ap);
 		buf[len] = 0;
@@ -194,6 +205,8 @@ long _fail_unless (struct ktf_test *self, int result, const char *file,
 		(void) strncat(self->log, buf, KTF_MAX_LOG);
 		kfree(buf);
 	}
+out:
+	spin_unlock_irqrestore(&assert_lock, flags);
 	return result;
 }
 EXPORT_SYMBOL(_fail_unless);

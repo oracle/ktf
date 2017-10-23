@@ -152,3 +152,33 @@ ktfcov [-d module] [-e module [-m]]
 "-m" in combination with "-e" enables memory tracking for the module under
 test.
 
+Thread execution
+****************
+
+KTF provides easy mechanisms to create and use kernel threads.
+Assertions can then be carried out in the created thread context
+also.  Threads can be created as follows, and we can if we wish
+wait for thread completion:
+
+
+    TEST(foo, bar)
+    {
+        struct ktf_thread t;
+
+        ...
+        KTF_THREAD_INIT(mythread, &t);
+        KTF_THREAD_RUN(&t);
+        KTF_THREAD_WAIT_COMPLETED(&t);
+        ...
+    }
+
+The thread itself is defined as follows:
+
+    KTF_THREAD(mythread)
+    {
+        ...
+    }
+
+We can add assertions to the thread and they will be recorded/logged
+as part of the test.
+

@@ -13,6 +13,7 @@
 
 #include <linux/completion.h>
 #include <linux/kprobes.h>
+#include <linux/kthread.h>
 #include "kcheck.h"
 #include "ktf_map.h"
 #include "unlproto.h"
@@ -26,6 +27,18 @@ struct ktf_context {
 
 /* type for a test function */
 struct ktf_test;
+
+/* state of running test, used to pass to threads spawned by test. */
+struct ktf_test_state;
+
+struct ktf_thread {
+	int (*func)(void *);
+	const char *name;
+	struct task_struct *task;
+	struct ktf_test_state state;
+	struct completion started;
+	struct completion completed;
+};
 
 typedef void (*ktf_test_adder)(void);
 
@@ -135,6 +148,51 @@ extern struct ktf_handle __test_handle;
 
 #define KTF_UNREGISTER_RETURN_PROBE(func, probehandler) \
 	KTF_UNREGISTER_PROBE(handler, func, probehandler)
+
+/* Interfaces for creating kthreads in tests. */
+#define	KTF_THREAD_INIT(threadname, t) \
+	do { \
+		(t)->func = threadname; \
+		(t)->name = #threadname; \
+		(t)->state.self = self; \
+		(t)->state.ctx = ctx; \
+		(t)->state.iter = _i; \
+		(t)->state.value = _value; \
+		init_completion(&((t)->started)); \
+		init_completion(&((t)->completed)); \
+	} while (0)
+
+#define	KTF_THREAD_RUN(t) \
+	((t)->task = kthread_run((t)->func, t, (t)->name))
+
+#define KTF_THREAD_STOP(t) \
+	do { \
+		if ((t)->task) \
+			kthread_stop((t)->task); \
+	} while (0)
+
+/* Wraps thread execution to supply same variables as test case - this allows
+ * us to define assertions etc in thread context.
+ */
+#define	KTF_THREAD(name) \
+	static void __##name(struct ktf_thread *thread, struct ktf_test *self, \
+			     struct ktf_context *ctx, int _i, u32 _value); \
+	int name(void *data) \
+	{ \
+		struct ktf_thread *t = data; \
+		complete(&t->started); \
+		__##name(t, t->state.self, t->state.ctx, t->state.iter, \
+			 t->state.value); \
+		complete(&t->completed); \
+		return 0; \
+	} \
+	static void __##name(struct ktf_thread *_thread, struct ktf_test *self,\
+			     struct ktf_context *ctx, int _i, u32 _value)
+
+#define	KTF_THREAD_WAIT_STARTED(t)	(wait_for_completion(&((t)->started)))
+#define	KTF_THREAD_WAIT_COMPLETED(t)	(wait_for_completion(&((t)->completed)))
+
+u32 ktf_get_assertion_count(void);
 
 /**
  * ASSERT_TRUE() - fail and return if @C evaluates to false

@@ -339,6 +339,38 @@ static void add_cov_tests(void)
 	ADD_TEST(cov);
 }
 
+KTF_THREAD(test_thread)
+{
+	/* ensure assertions can work in thread context */
+	ASSERT_INT_EQ(1, 1);
+}
+
+#define NUM_TEST_THREADS 20
+
+struct ktf_thread test_threads[NUM_TEST_THREADS];
+
+TEST(selftest, thread)
+{
+	int assertions, i;
+
+	for (i = 0; i < NUM_TEST_THREADS; i++) {
+		KTF_THREAD_INIT(test_thread, &test_threads[i]);
+		KTF_THREAD_RUN(&test_threads[i]);
+	}
+	for (i = 0; i < NUM_TEST_THREADS; i++)
+		KTF_THREAD_WAIT_COMPLETED(&test_threads[i]);
+
+	assertions = (int)ktf_get_assertion_count();
+
+	/* Verify assertion in thread */
+	ASSERT_INT_EQ(assertions, NUM_TEST_THREADS);
+}
+
+static void add_thread_tests(void)
+{
+	ADD_TEST(thread);
+}
+
 static int __init selftest_init(void)
 {
 	int ret = ktf_context_add(&dual_handle, &s_mctx[0].k, "map1");
@@ -359,6 +391,7 @@ static int __init selftest_init(void)
 	add_map_tests();
 	add_probe_tests();
 	add_cov_tests();
+	add_thread_tests();
 	tlog(T_INFO, "selftest: loaded\n");
 	return 0;
 }
