@@ -79,13 +79,13 @@ abstractions provided by KTF:
 +----------------------------+--------------------------------------------------+
 | KTF_THREAD_INIT(name, t)   | Initialize thread name, struct ktf_thread * t.   |
 +----------------------------+--------------------------------------------------+
-| KTF_THREAD_RUN(t)          | Run initialized struct ktf_thread *t.            |
+| KTF_THREAD_RUN(t)          | Run initialized struct ktf_thread * t.           |
 +----------------------------+--------------------------------------------------+
 | KTF_THREAD_STOP(t)         | Stop thread via kthread_stop()                   |
 +----------------------------+--------------------------------------------------+
-| KTF_THREAD_WAIT_STARTED(t) | Wait for start of struct ktf_thread *t.          |
+| KTF_THREAD_WAIT_STARTED(t) | Wait for start of struct ktf_thread * t.         |
 +----------------------------+--------------------------------------------------+
-| KTF_THREAD_WAIT_COMPLETED  | Wait for completion of struct ktf_thread *t.     |
+| KTF_THREAD_WAIT_COMPLETED  | Wait for completion of struct ktf_thread * t.    |
 |  (t)                       |                                                  |
 +----------------------------+--------------------------------------------------+
 

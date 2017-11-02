@@ -6,28 +6,28 @@ Running tests, examining results via debugfs
 
 We provide debugfs interfaces for examining the results of the
 last test run and for running tests which do not require configuration
-specification.  ktf testsets can be run via:
+specification.  ktf testsets can be run via::
 
-cat /sys/kernel/debug/ktf/run/<testset>
+    cat /sys/kernel/debug/ktf/run/<testset>
 
-Individual tests can be run via
+Individual tests can be run via::
 
-cat /sys/kernel/debug/ktf/run/<testset>-tests/<test>
+    cat /sys/kernel/debug/ktf/run/<testset>-tests/<test>
 
-Results can be displayed for the last run via
+Results can be displayed for the last run via::
 
-cat /sys/kernel/debug/ktf/results/<testset>
+    cat /sys/kernel/debug/ktf/results/<testset>
 
-Individual tests can be run via
+Individual tests can be run via::
 
-cat /sys/kernel/debug/ktf/results/<testset>-tests/<test>
+    cat /sys/kernel/debug/ktf/results/<testset>-tests/<test>
 
 These interfaces eliminate the use of the netlink socket API
 and provide a simple way to keep track of test failures.  It can
 be useful to log into a machine and examine what tests were run
-without having console history available, and in particular:
+without having console history available, and in particular::
 
-cat /sys/kernel/debug/ktf/run/*
+    cat /sys/kernel/debug/ktf/run/*
 
 ...is a useful way of running all KTF tests.
 
@@ -144,9 +144,9 @@ leaks etc.  If memory tracking is enabled, /sys/kernel/debug/ktf/coverage
 will show outstanding allocations - the stack at allocation time; the
 memory address and size.
 
-Coverage can be enabled via the "ktfcov" utility.  Syntax is as follows:
+Coverage can be enabled via the "ktfcov" utility.  Syntax is as follows::
 
-ktfcov [-d module] [-e module [-m]]
+    ktfcov [-d module] [-e module [-m]]
 
 "-e" enables coverage for the specified module; "-d" disables coverage.
 "-m" in combination with "-e" enables memory tracking for the module under
