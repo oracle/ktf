@@ -47,7 +47,6 @@ else
 	LIBS+=" $NETLINK_LIBS"
 fi
 
-
 AS_IF([ test x$KVER != x ],dnl
    	[AC_MSG_NOTICE("building against kernel version $KVER")],dnl
     	[AC_MSG_ERROR("Kernel version (KVER) not set")])

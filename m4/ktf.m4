@@ -54,8 +54,19 @@ AS_IF([test -f $ktf_build/config.log],
 AC_SUBST([KTF_DIR],[$ktf_dir])
 AC_SUBST([KTF_BDIR],[$ktf_bdir])
 
+PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.1, [have_libnl3=yes],[ dnl
+  have_libnl3=no
+  PKG_CHECK_MODULES([NETLINK], [libnl-1 >= 1.1])
+])
+
+if (test "${have_libnl3}" = "yes"); then
+        NETLINK_CFLAGS+=" $LIBNL3_CFLAGS"
+        NETLINK_LIBS+=" $LIBNL3_LIBS -lnl-genl-3"
+	AC_DEFINE([HAVE_LIBNL3], 1, [Using netlink v.3])
+fi
+
 KTF_CFLAGS="-I$ktf_src/lib"
-KTF_LIBS="-L$ktf_build/lib -lktf"
+KTF_LIBS="-L$ktf_build/lib -lktf $NETLINK_LIBS"
 
 AC_ARG_VAR([KTF_CFLAGS],[Include files options needed for C/C++ user space program clients])
 AC_ARG_VAR([KTF_LIBS],[Library options for tests accessing KTF functionality])

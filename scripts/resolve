@@ -51,7 +51,7 @@ class Module:
                 return header
             except:
                 continue
-        print " ** unable to open \"%s\"" % filename
+        sys.stderr.write(" ** unable to open \"%s\"\n" % filename)
         return None
 
     # Parse the relevant header files for function defs:
@@ -59,6 +59,8 @@ class Module:
         for hf in self.symbols.keys():
             print "** Parsing %s:" % hf
             header = self.Open(hf)
+            if header == None:
+                return
             content = header.read()
             symbols = self.symbols[hf]
             types = r"(extern|u8|u16|u32|u64|int|long|size_t|off_t|loff_t|void|struct|union\s)(.*[\*\s]"
