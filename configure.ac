@@ -19,6 +19,12 @@ AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 # Silent rules by default - use make V=1 for verbose
 AM_SILENT_RULES([yes])
 
+
+#  temporary measure to see if running make sequentially will eliminate some
+#  spurious build errors:
+#  NB! this comment is interpreted by sifbuild, keep as is:
+# Sequential make
+
 # Checks for programs.
 AC_PROG_CXX
 AM_PROG_CC_C_O
