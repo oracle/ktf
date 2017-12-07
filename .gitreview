@@ -1,0 +1,5 @@
+[gerrit]
+host=review.no.oracle.com
+port=29418
+project=ktf.git
+defaultbranch=master
