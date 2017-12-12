@@ -188,14 +188,17 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 	if (!mod || !cov)
 		return 0;
 
+	if (!try_module_get(mod))
+		return 0;
+
 	/* We only care about symbols for cov-specified module. */
 	if (strcmp(mod->name, cov->kmap.key))
-		return 0;
+		goto out;
 
 	/* We don't probe ourselves and functions called within probe ctxt. */
 	if (strncmp(name, "ktf_cov", strlen("ktf_cov")) == 0 ||
 	    strcmp(name, "ktf_map_find") == 0)
-		return 0;
+		goto out;
 
 	/* Check if we're already covered for this module/symbol. */
 	entry = ktf_cov_entry_find(addr, 0);
@@ -204,7 +207,7 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 		   printk(KERN_INFO "%s already present in coverage: %s\n",
 		   name, entry->name));
 		ktf_cov_entry_put(entry);
-		return 0;
+		goto out;
 	}
 	entry = kzalloc(sizeof(struct ktf_cov_entry), GFP_KERNEL);
 	(void) strlcpy(entry->name, name, sizeof(entry->name));
@@ -221,7 +224,7 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 	if (register_kprobe(&entry->kprobe) < 0) {
 		/* not a probe-able function */
 		kfree(entry);
-		return 0;
+		goto out;
 	}
 	entry->key.address = addr;
 	entry->key.size = ktf_symbol_size(addr);
@@ -230,7 +233,7 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 	    ktf_map_insert(&cov_entry_map, &entry->kmap) < 0) {
 		unregister_kprobe(&entry->kprobe);
 		kfree(entry);
-		return 0;
+		goto out;
 	}
 	DM(T_DEBUG,
 	   printk(KERN_INFO "Added %s/%s (%p, size %lu) to coverage: %s",
@@ -240,6 +243,8 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 	cov->total++;
 	ktf_cov_entry_put(entry);
 
+out:
+	module_put(mod);
 	return 0;
 }
 
