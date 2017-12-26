@@ -55,6 +55,6 @@ their code.
 
 ## User Documentation
 
-See https://github.com/knuto/ktf/tree/master/doc
+See [./doc](./doc)
 
 
