@@ -60,7 +60,6 @@ public:
 private:
   utest::KernelTest* ukt;
   std::string ctx;
-  friend void gtest_init();
 
   static int AddToRegistry();
   static int gtest_registering_dummy_;

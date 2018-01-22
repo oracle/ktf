@@ -17,8 +17,6 @@
 namespace utest
 {
   void gtest_handle_test(int result,  const char* file, int line, const char* report);
-
-  void gtest_init();
 }
 
 #endif
