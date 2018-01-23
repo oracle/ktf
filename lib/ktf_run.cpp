@@ -93,7 +93,8 @@ class KernelMetaFactory : public ::testing::internal::TestMetaFactory<Kernel>
 public:
   virtual ::testing::internal::TestFactoryBase* CreateTestFactory(ParamType parameter) {
     TFactory* tf;
-    tf = new TFactory(get_current_setname(), parameter.c_str());
+    std::string setname = get_current_setname();
+    tf = new TFactory(setname, parameter.c_str());
     return tf;
   }
 };

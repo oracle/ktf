@@ -153,11 +153,12 @@ testset& KernelTestMgr::find_add_set(std::string& setname)
     new_set = true;
   }
 
+  /* This implicitly adds a new testset to sets, if it's not there: */
   testset& ts = sets[setname];
   if (new_set)
   {
     ts.setnum = next_set++;
-    log(KTF_INFO, "added %s (set %d)\n", setname.c_str(), ts.setnum);
+    log(KTF_INFO, "added %s (set %d) total %lu sets\n", setname.c_str(), ts.setnum, sets.size());
   }
   return ts;
 }
@@ -226,15 +227,21 @@ void KernelTestMgr::add_wrapper(const std::string setname, const std::string tes
 {
   log(KTF_DEBUG, "add_wrapper: %s.%s\n", setname.c_str(),testname.c_str());
   testset& ts = sets[setname];
+
   /* Depending on C++ initialization order which vary between compiler version
    * (sigh!) either the kernel tests have already been processed or we have to store
    * this object in wrapper for later insertion:
    */
   KernelTest *kt = ts.tests[testname];
-  if (kt)
+  if (kt) {
+    log(KTF_DEBUG_V, "Assigning user_test for %s.%s\n",
+	setname.c_str(), testname.c_str());
     kt->user_test = tcb;
-  else
+  } else {
+    log(KTF_DEBUG_V, "Set wrapper for %s.%s\n",
+	setname.c_str(), testname.c_str());
     ts.wrapper[testname] = tcb;
+  }
 }
 
 stringvec KernelTestMgr::get_test_names()
@@ -244,13 +251,23 @@ stringvec KernelTestMgr::get_test_names()
     cur->it = sets.begin();
   }
 
+  /* Filter out any combined tests that do not have a kernel counterpart loaded */
+  while (cur->it->second.wrapper.size() != 0 && cur->it != sets.end()) {
+    if (cur->it->second.test_names.size() == 0)
+      log(KTF_INFO, "Note: Skipping test suite %s which has combined tests with no kernel counterpart\n",
+	  cur->it->first.c_str());
+    ++(cur->it);
+  }
+
   if (cur->it == sets.end()) {
     delete cur;
     cur = NULL;
     return stringvec();
   }
+
   stringvec& v = cur->it->second.test_names;
   cur->setname = cur->it->first;
+
   ++(cur->it);
   return v;
 }
@@ -316,8 +333,15 @@ int set_coverage(std::string module, unsigned int opts, bool enabled)
   testnum = ts.tests.size();
 
   wrappermap::iterator hit = ts.wrapper.find(testname);
-  if (hit != ts.wrapper.end())
+  if (hit != ts.wrapper.end()) {
+    log(KTF_DEBUG_V, "Assigning user_test from wrapper for %s.%s\n",
+	setname.c_str(), testname.c_str());
     user_test = hit->second;
+    /* Clear out wrapper entry as we skip any test sets
+     * with nonempty wrapper lists during test execution:
+     */
+    ts.wrapper.erase(hit);
+  }
 }
 
 
