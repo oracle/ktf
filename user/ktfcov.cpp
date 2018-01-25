@@ -13,9 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "lib/ktf_run.h"
-#include "lib/debug.h"
-#include "kernel/unlproto.h"
+#include "ktf.h"
+#include "../kernel/unlproto.h"
 
 using namespace std;
 
@@ -67,5 +66,5 @@ int main (int argc, char** argv)
 	usage(argv[0]);
 	return -1;
   }
-  return utest::set_coverage(modname, cov_opts, enable);
+  return ktf::set_coverage(modname, cov_opts, enable);
 }

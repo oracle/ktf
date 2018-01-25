@@ -2,18 +2,18 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CFLAGS = -I$(top_srcdir) $(LIBNL3_CFLAGS) -Wall -Werror -Wno-packed-bitfield-compat -D_GNU_SOURCE
-AM_CXXFLAGS = -I$(top_srcdir) $(LIBNL3_CFLAGS) \
+AM_CFLAGS = -I$(top_srcdir) $(NETLINK_CFLAGS) -Wall -Werror -Wno-packed-bitfield-compat -D_GNU_SOURCE
+AM_CXXFLAGS = -I$(top_srcdir) $(NETLINK_CFLAGS) \
 		-Wall \
 		-Wno-packed-bitfield-compat \
 		-Wno-pointer-arith -Werror \
 		-D__FILENAME__=\"`basename $<`\"
 
 lib_LTLIBRARIES = libktf.la
-libktf_la_SOURCES = utest.cpp ktf_run.cpp unlproto.c debug.cpp
+libktf_la_SOURCES = ktf_int.cpp ktf_run.cpp unlproto.c ktf_debug.cpp
 
 libktf_includedir = $(includedir)
-libktf_include_HEADERS = ktf_run.h utest.h
+libktf_include_HEADERS = ktf_debug.h ktf_int.h ktf.h
 
 ## Extra header files for the kernel side:
 

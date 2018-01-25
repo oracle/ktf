@@ -81,7 +81,7 @@ static int ktf_debugfs_run(struct seq_file *seq, void *v)
 	if (!t)
 		return (0);
 
-	ktf_run_hook(NULL, NULL, t, 0);
+	ktf_run_hook(NULL, NULL, t, 0, NULL, 0);
 	ktf_debugfs_print_result(seq, t);
 
 	return (0);
@@ -98,7 +98,7 @@ static int ktf_debugfs_run_all(struct seq_file *seq, void *v)
 
 	seq_printf(seq, "Running %s\n", ktf_case_name(testset));
 	ktf_testcase_for_each_test(t, testset) {
-		ktf_run_hook(NULL, NULL, t, 0);
+		ktf_run_hook(NULL, NULL, t, 0, NULL, 0);
 		ktf_debugfs_print_result(seq, t);
 	}
 

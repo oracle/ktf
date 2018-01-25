@@ -4,7 +4,7 @@
 KTF's user land side depends on googletest, which should be available via
 your package manager. On Redhat or Fedora it is available as ``gtest`` and ``gtest-devel``.
 
-To build KTF, cd to your source tree (let's assume ~/src for this) then clone the ktf project.
+To build KTF, cd to your source tree (let's assume ~/src for this) then clone the ktf project::
 
 	cd ~/src
 	<clone ktf>

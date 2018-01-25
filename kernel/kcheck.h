@@ -78,6 +78,8 @@ struct ktf_test {
 	int end;   /* Defines number of iterations */
 	struct sk_buff *skb; /* sk_buff for recording assertion results */
 	char *log; /* per-test log */
+	void *data; /* Test specific out-of-band data */
+	size_t data_sz; /* Size of the data element, if set */
 	struct timespec lastrun; /* last time test was run */
 	struct ktf_debugfs debugfs; /* debugfs info for test */
 	struct ktf_handle *handle; /* Handler for owning module */
@@ -119,7 +121,8 @@ void ktf_case_put(struct ktf_case *);
 int ktf_version_check(u64 version);
 
 void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
-		  struct ktf_test *t, u32 value);
+		struct ktf_test *t, u32 value,
+		void *oob_data, size_t oob_data_sz);
 void flush_assert_cnt(struct ktf_test *self);
 
 /* Representation of a test case (a group of tests) */

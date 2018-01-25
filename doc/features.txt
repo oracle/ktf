@@ -181,3 +181,77 @@ The thread itself is defined as follows::
 
 We can add assertions to the thread and they will be recorded/logged
 as part of the test.
+
+Hybrid tests
+************
+
+KTF also allows mixing of user and kernel side code in the same test.
+This is useful if one wants for instance to verify that user land operations
+has certain effects in the kernel, for instance verify that a parameter is
+transferred or handled correctly in the kernel.
+
+Hybrid tests are specified by writing a user mode test using the special
+``HTEST()`` macro instead of the normal ``TEST()`` macro. This macro takes
+Inside the macro, the special variable ``self`` can be used to refer to the
+test itself, and the macro ``KTF_USERDATA()`` can be used to get a pointer to
+an allocated instance of a test specific parameter struct. The user land test
+can then call the kernel side directly using ``ktf::run_kernel_test(self)` An
+optional context name can be specified as a second argument to the call if
+needed. This can be done any number of times during the user land test and
+each call will transmit the struct value out-of-band to the kernel side. To
+the kernel this appears as separate test calls, but the kernel side have the
+option of aggregating or otherwise maintain state for the duration of the
+test.
+
+Declare the data structure to use for user/kernel out-of-band communication
+in a header file that is included both by the user and the kernel side::
+
+    struct my_params
+    {
+	char expected[128];
+	unsigned long mode;
+    };
+
+The user land side of the test itself can then look like this::
+
+    HTEST(foo, hybrid)
+    {
+	KTF_USERDATA(self, my_params, data);
+
+	<normal gtest code>
+
+	strcpy(data->expected, "something");
+	data->mode = 0;
+        ktf::run_kernel_test(self);
+
+	strcpy(data->expected, "something_else");
+	ktf::run_kernel_test(self);
+
+	<normal gtest code>
+
+	...
+    }
+
+On the kernel side, a hybrid test is written as a normal kernel test using
+the ``TEST()`` macro, and the test must be added using ``ADD_TEST()`` as
+usual. Include the user land header file to know the data type of the
+out-of-band parameter block. Invoke the macro ``KTF_USERDATA()`` to get a
+size validated pointer to the user land provided data. If no data is
+available, the test will silently exit. This is by purpose - if the kernel
+test is executed from a test program that does not have the associated user
+land code, such as for instance ``ktfrun``, it will just appear as a test
+with no assertions in it, and not create any errors. If on the other hand the
+parameter block does not match in size, an assertion is thrown and the test
+exits::
+
+    TEST(foo, hybrid)
+    {
+	KTF_USERDATA(self, my_params, data);
+
+	...
+	if (strcmp(data->expected, "something") == 0)
+	   ...
+	   EXPECT( ... )
+
+ 	...
+    }

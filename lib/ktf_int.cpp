@@ -6,7 +6,8 @@
  * it under the terms of the GNU General Public License version 2
  * as published by the Free Software Foundation.
  *
- * utest.cpp: Gtest test management for kernel tests
+ * ktf_int.cpp: Implementation of Gtest user land test management
+ * for kernel and hybrid test functionality provided by KTF.
  */
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
@@ -16,11 +17,11 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include "utest.h"
 #include <map>
 #include <set>
 #include <string>
-#include "debug.h"
+#include "ktf_int.h"
+#include "ktf_debug.h"
 
 #ifdef HAVE_LIBNL3
 #include <netlink/version.h>
@@ -39,7 +40,7 @@ extern "C"
 
 int devcnt = 0;
 
-namespace utest
+namespace ktf
 {
 
 struct nl_sock* sock = NULL;
@@ -223,7 +224,8 @@ void KernelTestMgr::add_cset(unsigned int hid, stringvec& ctxs)
 
 
 /* Function for adding a wrapper user level test */
-void KernelTestMgr::add_wrapper(const std::string setname, const std::string testname, test_cb* tcb)
+void KernelTestMgr::add_wrapper(const std::string setname, const std::string testname,
+				test_cb* tcb)
 {
   log(KTF_DEBUG, "add_wrapper: %s.%s\n", setname.c_str(),testname.c_str());
   testset& ts = sets[setname];
@@ -243,6 +245,7 @@ void KernelTestMgr::add_wrapper(const std::string setname, const std::string tes
     ts.wrapper[testname] = tcb;
   }
 }
+
 
 stringvec KernelTestMgr::get_test_names()
 {
@@ -270,6 +273,17 @@ stringvec KernelTestMgr::get_test_names()
 
   ++(cur->it);
   return v;
+}
+
+
+void *get_priv(KernelTest *kt, size_t sz)
+{
+  return kt->get_priv(sz);
+}
+
+size_t get_priv_sz(KernelTest *kt)
+{
+  return kt->user_priv_sz;
 }
 
 int set_coverage(std::string module, unsigned int opts, bool enabled)
@@ -309,7 +323,8 @@ int set_coverage(std::string module, unsigned int opts, bool enabled)
     testname(tn),
     setnum(0),
     testnum(0),
-    value(0),
+    user_priv(NULL),
+    user_priv_sz(0),
     user_test(NULL),
     file(NULL),
     line(-1)
@@ -345,6 +360,21 @@ int set_coverage(std::string module, unsigned int opts, bool enabled)
 }
 
 
+KernelTest::~KernelTest()
+{
+  if (user_priv)
+    free(user_priv);
+}
+
+void* KernelTest::get_priv(size_t p_sz)
+{
+  if (!user_priv) {
+    user_priv = malloc(p_sz);
+    if (user_priv)
+      user_priv_sz = p_sz;
+  }
+  return user_priv;
+}
 
 static int parse_cb(struct nl_msg *msg, void *arg);
 static int debug_cb(struct nl_msg *msg, void *arg);
@@ -457,11 +487,11 @@ void run_test(KernelTest* kt, std::string& ctx)
   if (kt->user_test)
     kt->user_test->fun(kt);
   else
-    run_kernel_test(kt, ctx);
+    run(kt, ctx);
 }
 
-
-void run_kernel_test(KernelTest* kt, std::string& context)
+/* Run the kernel test */
+void run(KernelTest* kt, std::string context)
 {
   struct nl_msg *msg;
 
@@ -478,8 +508,10 @@ void run_kernel_test(KernelTest* kt, std::string& context)
 
   if (!context.empty())
     nla_put_string(msg, KTF_A_STR, context.c_str());
-  if (kt->value)
-    nla_put_u32(msg, KTF_A_STAT, kt->value);
+
+  /* Send any test specific out-of-band data */
+  if (kt->user_priv)
+    nla_put(msg, KTF_A_DATA, kt->user_priv_sz, kt->user_priv);
 
   // Send message over netlink socket
   nl_send_auto_complete(sock, msg);
@@ -498,7 +530,7 @@ void run_kernel_test(KernelTest* kt, std::string& context)
   // Wait for the answer and receive it
   nl_recvmsgs_default(sock);
 
-  log(KTF_DEBUG_V, "END   utest::run_kernel_test %s\n", kt->name.c_str());
+  log(KTF_DEBUG_V, "END   ktf::run_kernel_test %s\n", kt->name.c_str());
 }
 
 
@@ -704,4 +736,4 @@ static int debug_cb(struct nl_msg *msg, void *arg)
     return NL_OK;
 }
 
-} // end namespace utest
+} // end namespace ktf

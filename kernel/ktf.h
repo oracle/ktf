@@ -65,6 +65,17 @@ extern struct ktf_handle __test_handle;
 #define KTF_CONTEXT_GET(name, type) \
 	container_of(KTF_CONTEXT_FIND(name), type, k)
 
+/* Part of KTF support for hybrid tests: Safe get the out-of-band user data
+ * Silently return if no data (to avoid failing if a generic user program without
+ * specific support for the hybrid test is used)
+ * Fail if an object of an unecpected size is provided.
+ */
+#define KTF_USERDATA(__kt_ptr, __priv_datatype, __priv_data)			\
+	struct __priv_datatype *__priv_data = (struct __priv_datatype *)__kt_ptr->data; \
+	if (!__priv_data) return; \
+	ASSERT_LONG_EQ(__kt_ptr->data_sz, sizeof(struct __priv_datatype))
+
+
 /* KTF support for entry/return probes (via kprobes kretprobes).  We use
  * kretprobes as they support entry/return and do not induce panics when
  * mixed with gkdb usage.

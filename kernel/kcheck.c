@@ -278,14 +278,18 @@ void  _tcase_add_test (struct __test_desc td,
 EXPORT_SYMBOL(_tcase_add_test);
 
 void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
-		  struct ktf_test *t, u32 value)
+		struct ktf_test *t, u32 value,
+		void *oob_data, size_t oob_data_sz)
 {
 	int i;
 
 	t->log[0] = '\0';
 	t->skb = skb;
+	t->data = oob_data;
+	t->data_sz = oob_data_sz;
 	for (i = t->start; i < t->end; i++) {
-		/* No need to bump refcnt, this is just for debugging.  Nothing			 * should reference the testcase via the handle's current test
+		/* No need to bump refcnt, this is just for debugging.  Nothing
+		 * should reference the testcase via the handle's current test
 		 * pointer.
 		 */
 		t->handle->current_test = t;

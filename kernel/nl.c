@@ -221,7 +221,8 @@ resp_failure:
 
 
 static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
-			const char *setname, const char *testname, u32 value)
+			const char *setname, const char *testname,
+			u32 value, void *oob_data, size_t oob_data_sz)
 {
 	struct ktf_case* testset = ktf_case_find(setname);
 	struct ktf_test *t;
@@ -236,7 +237,7 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 	ktf_testcase_for_each_test(t, testset) {
 		if (t->fun && strcmp(t->name,testname) == 0) {
 			struct ktf_context *ctx = ktf_find_context(t->handle, ctxname);
-			ktf_run_hook(skb, ctx, t, value);
+			ktf_run_hook(skb, ctx, t, value, oob_data, oob_data_sz);
 		} else if (!t->fun)
 			DM(T_DEBUG, printk(KERN_INFO "** no function for test %s.%s **\n",
 						t->tclass,t->name));
@@ -249,17 +250,27 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 }
 
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0))
+static inline void *nla_memdup(const struct nlattr *src, gfp_t gfp)
+{
+	return kmemdup(nla_data(src), nla_len(src), gfp);
+}
+#endif
+
+
 static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 {
 	u32 value = 0;
 	struct sk_buff *resp_skb;
 	void *data;
 	int retval = 0;
-	struct nlattr *nest_attr;
+	struct nlattr *nest_attr, *data_attr;
 	char ctxname_store[KTF_MAX_NAME+1];
 	char *ctxname = ctxname_store;
 	char setname[KTF_MAX_NAME+1];
 	char testname[KTF_MAX_NAME+1];
+	void *oob_data = NULL;
+	size_t oob_data_sz = 0;
 
 	if (info->attrs[KTF_A_STR]) {
 		nla_strlcpy(ctxname, info->attrs[KTF_A_STR], KTF_MAX_NAME);
@@ -283,6 +294,13 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 		value = nla_get_u32(info->attrs[KTF_A_NUM]);
 	}
 
+	data_attr = info->attrs[KTF_A_DATA];
+	if (data_attr)	{
+		/* User space sends out-of-band data: */
+		oob_data = nla_memdup(data_attr, GFP_KERNEL);
+		oob_data_sz = nla_len(data_attr);
+	}
+
 	tlog(T_DEBUG, "ktf_run: Request for testset %s, test %s\n", setname, testname);
 
 	/* Start building a response */
@@ -299,7 +317,7 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 
 	nla_put_u32(resp_skb, KTF_A_TYPE, KTF_CT_RUN);
 	nest_attr = nla_nest_start(resp_skb, KTF_A_LIST);
-	retval = ktf_run_func(resp_skb, ctxname, setname, testname, value);
+	retval = ktf_run_func(resp_skb, ctxname, setname, testname, value, oob_data, oob_data_sz);
 	nla_nest_end(resp_skb, nest_attr);
 	nla_put_u32(resp_skb, KTF_A_STAT, retval);
 
@@ -313,6 +331,8 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 		printk(KERN_WARNING
 			"ktf_run: Failed to send reply for test %s.%s - value %d\n",
 			setname, testname, retval);
+	if (oob_data)
+		kfree(oob_data);
 put_fail:
 	/* Free buffer if failure */
 	if (retval)

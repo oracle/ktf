@@ -45,6 +45,7 @@ enum ktf_attr {
 	KTF_A_HLIST,  /* List of handles repr. as a LIST of contexts for a given HID */
 	KTF_A_MOD,    /* module for coverage analysis */
 	KTF_A_COVOPT, /* options for coverage analysis */
+	KTF_A_DATA,   /* Binary data used by a.o. hybrid tests */
 	KTF_A_MAX
 };
 
@@ -65,6 +66,7 @@ struct nla_policy ktf_gnl_policy[KTF_A_MAX] = {
 	[KTF_A_FILE]  = { .type = NLA_STRING },
 	[KTF_A_MOD]   = { .type = NLA_STRING },
 	[KTF_A_COVOPT] = { .type = NLA_U32 },
+	[KTF_A_DATA] = { .type = NLA_BINARY },
 };
 #endif
 

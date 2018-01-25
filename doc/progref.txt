@@ -9,7 +9,7 @@ KTF API Overview
 ****************
 
 For reference, the following table lists a few terms and classes of
-abstractions provided by KTF:
+abstractions provided by KTF. These are kernel side, if not otherwise noted:
 
 +----------------------------+--------------------------------------------------+
 | **Item**		     | **description** 				        |
@@ -87,6 +87,14 @@ abstractions provided by KTF:
 +----------------------------+--------------------------------------------------+
 | KTF_THREAD_WAIT_COMPLETED  | Wait for completion of struct ktf_thread * t.    |
 |  (t)                       |                                                  |
++----------------------------+--------------------------------------------------+
+| HTEST(s, n) { ... }        | Declares a hybrid test. A correspondingly named  |
+| (NB! User mode only!)      | test must be declared using TEST() from kernel   |
+|                            | space for the hybrid test to be executed.        |
++----------------------------+--------------------------------------------------+
+| KTF_USERDATA(self, type, d)| Declare/get a pointer to user/kernel aux.data    |
+| (NB! both kernel and       | for a test that declares such extra data. Used   |
+|  user space!)              | for hybrid tests.                                |
 +----------------------------+--------------------------------------------------+
 
 The ``KTF_INIT()`` macro must be called at a global level as it just

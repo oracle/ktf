@@ -11,8 +11,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include "lib/ktf_run.h"
-#include "lib/debug.h"
+#include <ktf.h>
 
 int main (int argc, char** argv)
 {

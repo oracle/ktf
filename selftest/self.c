@@ -16,6 +16,8 @@
 #include "ktf_cov.h"
 #include "ktf_syms.h"
 
+#include "hybrid.h"
+
 MODULE_LICENSE("GPL");
 
 struct map_test_ctx {
@@ -392,6 +394,7 @@ static int __init selftest_init(void)
 	add_probe_tests();
 	add_cov_tests();
 	add_thread_tests();
+	add_hybrid_tests();
 	tlog(T_INFO, "selftest: loaded\n");
 	return 0;
 }

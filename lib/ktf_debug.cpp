@@ -1,6 +1,6 @@
 /* Copyright (c) 2012 Oracle Corporation. All rights reserved */
 
-#include "debug.h"
+#include "ktf_debug.h"
 #include <stdlib.h>
 
 unsigned long ktf_debug_mask = 0;

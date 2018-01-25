@@ -10,7 +10,7 @@ obj-m := selftest.o
 
 -include ktf_gen.mk
 
-selftest-y := self.o
+selftest-y := self.o hybrid.o
 
 KDIR   := /lib/modules/$(KVER)
 PWD    := $(shell pwd)

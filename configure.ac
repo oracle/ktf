@@ -50,7 +50,9 @@ if (test "${have_libnl3}" = "yes"); then
         NETLINK_LIBS+=" $LIBNL3_LIBS -lnl-genl-3"
 	AC_DEFINE([HAVE_LIBNL3], 1, [Using netlink v.3])
 else
-	LIBS+=" $NETLINK_LIBS"
+	# libnl does not define NLA_BINARY, but kernels since v2.6.21 supports it
+	# and no special user side handling is needed:
+	NETLINK_CFLAGS+="-DNLA_BINARY=11"
 fi
 
 AS_IF([ test x$KVER != x ],dnl

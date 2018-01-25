@@ -12,12 +12,12 @@
  *  and only initiated via run_test below
  */
 
-#include "ktf_run.h"
+#include "ktf_int.h"
 #include <assert.h>
 #include <errno.h>
-#include "debug.h"
+#include "ktf_debug.h"
 
-namespace utest
+namespace ktf
 {
 
 class KernelMetaFactory;
@@ -34,7 +34,7 @@ public:
   {
     log(KTF_INFO, "%s.%s\n", setname.c_str(), testname.c_str());
 
-    ukt = utest::find_test(setname,testname,&ctx);
+    ukt = ktf::find_test(setname,testname,&ctx);
     if (!ukt) {
       fprintf(stderr, "**** Internal error: Could not find test %s.%s (set %s, name %s) ****\n",
 	      setname.c_str(), testname.c_str(), setname.c_str(), testname.c_str());
@@ -58,7 +58,7 @@ public:
 
   virtual void TestBody();
 private:
-  utest::KernelTest* ukt;
+  ktf::KernelTest* ukt;
   std::string ctx;
 
   static int AddToRegistry();
@@ -101,13 +101,15 @@ public:
 
 testing::internal::ParamGenerator<Kernel::ParamType> gtest_query_tests(void);
 std::string gtest_name_from_info(const testing::TestParamInfo<Kernel::ParamType>&);
+void gtest_handle_test(int result,  const char* file, int line, const char* report);
+
 
 int Kernel::AddToRegistry()
 {
-  if (!utest::setup(utest::gtest_handle_test)) return 1;
+  if (!ktf::setup(ktf::gtest_handle_test)) return 1;
 
   /* Run query against kernel to figure out which tests that exists: */
-  stringvec& t = utest::query_testsets();
+  stringvec& t = ktf::query_testsets();
 
   ::testing::internal::ParameterizedTestCaseInfo<Kernel>* tci =
       ::testing::UnitTest::GetInstance()->parameterized_test_registry()
@@ -164,7 +166,7 @@ void gtest_handle_test(int result,  const char* file, int line, const char* repo
 
 testing::internal::ParamGenerator<Kernel::ParamType> gtest_query_tests()
 {
-  return testing::ValuesIn(utest::get_test_names());
+  return testing::ValuesIn(ktf::get_test_names());
 }
 
 std::string gtest_name_from_info(const testing::TestParamInfo<Kernel::ParamType>& info)
@@ -172,4 +174,4 @@ std::string gtest_name_from_info(const testing::TestParamInfo<Kernel::ParamType>
   return info.param;
 }
 
-} // end namespace utest
+} // end namespace ktf
