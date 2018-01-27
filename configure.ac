@@ -22,7 +22,7 @@ AM_SILENT_RULES([yes])
 
 #  temporary measure to see if running make sequentially will eliminate some
 #  spurious build errors:
-#  NB! this comment is interpreted by sifbuild, keep as is:
+#  NB! this comment is interpreted by terse, keep as is:
 # Sequential make
 
 # Checks for programs.

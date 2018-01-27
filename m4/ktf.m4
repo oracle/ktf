@@ -82,14 +82,18 @@ AC_ARG_VAR([KVER],[Kernel version to use])
 AC_DEFUN([AM_CONFIG_KTF],
 [
 
-gtest_fail_msg="No gtest library - install gtest-devel"
-
-GTEST_LIB_CHECK([1.5.0],[echo -n ""],[AC_MSG_ERROR([$gtest_fail_msg])])
+PKG_CHECK_MODULES(GTEST, gtest >= 1.8.0, [HAVE_GTEST="yes"],[ dnl
+  dnl Fallback to the old way of checking:
+  GTEST_LIB_CHECK([1.5.0],[echo -n ""],[AC_MSG_ERROR([No gtest library - install gtest-devel])])
+])
 
 KTF_DIR="$srcdir/kernel"
 KTF_BDIR="`pwd`/kernel"
 
 ktf_scripts="$srcdir/scripts"
+
+AC_SUBST([HAVE_GTEST])
+AM_CONDITIONAL([HAVE_GTEST],[test "x$HAVE_GTEST" = "xyes"])
 
 AC_SUBST([KTF_DIR],[$KTF_DIR])
 AC_SUBST([KTF_BDIR],[$KTF_BDIR])
