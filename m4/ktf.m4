@@ -82,10 +82,35 @@ AC_ARG_VAR([KVER],[Kernel version to use])
 AC_DEFUN([AM_CONFIG_KTF],
 [
 
-PKG_CHECK_MODULES(GTEST, gtest >= 1.8.0, [HAVE_GTEST="yes"],[ dnl
+PKG_CHECK_MODULES(GTEST, gtest >= 1.9.0, [HAVE_GTEST="yes"],[dnl
   dnl Fallback to the old way of checking:
   GTEST_LIB_CHECK([1.5.0],[echo -n ""],[AC_MSG_ERROR([No gtest library - install gtest-devel])])
 ])
+
+dnl --------------
+dnl Check for our Gtest enhancement to print assert counters:
+have_assert_count=0
+assert_count_result="no"
+dummy=_cntchk$$
+
+AC_MSG_CHECKING([for assert counters])
+cat <<EOT > $dummy.c
+#include <gtest/gtest.h>
+int main(int argc, char** argv) {
+  size_t x = ::testing::UnitTest::GetInstance()->increment_success_assert_count();
+  return 0;
+}
+EOT
+
+$CXX -Isrc $CPPFLAGS $GTEST_CFLAGS -c $dummy.c -o $dummy.o > /dev/null 2>&1
+if test $? = 0; then
+    have_assert_count=1
+    assert_count_result="yes"
+fi
+rm -f $dummy.o $dummy.c
+AC_SUBST([HAVE_ASSERT_COUNT],[$have_assert_count])
+AC_MSG_RESULT([$assert_count_result])
+dnl ---------------
 
 KTF_DIR="$srcdir/kernel"
 KTF_BDIR="`pwd`/kernel"

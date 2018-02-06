@@ -2,8 +2,9 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CFLAGS = -I$(top_srcdir) $(NETLINK_CFLAGS) -Wall -Werror -Wno-packed-bitfield-compat -D_GNU_SOURCE
-AM_CXXFLAGS = -I$(top_srcdir) $(NETLINK_CFLAGS) \
+AM_CFLAGS = -I$(top_srcdir) $(NETLINK_CFLAGS) $(GTEST_CFLAGS) \
+		-Wall -Werror -Wno-packed-bitfield-compat -D_GNU_SOURCE
+AM_CXXFLAGS = -I$(top_srcdir) $(NETLINK_CFLAGS) $(GTEST_CFLAGS) \
 		-Wall \
 		-Wno-packed-bitfield-compat \
 		-Wno-pointer-arith -Werror \

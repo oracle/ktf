@@ -155,8 +155,11 @@ void gtest_handle_test(int result,  const char* file, int line, const char* repo
       /* We might get multiple partial results from the kernel in one positive
        * result report:
        */
-      for (int i = 0; i < result; i++)
-	GTEST_SUCCEED();
+#if HAVE_ASSERT_COUNT
+      ::testing::UnitTest::GetInstance()->increment_success_assert_count(result);
+#else
+      for (int i = 0; i < result; i++) GTEST_SUCCEED();
+#endif
     } else {
       ::testing::internal::AssertHelper(::testing::TestPartResult::kNonFatalFailure,
 					file, line, gtest_ar.failure_message()) = ::testing::Message();
