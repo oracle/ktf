@@ -55,6 +55,9 @@ else
 	NETLINK_CFLAGS+="-DNLA_BINARY=11"
 fi
 
+AC_ARG_WITH([googletest], AS_HELP_STRING([--with-googletest], [Optional path to a gtest install]),
+	[gtest_prefix="$withval"],AS_IF([test "x$prefix" != "xNONE"],[gtest_prefix=$prefix]))
+
 AS_IF([ test x$KVER != x ],dnl
    	[AC_MSG_NOTICE("building against kernel version $KVER")],dnl
     	[AC_MSG_ERROR("Kernel version (KVER) not set")])

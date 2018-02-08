@@ -20,6 +20,12 @@
 #
 AC_DEFUN([AM_LIB_KTF],
 [
+libsuffix="${libdir##*/}"
+
+# Also look for dependencies below --prefix, if set:
+#
+AS_IF([test "x$prefix" != "x" ],[export PKG_CONFIG_PATH=$prefix/$libsuffix/pkgconfig])
+PKG_CHECK_MODULES(GTEST, gtest >= 1.9.0, [HAVE_GTEST="yes"])
 
 ktf_build="`pwd`/../ktf"
 ktf_src="$ac_confdir/../ktf"
@@ -65,8 +71,8 @@ if (test "${have_libnl3}" = "yes"); then
 	AC_DEFINE([HAVE_LIBNL3], 1, [Using netlink v.3])
 fi
 
-KTF_CFLAGS="-I$ktf_src/lib"
-KTF_LIBS="-L$ktf_build/lib -lktf $NETLINK_LIBS"
+KTF_CFLAGS="-I$ktf_src/lib $GTEST_CFLAGS"
+KTF_LIBS="-L$ktf_build/lib -lktf $GTEST_LIBS $NETLINK_LIBS"
 
 AC_ARG_VAR([KTF_CFLAGS],[Include files options needed for C/C++ user space program clients])
 AC_ARG_VAR([KTF_LIBS],[Library options for tests accessing KTF functionality])
@@ -81,11 +87,14 @@ AC_ARG_VAR([KVER],[Kernel version to use])
 
 AC_DEFUN([AM_CONFIG_KTF],
 [
+dnl detect any multilib architecture suffix set with --libdir
+dnl Some distros use lib64 on x86_64, in which case even dependencies
+dnl may be found in ${prefix}/lib64 instead of in ${prefix}/lib
+dnl
+libsuffix="${libdir##*/}"
 
-PKG_CHECK_MODULES(GTEST, gtest >= 1.9.0, [HAVE_GTEST="yes"],[dnl
-  dnl Fallback to the old way of checking:
-  GTEST_LIB_CHECK([1.5.0],[echo -n ""],[AC_MSG_ERROR([No gtest library - install gtest-devel])])
-])
+AS_IF([test "x$gtest_prefix" != "x" ],[export PKG_CONFIG_PATH=$gtest_prefix/$libsuffix/pkgconfig])
+PKG_CHECK_MODULES(GTEST, gtest >= 1.9.0, [HAVE_GTEST="yes"])
 
 dnl --------------
 dnl Check for our Gtest enhancement to print assert counters:
