@@ -10,7 +10,8 @@
  * Include this to write hybrid tests
  *
  */
-
+#ifndef _KTF_H
+#define _KTF_H
 #include <gtest/gtest.h>
 
 namespace ktf
@@ -30,7 +31,6 @@ namespace ktf
   int set_coverage(std::string module, unsigned int opts, bool enabled);
 
 } // end namespace ktf
-
 
 /* HTEST: Define user part of a hybrid test.
  * Hybrid tests are tests that have a user and a kernel counterpart,
@@ -83,4 +83,9 @@ namespace ktf {
   /* Get the size of the existing priv data */
   size_t get_priv_sz(KernelTest *kt);
 
+  // Initialize KTF - should normally be called as part of static
+  // initialization, but some compilers may decide to optimize it away:
+  int setup(void);
 } // end namespace ktf
+
+#endif

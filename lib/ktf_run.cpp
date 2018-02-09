@@ -60,7 +60,7 @@ public:
 private:
   ktf::KernelTest* ukt;
   std::string ctx;
-
+  friend int setup(void);
   static int AddToRegistry();
   static int gtest_registering_dummy_;
 };
@@ -137,6 +137,13 @@ int Kernel::AddToRegistry()
  *
  */
 int Kernel::gtest_registering_dummy_ = Kernel::AddToRegistry();
+
+
+int setup(void)
+{
+  /* Just refer this variable, that forces it to have to be initialized.. */
+  return Kernel::gtest_registering_dummy_;
+}
 
 
 void Kernel::TestBody()
