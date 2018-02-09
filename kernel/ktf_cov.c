@@ -462,8 +462,8 @@ static int ktf_cov_init_opts(struct ktf_cov *cov)
 			cov_mem_cache =
 				kmem_cache_create("ktf_cov_mem_cache",
 						  sizeof(struct ktf_cov_mem), 0,
-						  SLAB_HWCACHE_ALIGN|SLAB_PANIC|
-						  SLAB_NOTRACK, NULL);
+						  SLAB_HWCACHE_ALIGN|SLAB_PANIC,
+						  NULL);
 
 			if (!cov_mem_cache)
 				return -ENOMEM;

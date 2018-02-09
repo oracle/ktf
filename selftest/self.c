@@ -259,7 +259,7 @@ TEST(selftest, cov)
 
 	c = kmem_cache_create("selftest_cov_cache",
 			     32, 0,
-			     SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_NOTRACK, NULL);
+			     SLAB_HWCACHE_ALIGN|SLAB_PANIC, NULL);
 
 	ASSERT_ADDR_NE(NULL, c);
 
