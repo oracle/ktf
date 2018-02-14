@@ -1,10 +1,37 @@
 4. Building and installing KTF
 ------------------------------
 
-KTF's user land side depends on googletest, which should be available via
-your package manager. On Redhat or Fedora it is available as ``gtest`` and ``gtest-devel``.
+KTF's user land side depends on googletest.
+The googletest project has seen some structural changes in moving from a
+project specific gtest-config via no package management support at all to
+recently introduce pkgconfig support. This version of KTF only supports
+building against a googletest (gtest) with pkgconfig support, which means
+that as of February 2018 you have to build googletest from source at github.
 
-To build KTF, cd to your source tree (let's assume ~/src for this) then clone the ktf project::
+Let's assume for the rest of these instructions that your source trees are
+below ``~/src``::
+
+        cd ~/src
+        git clone https://github.com/google/googletest.git
+	mkdir -p ~/build/`uname -r`
+	cd ~/build/`uname -r`
+	mkdir googletest
+	cd googletest
+	cmake ~/src/googletest
+	make
+	sudo make install
+
+Default for googletest is to use static libraries.  If you want to use shared
+libraries for googletest, you can specify ``-DBUILD_SHARED_LIBS=ON`` to
+cmake.  This version of KTF has been tested against commit 718fd88d8f of
+googletest. If you don't want to install googletest/ktf into /usr/local, you can
+specify an alternate install path using ``-DCMAKE_INSTALL_PREFIX=<your path>``
+to cmake. If you choose to do so, you would want to use the same path
+with ktf, using ``--prefix=<your path>`` and on distros with multilib support
+also ``--libdir=<your path>/lib64`` on x86_64 to configure for KTF below, to avoid
+configure just looking in ``<your path>/lib``.
+
+To build KTF, cd to your source tree then clone the ktf project::
 
 	cd ~/src
 	<clone ktf>
@@ -16,16 +43,14 @@ same KTF source tree to be used against multiple versions of the
 kernel. Assuming for simplicity that you want to build for the running
 kernel but you can build for any installed ``kernel-*-devel``::
 
-	mkdir -p ~/build/`uname -r`
 	cd ~/build/`uname -r`
 	mkdir ktf
 	cd ktf
 	~/src/ktf/configure KVER=`uname -r`
 	make
+	sudo make install
 
-Optionally, ktf also supports ``make install`` and the ``--prefix`` configuration option to
-allow you to use a custom install directory. Kernel objects will be
-installed under ``kernel/``.
+Kernel objects will be installed under ``kernel/``.
 
 Now you should have got a ``kernel/ktf.ko`` that works with your test kernel
 and modules for the ``examples`` and KTF ``selftest`` directories.
