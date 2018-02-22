@@ -4,5 +4,5 @@ ACLOCAL_AMFLAGS= -I m4
 
 SUBDIRS = kernel selftest examples lib user doc
 
-htmlhelp htmldocs:
+documentation htmlhelp htmldocs:
 	@(cd doc && $(MAKE) htmlhelp)

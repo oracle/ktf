@@ -94,7 +94,7 @@ abstractions provided by KTF. These are kernel side, if not otherwise noted:
 +----------------------------+--------------------------------------------------+
 | KTF_USERDATA(self, type, d)| Declare/get a pointer to user/kernel aux.data    |
 | (NB! both kernel and       | for a test that declares such extra data. Used   |
-|  user space!)              | for hybrid tests.                                |
+| user space!)               | for hybrid tests.                                |
 +----------------------------+--------------------------------------------------+
 
 The ``KTF_INIT()`` macro must be called at a global level as it just

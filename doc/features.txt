@@ -195,7 +195,7 @@ Hybrid tests are specified by writing a user mode test using the special
 Inside the macro, the special variable ``self`` can be used to refer to the
 test itself, and the macro ``KTF_USERDATA()`` can be used to get a pointer to
 an allocated instance of a test specific parameter struct. The user land test
-can then call the kernel side directly using ``ktf::run_kernel_test(self)` An
+can then call the kernel side directly using ``ktf::run_kernel_test(self)`` An
 optional context name can be specified as a second argument to the call if
 needed. This can be done any number of times during the user land test and
 each call will transmit the struct value out-of-band to the kernel side. To
