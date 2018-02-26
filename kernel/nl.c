@@ -250,7 +250,7 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 }
 
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0))
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0))
 static inline void *nla_memdup(const struct nlattr *src, gfp_t gfp)
 {
 	return kmemdup(nla_data(src), nla_len(src), gfp);
