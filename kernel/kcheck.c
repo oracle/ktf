@@ -148,21 +148,21 @@ struct ktf_case *ktf_case_find_create(const char *name)
 	return tc;
 }
 
-u32 assert_cnt = 0;
+atomic_t assert_cnt = ATOMIC_INIT(0);
 
 void flush_assert_cnt(struct ktf_test *self)
 {
-	if (assert_cnt) {
-		tlog(T_DEBUG, "update: %d asserts", assert_cnt);
+	if (atomic_read(&assert_cnt)) {
+		tlog(T_DEBUG, "update: %d asserts", atomic_read(&assert_cnt));
 		if (self->skb)
-			nla_put_u32(self->skb, KTF_A_STAT, assert_cnt);
-		assert_cnt = 0;
+			nla_put_u32(self->skb, KTF_A_STAT, atomic_read(&assert_cnt));
+		atomic_set(&assert_cnt, 0);
 	}
 }
 
 u32 ktf_get_assertion_count(void)
 {
-	return assert_cnt;
+	return atomic_read(&assert_cnt);
 }
 EXPORT_SYMBOL(ktf_get_assertion_count);
 
@@ -177,16 +177,16 @@ long _fail_unless (struct ktf_test *self, int result, const char *file,
 	char bufprefix[256];
 	unsigned long flags;
 
-	/* Multiple threads may try to update log/count */
-	spin_lock_irqsave(&assert_lock, flags);
-
 	if (result)
-		assert_cnt++;
+		atomic_inc(&assert_cnt);
 	else {
 		flush_assert_cnt(self);
 		buf = (char*)kmalloc(MAX_PRINTF, GFP_KERNEL);
-		if (!buf)
+		if (!buf) {
+			tlog(T_ERROR,"file %s line %d: Unable to allocate memory for the error report!",
+				file, line);
 			goto out;
+		}
 		va_start(ap,fmt);
 		len = vsnprintf(buf,MAX_PRINTF-1,fmt,ap);
 		buf[len] = 0;
@@ -201,12 +201,15 @@ long _fail_unless (struct ktf_test *self, int result, const char *file,
 				"file %s line %d: result %d: ", file, line,
 				result);
 		tlog(T_ERROR, "%s%s", bufprefix, buf);
+
+		/* Multiple threads may try to update log */
+		spin_lock_irqsave(&assert_lock, flags);
 		(void) strncat(self->log, bufprefix, KTF_MAX_LOG);
 		(void) strncat(self->log, buf, KTF_MAX_LOG);
+		spin_unlock_irqrestore(&assert_lock, flags);
 		kfree(buf);
 	}
 out:
-	spin_unlock_irqrestore(&assert_lock, flags);
 	return result;
 }
 EXPORT_SYMBOL(_fail_unless);
