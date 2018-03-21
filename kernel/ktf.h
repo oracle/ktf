@@ -354,13 +354,18 @@ u32 ktf_get_assertion_count(void);
 extern ulong ktf_debug_mask;
 #define DM(m, x) do { if (ktf_debug_mask & m) { x; } } while (0)
 
-// Defined debug bits:
-#define T_ERROR    0x1
-#define T_INFO	   0x2
-#define T_LIST     0x4
-#define T_INTR   0x200
-#define T_DEBUG 0x1000
-#define T_MCAST 0x2000
+/* Defined debug bits - higher values should represent more
+ * verbose categories:
+ */
+#define T_ERROR		0x1
+#define T_INFO		0x2
+#define T_LIST		0x4
+#define T_INTR	      0x200
+#define T_INFO_V      0x800
+#define T_DEBUG	     0x1000
+#define T_MCAST	     0x2000
+#define T_TRACE	   0x100000
+#define T_DEBUG_V  0x200000
 
 #define tlog(class, format, arg...)	\
 	do { \
