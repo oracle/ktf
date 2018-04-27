@@ -110,13 +110,13 @@ ccflags-y += -I$(KTF_DIR)
 
 obj-m := %s.o\n
 -include ktf_gen.mk\n
-KDIR   := /lib/modules/$(KVER)
+KDIR   := @KDIR@
 PWD    := $(shell pwd)\n
 EXTRASYMS := KBUILD_EXTRA_SYMBOLS="$(KTF_BDIR)/Module.symvers"\n
 module:
-	$(MAKE) -C $(KDIR)/build SUBDIRS=$(PWD) $(EXTRASYMS) modules\n
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) $(EXTRASYMS) modules\n
 clean:
-	$(MAKE) -C $(KDIR)/build M=$(PWD) clean\n
+	$(MAKE) -C $(KDIR) M=$(PWD) clean\n
 check: all
 install: all
 ''' % name)

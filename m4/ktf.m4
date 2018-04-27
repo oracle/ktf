@@ -18,6 +18,25 @@
 # AM_KTF_DIR([subdirectory])
 #
 #
+
+# Helper function to check if a pointer to a kernel to build against is set:
+#
+AC_DEFUN([AC_CHECK_KPATH],
+[
+dnl We implicitly set KDIR from KVER if it is not set explicitly
+AS_IF([test "x$KDIR" = "x" -a "x$KVER" != x],[KDIR='/lib/modules/$(KVER)/build'])
+
+AS_IF([ test x$KVER != x -a "x$KDIR" = x ],dnl
+	[AC_MSG_ERROR([dnl
+ Neither environment KVER nor KDIR is set!
+ - Set KDIR to an installed kernel version as output by "uname -r"
+   Alternatively set KDIR to the directory of the toplevel Makefile of a kernel build environment])]
+)
+
+AC_ARG_VAR([KDIR],[Path to a kernel build tree to build against])
+AC_ARG_VAR([KVER],[Kernel devel version to build against])
+])
+
 AC_DEFUN([AM_LIB_KTF],
 [
 libsuffix="${libdir##*/}"
@@ -65,11 +84,11 @@ PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.1, [have_libnl3=yes],[ dnl
   PKG_CHECK_MODULES([NETLINK], [libnl-1 >= 1.1])
 ])
 
-if (test "${have_libnl3}" = "yes"); then
+AS_IF([test "${have_libnl3}" = "yes"],[
         NETLINK_CFLAGS+=" $LIBNL3_CFLAGS"
         NETLINK_LIBS+=" $LIBNL3_LIBS -lnl-genl-3"
 	AC_DEFINE([HAVE_LIBNL3], 1, [Using netlink v.3])
-fi
+])
 
 KTF_CFLAGS="-I$ktf_src/lib $GTEST_CFLAGS"
 KTF_LIBS="-L$ktf_build/lib -lktf $GTEST_LIBS $NETLINK_LIBS"
@@ -77,12 +96,7 @@ KTF_LIBS="-L$ktf_build/lib -lktf $GTEST_LIBS $NETLINK_LIBS"
 AC_ARG_VAR([KTF_CFLAGS],[Include files options needed for C/C++ user space program clients])
 AC_ARG_VAR([KTF_LIBS],[Library options for tests accessing KTF functionality])
 
-AS_IF([ test x$KVER != x ],dnl
-	[AC_MSG_NOTICE(building against kernel version $KVER)],dnl
-	[AC_MSG_ERROR("Kernel version (KVER) not set")])
-
-AC_ARG_VAR([KVER],[Kernel version to use])
-
+AC_CHECK_KPATH
 ])
 
 AC_DEFUN([AM_CONFIG_KTF],
@@ -132,6 +146,7 @@ AM_CONDITIONAL([HAVE_GTEST],[test "x$HAVE_GTEST" = "xyes"])
 AC_SUBST([KTF_DIR],[$KTF_DIR])
 AC_SUBST([KTF_BDIR],[$KTF_BDIR])
 
+AC_CHECK_KPATH
 ])
 
 AC_DEFUN([AM_KTF_DIR],dnl Usage: AM_KTF_DIR([subdir]) where subdir contains kernel test defs

@@ -8,12 +8,12 @@ obj-m := ktf.o
 
 ktf-y := kbase.o nl.o ktf_map.o kcheck.o ktf_debugfs.o ktf_cov.o
 
-KDIR   := /lib/modules/$(KVER)
+KDIR   := @KDIR@
 PWD    := $(shell pwd)
 
 module:
-	$(MAKE) -C $(KDIR)/build SUBDIRS=$(PWD) modules
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
 clean:
-	$(MAKE) -C $(KDIR)/build M=$(PWD) clean
+	$(MAKE) -C $(KDIR) M=$(PWD) clean
 
 check: all
