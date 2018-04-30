@@ -191,6 +191,9 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 	if (!try_module_get(mod))
 		return 0;
 
+	/* module_mutex is grabbed by register_kprobe() */
+	mutex_unlock(&module_mutex);
+
 	/* We only care about symbols for cov-specified module. */
 	if (strcmp(mod->name, cov->kmap.key))
 		goto out;
@@ -244,6 +247,7 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 	ktf_cov_entry_put(entry);
 
 out:
+	mutex_lock(&module_mutex);
 	module_put(mod);
 	return 0;
 }
@@ -577,7 +581,9 @@ int ktf_cov_enable(const char *name, unsigned int opts)
 		}
 		register_kretprobe_size =
 			ktf_symbol_size((unsigned long)register_kretprobe);
+		mutex_lock(&module_mutex);
 		kallsyms_on_each_symbol(ktf_cov_init_symbol, cov);
+		mutex_unlock(&module_mutex);
 	} else {
 		ktf_map_for_each_entry(entry, &cov_entry_map, kmap) {
 			if (entry->cov != cov)
