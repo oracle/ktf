@@ -29,7 +29,7 @@ void ktf_map_init(struct ktf_map *map, ktf_map_elem_comparefn elem_comparefn,
 /* returns 0 upon success or -ENOMEM if key got truncated */
 int ktf_map_elem_init(struct ktf_map_elem *elem, const char *key)
 {
-	memcpy(elem->key, key, KTF_MAX_KEY);
+	strncpy(elem->key, key, KTF_MAX_KEY);
 	elem->map = NULL;
 	kref_init(&elem->refcount);
 	return 0;
