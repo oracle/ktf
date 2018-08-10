@@ -23,6 +23,11 @@
 #
 AC_DEFUN([AC_CHECK_KPATH],
 [
+dnl Fail on attempts to configure using a relative path to the source tree:
+AS_IF([test "x${ac_confdir%%/*}" != "x" -a "x${ac_confdir%%/*}" != "x." ],dnl
+	[AC_MSG_ERROR([$ac_confdir: Relative paths not supported
+  - please invoke configure with an absolute path!])])
+
 dnl We implicitly set KDIR from KVER if it is not set explicitly
 AS_IF([test "x$KDIR" = "x" -a "x$KVER" != x],[KDIR='/lib/modules/$(KVER)/build'])
 
@@ -46,7 +51,7 @@ libsuffix="${libdir##*/}"
 AS_IF([test "x$prefix" != "x" ],[export PKG_CONFIG_PATH=$prefix/$libsuffix/pkgconfig])
 PKG_CHECK_MODULES(GTEST, gtest >= 1.9.0, [HAVE_GTEST="yes"])
 
-ktf_build="`pwd`/../ktf"
+ktf_build="$(pwd)/../ktf"
 ktf_src="$ac_confdir/../ktf"
 
 AC_ARG_WITH([ktf],
@@ -55,16 +60,18 @@ AC_ARG_WITH([ktf],
         [ktf_build=$with_ktf],
 	[])
 
-dnl deduce source directory from build directory - note the ][ to avoid
+dnl deduce source directory from build directory - note the [] to avoid
 dnl that M4 expands $2. Also if src is relative to build, convert to abs path:
 AS_IF([test -f $ktf_build/config.log],
-   [ktf_configure=`awk '/^  \\$ .*configure/ { print $[]2; }' $ktf_build/config.log`
+   [ktf_configure=$(awk '/^  \\$ .*configure/ { print $[]2; }' $ktf_build/config.log)
 
     AS_IF([test "x$ktf_configure" = "x./configure" ],dnl
-          [ktf_src="$ktf_build"],dnl
           [
-	    ktf_src=`dirname $ktf_configure`
-	    ktf_src=`cd $ktf_build && cd $ktf_src && pwd`
+	    ktf_build=$(cd $ktf_build && pwd)
+	    ktf_src="$ktf_build"
+	  ],[
+	    ktf_src=$(dirname $ktf_configure)
+	    ktf_src=$(cd $ktf_build && cd $ktf_src && pwd)
 	  ])
 	  ktf_dir=$ktf_src/kernel
 	  ktf_bdir=$ktf_build/kernel
@@ -135,8 +142,11 @@ AC_SUBST([HAVE_ASSERT_COUNT],[$have_assert_count])
 AC_MSG_RESULT([$assert_count_result])
 dnl ---------------
 
+AS_IF([test "x${ac_confdir%%/*}" = "x." ],
+    [srcdir=$(cd $srcdir; pwd)])
+
 KTF_DIR="$srcdir/kernel"
-KTF_BDIR="`pwd`/kernel"
+KTF_BDIR="$(pwd)/kernel"
 
 ktf_scripts="$srcdir/scripts"
 
@@ -151,20 +161,22 @@ AC_CHECK_KPATH
 
 AC_DEFUN([AM_KTF_DIR],dnl Usage: AM_KTF_DIR([subdir]) where subdir contains kernel test defs
 [
+subdir="$1"
 
-TEST_DIR="$srcdir/$1"
-TEST_SRC=`cd $TEST_DIR && ls *.h *.c *.S 2> /dev/null | tr '\n' ' '| sed 's/ \w*\.mod\.c|\w*version.c|\wversioninfo.h//'`
+AS_IF([test "x${ac_confdir%%/*}" = "x." ],
+	[TEST_DIR="."],
+	[TEST_DIR="$srcdir/$subdir"
+	 TEST_SRC=$(cd $TEST_DIR && ls *.h *.c *.S 2> /dev/null | tr '\n' ' '| sed 's/ \w*\.mod\.c|\w*version.c|\wversioninfo.h//')])
 
 dnl Provide automatic generation of internal symbol resolving from ktf_syms.txt
 dnl if it exists:
 dnl
-ktf_symfile=`cd $TEST_DIR && ls ktf_syms.txt 2> /dev/null || true`
+ktf_symfile=$(cd $srcdir/$subdir && ls ktf_syms.txt 2> /dev/null || true)
 
-rulepath="$1"
-rulefile="$rulepath/ktf_gen.mk"
-top_builddir="`pwd`"
+rulefile="$subdir/ktf_gen.mk"
+top_builddir="$(pwd)"
 
-mkdir -p $rulepath
+mkdir -p $subdir
 cat - > $rulefile <<EOF
 
 top_builddir = $top_builddir

@@ -40,7 +40,9 @@ To build KTF, cd to your source tree then clone the ktf project::
 
 Create a build directory somewhere outside the source tree to allow the
 same KTF source tree to be used against multiple versions of the
-kernel. Assuming for simplicity that you want to build for the running
+kernel. Note that the configure command needs to use an absolute path -
+relative paths are not supported.
+Assuming for simplicity that you want to build for the running
 kernel but you can build for any installed ``kernel-*-devel``::
 
 	cd ~/build/`uname -r`
