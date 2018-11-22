@@ -11,7 +11,7 @@ A simple generic Netlink protocol is used for the communication.
 User mode implementation
 ************************
 
-Since reporting is something existing unit test frameworks for
+Since test filtering and reporting is something existing unit test frameworks for
 user space code already does well, the implementation of KTF simply leverages that.
 The current version supports an integration with gtest (Googletest), which provides a lot of
 these features in a flexible way, but in principle alternative implementations could
@@ -32,17 +32,18 @@ themselves even though in the context of ktf.
 KTF supports two distinct classes of tests:
 
 * Pure kernel mode tests
-* Combined tests
+* Hybrid tests
 
 Pure kernel mode tests are tests that are fully implemented in kernel space.
 This is the most straightforward mode and resembles ordinary user land unit testing
 in kernel mode. If you only have kernel mode tests, you will only ever need one user level program
-similar to user/ktest.cpp, so all test development takes place on the kernel side.
+similar to user/ktfrun.cpp, since all test development takes place on the kernel side.
 
-Combined tests are for testing and making assumptions about the user/kernel communication, for instance
+Hybrid tests are for testing and making assumptions about the user/kernel communication, for instance
 if a parameter supplied from user mode is interpreted the intended way when it arrives at it's kernel
 destination. For such tests you need to tell ktf (from user space) when the kernel part of the test
-is going to be executed. Apart from that it works mostly like a normal gtest user level test.
+is going to be executed - this can happen multiple times depending on your test needs.
+Apart from that it works mostly like a normal gtest user level test.
 
 KTF as a separate git project
 *****************************
@@ -62,7 +63,12 @@ On the other hand keeping KTF as a separate project allows
 * This in turn allows newly developed tests to be tested on older kernels as well, possibly
   detecting more bugs, or instances of bugs not backported.
 * User code can be integrated with the kernel code to be built with a single command
-* A smaller kernel git module
+* A smaller kernel git module and a more scalable development process where test related changes
+  does not to the same extent affect the core code history.
 
-I am open to suggestions from the community on whether inclusion in the kernel tree or a
-separate project (or both...) is the best approach.
+Our current belief is that we would want integration of at least the kernel side of KTF,
+maybe just the ktf.ko kernel object, but that being able to maintain and build tests out-of-tree
+is an important feature that also need to be supported.
+
+We are open to suggestions from the community on whether whole or partial
+inclusion in the kernel tree or a separate project (or both...) is the best approach.
