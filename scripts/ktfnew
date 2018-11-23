@@ -22,6 +22,10 @@ usage_h = False
 my_argv = []
 path = None
 
+# m4 files to install (ext .m4 assumed):
+#
+m4_filelist = [ "ktf", "ax_check_compile_flag" ]
+
 for arg in sys.argv[1:]:
     if arg == "-h":
         usage_h = True
@@ -60,9 +64,10 @@ except OSError as exc:
 try:
     os.makedirs("%s/m4" % target_root)
     os.makedirs("%s/kernel" % target_root)
-    # Install ktf.m4 from the ktf source:
-    ktf_m4 = "%s/m4/ktf.m4"
-    shutil.copyfile(ktf_m4 % ktf_root, ktf_m4 % target_root)
+    # Install ktf.m4 and dependencies from the ktf source:
+    fm = "%s/m4/%s.m4"
+    for f in m4_filelist:
+        shutil.copyfile(fm % (ktf_root,f), fm % (target_root, f))
 
     # Create a minimal configure.ac
     #

@@ -43,6 +43,19 @@ AC_ARG_VAR([KVER],[Kernel devel version to build against])
 ])
 
 
+AC_DEFUN([AC_CHECK_CXXFLAGS],
+[
+AC_LANG_PUSH([C++])
+dnl Enable C++11 if possible. If it cannot be enabled,
+dnl googletest would have had to be compiled without it too, implying
+dnl an older version which doesn't need it:
+AX_CHECK_COMPILE_FLAG([-std=c++11],
+	[KTF_CXXFLAGS="-std=c++11 $KTF_CXXFLAGS"],
+	[KTF_CXXFLAGS="-std=c++0x $KTF_CXXFLAGS"])
+AC_LANG_POP([C++])
+])
+
+
 AC_DEFUN([AC_CHECK_NETLINK],
 [
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.1, [have_libnl3=yes],[ dnl
@@ -109,9 +122,14 @@ AC_SUBST([KTF_BDIR],[$ktf_bdir])
 AC_CHECK_NETLINK
 
 KTF_CFLAGS="-I$ktf_src/lib $GTEST_CFLAGS"
+KTF_CXXFLAGS="-I$ktf_src/lib $GTEST_CFLAGS"
 KTF_LIBS="-L$ktf_build/lib -lktf $GTEST_LIBS $NETLINK_LIBS"
 
-AC_ARG_VAR([KTF_CFLAGS],[Include files options needed for C/C++ user space program clients])
+dnl optionally set the -std=c++11 flag for c++ (see def, above):
+AC_CHECK_CXXFLAGS
+
+AC_ARG_VAR([KTF_CFLAGS],[Include files options needed for C user space program clients])
+AC_ARG_VAR([KTF_CXXFLAGS],[Include files options needed for C++ user space program clients])
 AC_ARG_VAR([KTF_LIBS],[Library options for tests accessing KTF functionality])
 
 AC_CHECK_KPATH
@@ -180,6 +198,19 @@ AC_SUBST([KTF_DIR],[$KTF_DIR])
 AC_SUBST([KTF_BDIR],[$KTF_BDIR])
 
 AC_CHECK_NETLINK
+
+# Internal client directories need this:
+#
+KTF_CFLAGS="-I$srcdir/lib $GTEST_CFLAGS"
+KTF_CXXFLAGS="-I$srcdir/lib $GTEST_CFLAGS"
+KTF_LIBS="-L$(pwd)/lib -lktf $GTEST_LIBS $NETLINK_LIBS"
+
+dnl optionally set the -std=c++11 flag for c++ (see def, above):
+AC_CHECK_CXXFLAGS
+
+AC_ARG_VAR([KTF_CFLAGS],[Include files options needed for C user space program clients])
+AC_ARG_VAR([KTF_CXXFLAGS],[Include files options needed for C++ user space program clients])
+AC_ARG_VAR([KTF_LIBS],[Library options for tests accessing KTF functionality])
 
 AC_CHECK_KPATH
 ])
