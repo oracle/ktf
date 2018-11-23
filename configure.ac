@@ -40,21 +40,6 @@ AC_CHECK_HEADERS([stdlib.h])
 # Checks for library functions.
 AC_FUNC_MALLOC
 
-PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.1, [have_libnl3=yes],[ dnl
-  have_libnl3=no
-  PKG_CHECK_MODULES([NETLINK], [libnl-1 >= 1.1])
-])
-
-if (test "${have_libnl3}" = "yes"); then
-        NETLINK_CFLAGS+=" $LIBNL3_CFLAGS"
-        NETLINK_LIBS+=" $LIBNL3_LIBS -lnl-genl-3"
-	AC_DEFINE([HAVE_LIBNL3], 1, [Using netlink v.3])
-else
-	# libnl does not define NLA_BINARY, but kernels since v2.6.21 supports it
-	# and no special user side handling is needed:
-	NETLINK_CFLAGS+="-DNLA_BINARY=11"
-fi
-
 AC_ARG_WITH([googletest], AS_HELP_STRING([--with-googletest], [Optional path to a gtest install]),
 	[gtest_prefix="$withval"],AS_IF([test "x$prefix" != "xNONE" -a "x$prefix" != "x"],[gtest_prefix=$prefix]))
 

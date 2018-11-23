@@ -42,6 +42,26 @@ AC_ARG_VAR([KDIR],[Path to a kernel build tree to build against])
 AC_ARG_VAR([KVER],[Kernel devel version to build against])
 ])
 
+
+AC_DEFUN([AC_CHECK_NETLINK],
+[
+PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.1, [have_libnl3=yes],[ dnl
+  have_libnl3=no
+  PKG_CHECK_MODULES([NETLINK], [libnl-1 >= 1.1])
+])
+
+if (test "${have_libnl3}" = "yes"); then
+        NETLINK_CFLAGS+=" $LIBNL3_CFLAGS"
+        NETLINK_LIBS+=" $LIBNL3_LIBS -lnl-genl-3"
+	AC_DEFINE([HAVE_LIBNL3], 1, [Using netlink v.3])
+else
+	# libnl does not define NLA_BINARY, but kernels since v2.6.21 supports it
+	# and no special user side handling is needed:
+	NETLINK_CFLAGS+="-DNLA_BINARY=11"
+fi
+])
+
+
 AC_DEFUN([AM_LIB_KTF],
 [
 libsuffix="${libdir##*/}"
@@ -86,16 +106,7 @@ AS_IF([test -f $ktf_build/config.log],
 AC_SUBST([KTF_DIR],[$ktf_dir])
 AC_SUBST([KTF_BDIR],[$ktf_bdir])
 
-PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.1, [have_libnl3=yes],[ dnl
-  have_libnl3=no
-  PKG_CHECK_MODULES([NETLINK], [libnl-1 >= 1.1])
-])
-
-AS_IF([test "${have_libnl3}" = "yes"],[
-        NETLINK_CFLAGS+=" $LIBNL3_CFLAGS"
-        NETLINK_LIBS+=" $LIBNL3_LIBS -lnl-genl-3"
-	AC_DEFINE([HAVE_LIBNL3], 1, [Using netlink v.3])
-])
+AC_CHECK_NETLINK
 
 KTF_CFLAGS="-I$ktf_src/lib $GTEST_CFLAGS"
 KTF_LIBS="-L$ktf_build/lib -lktf $GTEST_LIBS $NETLINK_LIBS"
@@ -155,6 +166,8 @@ AM_CONDITIONAL([HAVE_GTEST],[test "x$HAVE_GTEST" = "xyes"])
 
 AC_SUBST([KTF_DIR],[$KTF_DIR])
 AC_SUBST([KTF_BDIR],[$KTF_BDIR])
+
+AC_CHECK_NETLINK
 
 AC_CHECK_KPATH
 ])
