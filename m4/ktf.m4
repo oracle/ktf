@@ -117,19 +117,13 @@ AC_ARG_VAR([KTF_LIBS],[Library options for tests accessing KTF functionality])
 AC_CHECK_KPATH
 ])
 
-AC_DEFUN([AM_CONFIG_KTF],
-[
-dnl detect any multilib architecture suffix set with --libdir
-dnl Some distros use lib64 on x86_64, in which case even dependencies
-dnl may be found in ${prefix}/lib64 instead of in ${prefix}/lib
+
+dnl Check for the Oracle Gtest enhancement to print assert counters:
+dnl (not necessary for the operation of KTF, but useful as an
+dnl  additional debugging measure)
 dnl
-libsuffix="${libdir##*/}"
-
-AS_IF([test "x$gtest_prefix" != "x" ],[export PKG_CONFIG_PATH=$gtest_prefix/$libsuffix/pkgconfig])
-PKG_CHECK_MODULES(GTEST, gtest >= 1.9.0, [HAVE_GTEST="yes"])
-
-dnl --------------
-dnl Check for our Gtest enhancement to print assert counters:
+AC_DEFUN([AC_CHECK_ASSERT_CNT],
+[
 have_assert_count=0
 assert_count_result="no"
 dummy=_cntchk$$
@@ -151,7 +145,25 @@ fi
 rm -f $dummy.o $dummy.c
 AC_SUBST([HAVE_ASSERT_COUNT],[$have_assert_count])
 AC_MSG_RESULT([$assert_count_result])
-dnl ---------------
+])
+
+
+dnl This macro is an internal helper to configure KTF itself.
+dnl It is somewhat different from AM_LIB_KTF, used by clients to
+dnl configure *use* of KTF:
+dnl
+AC_DEFUN([AM_CONFIG_KTF],
+[
+dnl detect any multilib architecture suffix set with --libdir
+dnl Some distros use lib64 on x86_64, in which case even dependencies
+dnl may be found in ${prefix}/lib64 instead of in ${prefix}/lib
+dnl
+libsuffix="${libdir##*/}"
+
+AS_IF([test "x$gtest_prefix" != "x" ],[export PKG_CONFIG_PATH=$gtest_prefix/$libsuffix/pkgconfig])
+PKG_CHECK_MODULES(GTEST, gtest >= 1.9.0, [HAVE_GTEST="yes"])
+
+AC_CHECK_ASSERT_CNT
 
 AS_IF([test "x${ac_confdir%%/*}" = "x." ],
     [srcdir=$(cd $srcdir; pwd)])
