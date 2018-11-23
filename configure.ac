@@ -56,7 +56,7 @@ else
 fi
 
 AC_ARG_WITH([googletest], AS_HELP_STRING([--with-googletest], [Optional path to a gtest install]),
-	[gtest_prefix="$withval"],AS_IF([test "x$prefix" != "xNONE"],[gtest_prefix=$prefix]))
+	[gtest_prefix="$withval"],AS_IF([test "x$prefix" != "xNONE" -a "x$prefix" != "x"],[gtest_prefix=$prefix]))
 
 AM_CONFIG_KTF
 AM_KTF_DIR([kernel])
