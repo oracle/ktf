@@ -1,6 +1,11 @@
 #include <linux/module.h>
 #include "ktf.h"
 
+/* A trivial and somewhat rough example used to demonstrate
+ * interactive debugging with kgdb.
+ * Requires a kernel built with CONFIG_KGDB
+ */
+
 MODULE_LICENSE("GPL");
 
 KTF_INIT();

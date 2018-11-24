@@ -8,7 +8,11 @@ KTF_BDIR = @KTF_BDIR@
 
 ccflags-y += -I$(KTF_DIR)
 
-obj-m := hello.o h2.o h3.o h4.o kgdemo.o
+obj-m := hello.o h2.o h3.o h4.o
+
+ifdef CONFIG_KGDB
+obj-m += kgdemo.o
+endif
 
 KDIR   := @KDIR@
 PWD    := $(shell pwd)
