@@ -31,11 +31,11 @@ AS_IF([test "x${ac_confdir%%/*}" != "x" -a "x${ac_confdir%%/*}" != "x." ],dnl
 dnl We implicitly set KDIR from KVER if it is not set explicitly
 AS_IF([test "x$KDIR" = "x" -a "x$KVER" != x],[KDIR='/lib/modules/$(KVER)/build'])
 
-AS_IF([ test x$KVER != x -a "x$KDIR" = x ],dnl
+AS_IF([ test "x$KVER" = x -a "x$KDIR" = x ],dnl
 	[AC_MSG_ERROR([dnl
  Neither environment KVER nor KDIR is set!
- - Set KDIR to an installed kernel version as output by "uname -r"
-   Alternatively set KDIR to the directory of the toplevel Makefile of a kernel build environment])]
+ - Set KVER to an installed kernel version (for instance as output by "uname -r")
+   Alternatively set KDIR to the directory of the toplevel Makefile of a kernel build tree])]
 )
 
 AC_ARG_VAR([KDIR],[Path to a kernel build tree to build against])
