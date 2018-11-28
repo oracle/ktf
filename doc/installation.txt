@@ -27,9 +27,7 @@ cmake.  This version of KTF has been tested against commit 718fd88d8f of
 googletest. If you don't want to install googletest/ktf into /usr/local, you can
 specify an alternate install path using ``-DCMAKE_INSTALL_PREFIX=<your path>``
 to cmake. If you choose to do so, you would want to use the same path
-with ktf, using ``--prefix=<your path>`` and on distros with multilib support
-also ``--libdir=<your path>/lib64`` on x86_64 to configure for KTF below, to avoid
-configure just looking in ``<your path>/lib``.
+with ktf, using ``--prefix=<your path>``.
 
 To build KTF, cd to your source tree then clone the ktf project::
 
@@ -66,3 +64,12 @@ assumes for simplicity that you want to have your source tree beside the
 ktf source::
 
 	~/src/ktf/scripts/ktfnew mysuite
+
+Now go ahead and write your own kernel tests in ``~/src/mysuite/kernel``, then
+similarly to KTF, build your new project with::
+
+	cd ~/build/`uname -r`
+	mkdir mysuite
+	cd mysuite
+	~/src/mysuite/configure KVER=`uname -r`
+	make

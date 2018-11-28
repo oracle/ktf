@@ -77,7 +77,8 @@ fi
 
 AC_DEFUN([AM_LIB_KTF],
 [
-libsuffix="${libdir##*/}"
+
+AC_CHECK_LIBDIR
 
 # Also look for dependencies below --prefix, if set:
 #
@@ -166,17 +167,34 @@ AC_MSG_RESULT([$assert_count_result])
 ])
 
 
-dnl This macro is an internal helper to configure KTF itself.
-dnl It is somewhat different from AM_LIB_KTF, used by clients to
-dnl configure *use* of KTF:
-dnl
-AC_DEFUN([AM_CONFIG_KTF],
+AC_DEFUN([AC_CHECK_LIBDIR],
 [
 dnl detect any multilib architecture suffix set with --libdir
 dnl Some distros use lib64 on x86_64, in which case even dependencies
 dnl may be found in ${prefix}/lib64 instead of in ${prefix}/lib
 dnl
 libsuffix="${libdir##*/}"
+
+dnl Avoid having to specify --libdir explicitly on x86_64 where it is needed:
+dnl
+lib64_paths=$(egrep -v '^#' /etc/ld.so.conf.d/* /etc/ld.so.conf | grep lib64)
+arch=$(arch)
+AS_IF([test "x$arch" = "xx86_64" -a "x$lib64_paths" != "x" -a "x$libsuffix" = "xlib" ],
+[
+    libsuffix="lib64"
+    libdir="${libdir}64"
+])
+])
+
+
+dnl This macro is an internal helper to configure KTF itself.
+dnl It is somewhat different from AM_LIB_KTF, used by clients to
+dnl configure *use* of KTF:
+dnl
+AC_DEFUN([AM_CONFIG_KTF],
+[
+
+AC_CHECK_LIBDIR
 
 AS_IF([test "x$gtest_prefix" != "x" ],[export PKG_CONFIG_PATH=$gtest_prefix/$libsuffix/pkgconfig])
 PKG_CHECK_MODULES(GTEST, gtest >= 1.9.0, [HAVE_GTEST="yes"])
