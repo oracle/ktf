@@ -373,6 +373,35 @@ static void add_thread_tests(void)
 	ADD_TEST(thread);
 }
 
+int selftest_module_var;
+
+/**
+ * symbol()
+ *
+ * Verify finding kernel-internal symbol works.
+ * Verify finding module symbols works, both when we specify the
+ * module name and we do.
+ **/
+TEST(selftest, symbol)
+{
+	/* Verify finding kernel-internal symbol works. */
+	ASSERT_ADDR_NE(ktf_find_symbol(NULL, "skbuff_head_cache"), NULL);
+
+	/* Verify finding module symbols works, both when we specify the
+	 * module name and we do.
+	 */
+	ASSERT_ADDR_EQ(ktf_find_symbol(NULL, "selftest_module_var"),
+		       &selftest_module_var);
+
+	ASSERT_ADDR_EQ(ktf_find_symbol("selftest", "selftest_module_var"),
+		       &selftest_module_var);
+}
+
+static void add_symbol_tests(void)
+{
+	ADD_TEST(symbol);
+}
+
 static int __init selftest_init(void)
 {
 	int ret = ktf_context_add(&dual_handle, &s_mctx[0].k, "map1");
@@ -395,6 +424,7 @@ static int __init selftest_init(void)
 	add_cov_tests();
 	add_thread_tests();
 	add_hybrid_tests();
+	add_symbol_tests();
 	tlog(T_INFO, "selftest: loaded\n");
 	return 0;
 }

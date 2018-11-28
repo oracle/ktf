@@ -231,20 +231,28 @@ void ktf_add_tests(ktf_test_adder f)
 EXPORT_SYMBOL(ktf_add_tests);
 
 
-/* Support for looking up module internal symbols to enable testing */
+/* Support for looking up kernel/module internal symbols to enable testing.
+ * A NULL mod means either we want the kernel-internal symbol or don't care
+ * which module the symbol is in.
+ */
 void* ktf_find_symbol(const char *mod, const char *sym)
 {
 	char sm[200];
 	const char *symref;
-	unsigned long addr;
+	unsigned long addr = 0;
 
 	if (mod) {
 		sprintf(sm, "%s:%s", mod, sym);
 		symref = sm;
-	} else
+	} else {
+		/* Try for kernel-internal symbol first; fall back to modules
+		 * if that fails.
+		 */
 		symref = sym;
-
-	addr = ki.module_kallsyms_lookup_name(symref);
+		addr = kallsyms_lookup_name(symref);
+	}
+	if (!addr)
+		addr = ki.module_kallsyms_lookup_name(symref);
 	if (addr)
 		tlog(T_DEBUG, "Found %s at %0lx\n", sym, addr);
 	else {
