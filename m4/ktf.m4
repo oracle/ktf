@@ -97,7 +97,7 @@ AC_ARG_WITH([ktf],
 dnl deduce source directory from build directory - note the [] to avoid
 dnl that M4 expands $2. Also if src is relative to build, convert to abs path:
 AS_IF([test -f $ktf_build/config.log],
-   [ktf_configure=$(awk '/^  \\$ .*configure/ { print $[]2; }' $ktf_build/config.log)
+   [ktf_configure=$(awk '/^  \$[] .*configure/ { print $[]2; }' $ktf_build/config.log)
 
     AS_IF([test "x$ktf_configure" = "x./configure" ],dnl
           [
