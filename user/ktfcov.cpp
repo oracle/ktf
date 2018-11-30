@@ -2,9 +2,7 @@
  * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  *    Author: Alan Maguire <alan.maguire@oracle.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * SPDX-License-Identifier: GPL-2.0
  *
  * ktfcov.cpp:
  *   User level application to enable/disable coverage of kernel modules.

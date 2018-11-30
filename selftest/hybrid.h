@@ -1,9 +1,7 @@
 /*
  * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * SPDX-License-Identifier: GPL-2.0
  *
  * hybrid.h: Hybrid (combined user level and kernel) self tests,
  *  kernel side, internal interface:

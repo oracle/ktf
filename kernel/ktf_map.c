@@ -2,9 +2,7 @@
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  *    Author: Knut Omang <knut.omang@oracle.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * SPDX-License-Identifier: GPL-2.0
  *
  * ktf_map.c: Implementation of a kernel version independent std::map like API
  *   (made abstract to allow impl to change)
