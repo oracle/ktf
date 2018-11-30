@@ -22,6 +22,7 @@ KTF_K_HDRS = \
     ktf.h \
     kcheck.h \
     ktf_map.h \
+    ktf_override.h \
     nl.h \
     unlproto.h
 

@@ -13,6 +13,7 @@
 #include <linux/kprobes.h>
 #include <linux/kthread.h>
 #include "kcheck.h"
+#include "ktf_override.h"
 #include "ktf_map.h"
 #include "unlproto.h"
 
@@ -157,6 +158,37 @@ extern struct ktf_handle __test_handle;
 
 #define KTF_UNREGISTER_RETURN_PROBE(func, probehandler) \
 	KTF_UNREGISTER_PROBE(handler, func, probehandler)
+
+#define	KTF_OVERRIDE(func, probehandler) \
+	static int probehandler(struct kprobe *, struct pt_regs *);\
+	static struct kprobe __ktf_override_##probehandler = { \
+		.symbol_name = #func, \
+		.pre_handler = probehandler, \
+		.post_handler = ktf_post_handler, \
+		.fault_handler = NULL, \
+		.flags = 0, \
+        }; \
+        static int probehandler(struct kprobe *kp, struct pt_regs *regs)
+
+#define	KTF_REGISTER_OVERRIDE(func, probehandler) \
+	register_kprobe(&__ktf_override_##probehandler)
+
+#define	KTF_UNREGISTER_OVERRIDE(func, probehandler) \
+	do { \
+		unregister_kprobe(&__ktf_override_##probehandler); \
+		memset(&__ktf_override_##probehandler, 0, \
+		       sizeof(struct kprobe)); \
+		__ktf_override_##probehandler.symbol_name = #func; \
+		__ktf_override_##probehandler.pre_handler = probehandler; \
+		__ktf_override_##probehandler.post_handler = ktf_post_handler; \
+	} while (0)
+
+
+#define	KTF_OVERRIDE_RETURN \
+	do { \
+		ktf_override_function_with_return(regs); \
+		return 1; \
+	} while (0)
 
 /* Interfaces for creating kthreads in tests. */
 #define	KTF_THREAD_INIT(threadname, t) \

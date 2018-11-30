@@ -78,6 +78,28 @@ return.  In order to probe function return:
 See example h4.c in examples/ for a simple case where we verify return value
 of printk().
 
+Overriding functions
+********************
+in some cases, we wish to override harmful functions when inducing failues in
+tests (e.g. skb_panic()). Override is done via kprobes and we define as follows:
+
+    KTF_OVERRIDE(oldfunc, newfunc)
+    {
+	...
+	KTF_SET_RETURN_VALUE(1);
+	KTF_OVERRIDE_RETURN;
+    }
+
+    TEST(...)
+    {
+	KTF_REGISTER_OVERRIDE(oldfunc, newfunc);
+	...
+	KTF_UNREGISTER_OVERRIDE(oldfunc, newfunc);
+    } 
+
+Override should be used sparingly; we'd rather test the code as-is and use
+entry/return probes where possible.
+
 Coverage analytics
 ******************
 

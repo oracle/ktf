@@ -14,7 +14,7 @@ obj-m := ktf.o
 
 -include ktf_gen.mk
 
-ktf-y := kbase.o nl.o ktf_map.o kcheck.o ktf_debugfs.o ktf_cov.o
+ktf-y := kbase.o nl.o ktf_map.o kcheck.o ktf_debugfs.o ktf_cov.o ktf_override.o
 
 KDIR   := @KDIR@
 PWD    := $(shell pwd)

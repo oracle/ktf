@@ -177,12 +177,44 @@ KTF_ENTRY_PROBE(printk, printkhandler)
 TEST(selftest, probeentry)
 {
 	probecount = 0;
-	ASSERT_INT_EQ_GOTO(KTF_REGISTER_ENTRY_PROBE(printk, printkhandler),
-			   0, done);
+	ASSERT_INT_EQ(KTF_REGISTER_ENTRY_PROBE(printk, printkhandler), 0);
 	printk(KERN_INFO "Testing kprobe entry...");
 	ASSERT_INT_GT_GOTO(probecount, 0, done);
+
 done:
 	KTF_UNREGISTER_ENTRY_PROBE(printk, printkhandler);
+}
+
+int override_failed;
+
+noinline int myfunc(int i)
+{
+	override_failed = 1;
+	return i;
+}
+
+KTF_OVERRIDE(myfunc, myfunc_override)
+{
+	KTF_SET_RETURN_VALUE(0);
+	KTF_OVERRIDE_RETURN;
+}
+
+TEST(selftest, override)
+{
+	override_failed = 0;
+
+	ASSERT_INT_EQ(KTF_REGISTER_OVERRIDE(myfunc, myfunc_override), 0);
+
+	(void) myfunc(0);
+
+	/* Verify override function runs instead. */
+	ASSERT_TRUE_GOTO(override_failed == 0, done);
+
+	/* Verify override function modifies return value. */
+	ASSERT_INT_EQ_GOTO(myfunc(100), 0, done);
+	ASSERT_TRUE_GOTO(override_failed == 0, done);
+done:
+	KTF_UNREGISTER_OVERRIDE(myfunc, myfunc_override);
 }
 
 noinline int probesum(int a, int b)
@@ -232,6 +264,7 @@ static void add_probe_tests(void)
 {
 	ADD_TEST(probeentry);
 	ADD_TEST(probereturn);
+	ADD_TEST(override);
 }
 
 noinline void cov_counted(void)
