@@ -4,6 +4,10 @@
 #    Author: Knut Omang <knut.omang@oracle.com>
 #
 # SPDX-License-Identifier: GPL-2.0
+#
+# A script to generate a new KTF test suite with configuration setup
+# and Makefile support for building out-of-tree.
+#
 
 import sys, os, shutil
 

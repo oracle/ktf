@@ -1,4 +1,7 @@
-/* Copyright (c) 2012 Oracle Corporation. All rights reserved */
+/* Copyright (c) 2012 Oracle Corporation. All rights reserved
+ *
+ * SPDX-License-Identifier: GPL-2.0
+ */
 
 #include "ktf_debug.h"
 #include <stdlib.h>

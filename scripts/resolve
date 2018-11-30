@@ -4,6 +4,11 @@
 #    Author: Knut Omang <knut.omang@oracle.com>
 #
 # SPDX-License-Identifier: GPL-2.0
+#
+# A script to generate code and header definitions for
+# module and kernel symbols not directly exposed to KTF.
+# (See the documentation for KTF for details)
+#
 
 import os, sys, re, shutil, string, ConfigParser
 

@@ -1,3 +1,14 @@
+/* Copyright (c) 2012 Oracle Corporation. All rights reserved
+ *    Author: Knut Omang <knut.omang@oracle.com>
+ *
+ * SPDX-License-Identifier: GPL-2.0
+ *
+ * ktf_debug.h: User mode debug function definitions
+ * - intended for test debugging.
+ *
+ * Enabled by setting bits in the environment variable KTF_DEBUG_MASK
+ */
+
 #ifndef _KTF_DEBUG_H
 #define _KTF_DEBUG_H
 #include <time.h>
@@ -6,11 +17,6 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/syscall.h>
-
-/* Debug function definitions - intended for test debugging
- * Enabled by setting bits in the environment variable
- *  KTF_DEBUG_MASK
- */
 
 extern unsigned long ktf_debug_mask;
 
