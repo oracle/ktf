@@ -5,8 +5,6 @@
 # Kernel module implementing a test suite for testing KTF itself
 #
 
-ccflags-y += -Wno-declaration-after-statement
-
 KVER = @KVER@
 KTF_DIR = @KTF_DIR@
 KTF_BDIR = @KTF_BDIR@
@@ -32,4 +30,4 @@ clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
 
 check: all
-install: all
+	$(MAKE) -C $(KDIR) M=$(PWD) C=2

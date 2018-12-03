@@ -6,8 +6,6 @@
 # a framework for running unit test like tests within the kernel.
 #
 
-ccflags-y += -Wno-declaration-after-statement
-
 KVER = @KVER@
 
 obj-m := ktf.o
@@ -20,8 +18,9 @@ KDIR   := @KDIR@
 PWD    := $(shell pwd)
 
 module:
-	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
+	$(MAKE) -C $(KDIR) M=$(PWD)
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
 
 check: all
+	$(MAKE) -C $(KDIR) M=$(PWD) C=2
