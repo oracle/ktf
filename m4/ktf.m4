@@ -252,6 +252,7 @@ mkdir -p $subdir
 cat - > $rulefile <<EOF
 
 top_builddir = $top_builddir
+subdir = $subdir
 srcdir = $TEST_DIR
 src_links = $TEST_SRC
 ktf_symfile = $ktf_symfile
@@ -268,7 +269,7 @@ Makefile: \$(srcdir)/Makefile.in \$(top_builddir)/config.status
 	  *config.status*) \\
 	    cd \$(top_builddir) && \$(MAKE) \$(AM_MAKEFLAGS) am--refresh;; \\
 	  *) \\
-	    echo ' cd \$(top_builddir) && \$(SHELL) ./config.status \$(subdir)/\$[]@; \
+	    echo ' cd \$(top_builddir) && \$(SHELL) ./config.status \$(subdir)/\$[]@'; \
 	    cd \$(top_builddir) && \$(SHELL) ./config.status \$(subdir)/\$[]@ ;; \\
 	esac;
 
