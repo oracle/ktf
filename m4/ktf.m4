@@ -238,7 +238,7 @@ subdir="$1"
 AS_IF([test "x${ac_confdir%%/*}" = "x." ],
 	[TEST_DIR="."],
 	[TEST_DIR="$srcdir/$subdir"
-	 TEST_SRC=$(cd $TEST_DIR && ls *.h *.c *.S 2> /dev/null | tr '\n' ' '| sed 's/ \w*\.mod\.c|\w*version.c|\wversioninfo.h//')])
+	 TEST_SRC=$(cd $TEST_DIR && ls *.h *.c *.S runchecks.cfg 2> /dev/null | tr '\n' ' '| sed 's/ \w*\.mod\.c|\w*version.c|\wversioninfo.h//')])
 
 dnl Provide automatic generation of internal symbol resolving from ktf_syms.txt
 dnl if it exists:
