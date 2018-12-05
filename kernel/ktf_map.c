@@ -190,7 +190,7 @@ int ktf_map_insert(struct ktf_map *map, struct ktf_map_elem *elem)
 		parent = *newobj;
 		if (result < 0)
 			newobj = &((*newobj)->rb_left);
-		else if 	(result > 0)
+		else if	(result > 0)
 			newobj = &((*newobj)->rb_right);
 		else {
 			spin_unlock_irqrestore(&map->lock, flags);

@@ -297,7 +297,7 @@ void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 		DM(T_DEBUG,
 		   printk(KERN_INFO "Running test %s.%s",
 		   t->tclass, t->name);
-		   if (ctx)
+		if (ctx)
 			printk("_%s", ktf_context_name(ctx));
 		   printk("[%d:%d]\n", t->start, t->end);
 		);
