@@ -263,9 +263,8 @@ void  _tcase_add_test(struct __test_desc td,
 
 	ktf_debugfs_create_test(t);
 
-	DM(T_LIST, printk(KERN_INFO "ktf: Added test \"%s.%s\""
-			  " start = %d, end = %d\n",
-			  td.tclass, td.name, start, end));
+	tlog(T_LIST, "Added test \"%s.%s\" start = %d, end = %d\n",
+	     td.tclass, td.name, start, end);
 
 	/* Now since we no longer reference tc/t outside of global map of test
 	 * cases and per-testcase map of tests, drop their refcounts.  This
@@ -295,11 +294,10 @@ void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 		 */
 		t->handle->current_test = t;
 		DM(T_DEBUG,
-		   printk(KERN_INFO "Running test %s.%s",
-		   t->tclass, t->name);
-		if (ctx)
-			printk("_%s", ktf_context_name(ctx));
-		   printk("[%d:%d]\n", t->start, t->end);
+			printk(KERN_INFO "Running test %s.%s", t->tclass, t->name);
+			if (ctx)
+				printk("_%s", ktf_context_name(ctx));
+			printk("[%d:%d]\n", t->start, t->end);
 		);
 		getnstimeofday(&t->lastrun);
 		t->fun(t, ctx, i, value);
