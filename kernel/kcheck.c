@@ -181,8 +181,9 @@ long _fail_unless(struct ktf_test *self, int result, const char *file,
 		flush_assert_cnt(self);
 		buf = (char*)kmalloc(MAX_PRINTF, GFP_KERNEL);
 		if (!buf) {
-			tlog(T_ERROR, "file %s line %d: Unable to allocate memory for the error report!",
-				file, line);
+			tlog(T_ERROR,
+			     "file %s line %d: Unable to allocate memory for the error report!",
+			     file, line);
 			goto out;
 		}
 		va_start(ap, fmt);
