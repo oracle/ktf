@@ -55,7 +55,7 @@ static struct genl_family ktf_gnl_family = {
 	.hdrsize = 0,
 	.name = "ktf",
 	.version = 1,
-	.maxattr = KTF_A_MAX+4,
+	.maxattr = KTF_A_MAX + 4,
 #if (KERNEL_VERSION(3, 13, 7) < LINUX_VERSION_CODE)
 	.ops = ktf_ops,
 	.n_ops = ARRAY_SIZE(ktf_ops),
@@ -82,7 +82,7 @@ static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 		return -EINVAL;
 
 	type = nla_get_u32(info->attrs[KTF_A_TYPE]);
-	switch(type) {
+	switch (type) {
 	case KTF_CT_QUERY:
 		return ktf_query(skb, info);
 	case KTF_CT_RUN:
@@ -233,12 +233,12 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 
 	/* Execute test functions */
 	ktf_testcase_for_each_test(t, testset) {
-		if (t->fun && strcmp(t->name,testname) == 0) {
+		if (t->fun && strcmp(t->name, testname) == 0) {
 			struct ktf_context *ctx = ktf_find_context(t->handle, ctxname);
 			ktf_run_hook(skb, ctx, t, value, oob_data, oob_data_sz);
 		} else if (!t->fun)
 			DM(T_DEBUG, printk(KERN_INFO "** no function for test %s.%s **\n",
-						t->tclass,t->name));
+						t->tclass, t->name));
 		tn++;
 	}
 	DM(T_DEBUG, printk(KERN_INFO "Set %s contained %d tests\n",
@@ -263,10 +263,10 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 	void *data;
 	int retval = 0;
 	struct nlattr *nest_attr, *data_attr;
-	char ctxname_store[KTF_MAX_NAME+1];
+	char ctxname_store[KTF_MAX_NAME + 1];
 	char *ctxname = ctxname_store;
-	char setname[KTF_MAX_NAME+1];
-	char testname[KTF_MAX_NAME+1];
+	char setname[KTF_MAX_NAME + 1];
+	char testname[KTF_MAX_NAME + 1];
 	void *oob_data = NULL;
 	size_t oob_data_sz = 0;
 
@@ -351,7 +351,7 @@ static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 	struct genl_info *info)
 {
 	char *cmd = type == KTF_CT_COV_ENABLE ? "COV_ENABLE" : "COV_DISABLE";
-	char module[KTF_MAX_NAME+1];
+	char module[KTF_MAX_NAME + 1];
 	struct sk_buff *resp_skb;
 	int retval = 0;
 	void *data;
@@ -406,7 +406,7 @@ put_fail:
 
 int ktf_nl_register(void)
 {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,13,7))
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 7))
 	int stat = genl_register_family_with_ops(
 		&ktf_gnl_family,
 		ktf_ops, ARRAY_SIZE(ktf_ops));

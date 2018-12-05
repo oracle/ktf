@@ -205,7 +205,7 @@ TEST(selftest, override)
 
 	ASSERT_INT_EQ(KTF_REGISTER_OVERRIDE(myfunc, myfunc_override), 0);
 
-	(void) myfunc(0);
+	(void)myfunc(0);
 
 	/* Verify override function runs instead. */
 	ASSERT_TRUE_GOTO(override_failed == 0, done);
@@ -290,7 +290,7 @@ TEST(selftest, cov)
 
 	c = kmem_cache_create("selftest_cov_cache",
 			     32, 0,
-			     SLAB_HWCACHE_ALIGN|SLAB_PANIC, NULL);
+			     SLAB_HWCACHE_ALIGN | SLAB_PANIC, NULL);
 
 	ASSERT_ADDR_NE(NULL, c);
 

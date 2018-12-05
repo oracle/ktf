@@ -112,16 +112,16 @@ static inline bool ktf_map_empty(struct ktf_map *map) {
 }
 
 /* Gets first entry with refcount of entry increased for caller. */
-#define ktf_map_first_entry(map, type, member) \
-	ktf_map_empty(map) ? NULL : \
-	container_of(ktf_map_find_first(map), type, member)
+#define ktf_map_first_entry(_map, _type, _member) \
+	ktf_map_empty(_map) ? NULL : \
+	container_of(ktf_map_find_first(_map), _type, _member)
 
 /* Gets next elem after "pos", decreasing refcount for pos and increasing
  * it for returned entry.
  */
-#define ktf_map_next_entry(pos, member) ({ \
-	struct ktf_map_elem *e = ktf_map_find_next(&(pos)->member); \
-        e ? container_of(e, typeof(*pos), member) : NULL; \
+#define ktf_map_next_entry(_pos, _member) ({ \
+	struct ktf_map_elem *_e = ktf_map_find_next(&(_pos)->_member); \
+        _e ? container_of(_e, typeof(*_pos), _member) : NULL; \
 })
 
 /* Iterates over map elements, incrementing refcount for current element and
@@ -137,14 +137,14 @@ static inline bool ktf_map_empty(struct ktf_map *map) {
  * container_of() wrappers to work with the type embedding a
  * "struct ktf_map_elem".
  */
-#define ktf_map_for_each_entry(pos, map, member) \
-	for (pos = ktf_map_first_entry(map, typeof(*pos), member);	\
-	     pos != NULL; \
-	     pos = ktf_map_next_entry(pos, member))
+#define ktf_map_for_each_entry(_pos, _map, _member) \
+	for (_pos = ktf_map_first_entry(_map, typeof(*_pos), _member);	\
+	     _pos != NULL; \
+	     _pos = ktf_map_next_entry(_pos, _member))
 
-#define ktf_map_find_entry(map, key, type, member) ({	\
-	struct ktf_map_elem *e = ktf_map_find(map, key);	\
-        e ? container_of(e, type, member) : NULL; \
+#define ktf_map_find_entry(_map, _key, _type, _member) ({	\
+	struct ktf_map_elem *_entry = ktf_map_find(_map, _key);	\
+        _entry ? container_of(_entry, _type, _member) : NULL; \
 })
 
 #endif

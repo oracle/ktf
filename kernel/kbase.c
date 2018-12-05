@@ -265,7 +265,7 @@ unsigned long ktf_symbol_size(unsigned long addr)
 {
 	unsigned long size = 0;
 
-	(void) ki.kallsyms_lookup_size_offset(addr, &size, NULL);
+	(void)ki.kallsyms_lookup_size_offset(addr, &size, NULL);
 
 	return size;
 }

@@ -29,7 +29,7 @@ TEST(kgdb, nullpointer)
 	int pre = kgdemo_cnt;
 
 	int b = *bogus_ref++;
-	EXPECT_INT_EQ(pre+1, b);
+	EXPECT_INT_EQ(pre + 1, b);
 }
 
 static void add_tests(void)

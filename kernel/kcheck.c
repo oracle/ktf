@@ -166,7 +166,7 @@ EXPORT_SYMBOL(ktf_get_assertion_count);
 
 DEFINE_SPINLOCK(assert_lock);
 
-long _fail_unless (struct ktf_test *self, int result, const char *file,
+long _fail_unless(struct ktf_test *self, int result, const char *file,
 			int line, const char *fmt, ...)
 {
 	int len;
@@ -181,12 +181,12 @@ long _fail_unless (struct ktf_test *self, int result, const char *file,
 		flush_assert_cnt(self);
 		buf = (char*)kmalloc(MAX_PRINTF, GFP_KERNEL);
 		if (!buf) {
-			tlog(T_ERROR,"file %s line %d: Unable to allocate memory for the error report!",
+			tlog(T_ERROR, "file %s line %d: Unable to allocate memory for the error report!",
 				file, line);
 			goto out;
 		}
-		va_start(ap,fmt);
-		len = vsnprintf(buf,MAX_PRINTF-1,fmt,ap);
+		va_start(ap, fmt);
+		len = vsnprintf(buf, MAX_PRINTF - 1, fmt, ap);
 		buf[len] = 0;
 		va_end(ap);
 		if (self->skb) {
@@ -195,15 +195,15 @@ long _fail_unless (struct ktf_test *self, int result, const char *file,
 			nla_put_u32(self->skb, KTF_A_NUM, line);
 			nla_put_string(self->skb, KTF_A_STR, buf);
 		}
-		(void) snprintf(bufprefix, sizeof (bufprefix) - 1,
+		(void)snprintf(bufprefix, sizeof(bufprefix) - 1,
 				"file %s line %d: result %d: ", file, line,
 				result);
 		tlog(T_ERROR, "%s%s", bufprefix, buf);
 
 		/* Multiple threads may try to update log */
 		spin_lock_irqsave(&assert_lock, flags);
-		(void) strncat(self->log, bufprefix, KTF_MAX_LOG);
-		(void) strncat(self->log, buf, KTF_MAX_LOG);
+		(void)strncat(self->log, bufprefix, KTF_MAX_LOG);
+		(void)strncat(self->log, buf, KTF_MAX_LOG);
 		spin_unlock_irqrestore(&assert_lock, flags);
 		kfree(buf);
 	}
@@ -217,7 +217,7 @@ EXPORT_SYMBOL(_fail_unless);
  * Tests are represented by ktf_test objects that are linked into
  * a per-test case map TCase:tests map.
  */
-void  _tcase_add_test (struct __test_desc td,
+void  _tcase_add_test(struct __test_desc td,
 				struct ktf_handle *th,
 				int _signal,
 				int allowed_exit_value,

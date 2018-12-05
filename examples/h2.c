@@ -11,7 +11,7 @@ struct hello_ctx {
 	struct ktf_context k;
 	int value[MAX_CNT];
 };
-struct hello_ctx myctx = { .value = { 0, 1, 4 }};
+struct hello_ctx myctx = { .value = { 0, 1, 4 } };
 
 TEST(examples, cmp)
 {

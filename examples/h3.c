@@ -16,7 +16,7 @@ struct my_element {
 };
 
 
-SETUP_F(hello_fixture,hello_setup)
+SETUP_F(hello_fixture, hello_setup)
 {
 	int i;
 	INIT_LIST_HEAD(&hello_fixture->head);
@@ -28,7 +28,7 @@ SETUP_F(hello_fixture,hello_setup)
 	hello_fixture->ok = true;
 }
 
-TEARDOWN_F(hello_fixture,hello_teardown)
+TEARDOWN_F(hello_fixture, hello_teardown)
 {
 	struct list_head *p, *next_p;
 

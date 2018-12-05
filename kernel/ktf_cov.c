@@ -211,7 +211,7 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 		goto out;
 	}
 	entry = kzalloc(sizeof(struct ktf_cov_entry), GFP_KERNEL);
-	(void) strlcpy(entry->name, name, sizeof(entry->name));
+	(void)strlcpy(entry->name, name, sizeof(entry->name));
 	entry->magic = KTF_COV_ENTRY_MAGIC;
 	entry->cov = cov;
 	entry->refcnt = 1;
@@ -229,7 +229,7 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 	}
 	entry->key.address = addr;
 	entry->key.size = ktf_symbol_size(addr);
-	(void) sprint_symbol(buf, entry->key.address);
+	(void)sprint_symbol(buf, entry->key.address);
 	if (ktf_map_elem_init(&entry->kmap, (char *)&entry->key) < 0 ||
 	    ktf_map_insert(&cov_entry_map, &entry->kmap) < 0) {
 		unregister_kprobe(&entry->kprobe);
@@ -464,7 +464,7 @@ static int ktf_cov_init_opts(struct ktf_cov *cov)
 			cov_mem_cache =
 				kmem_cache_create("ktf_cov_mem_cache",
 						  sizeof(struct ktf_cov_mem), 0,
-						  SLAB_HWCACHE_ALIGN|SLAB_PANIC,
+						  SLAB_HWCACHE_ALIGN | SLAB_PANIC,
 						  NULL);
 
 			if (!cov_mem_cache)

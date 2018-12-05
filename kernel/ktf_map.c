@@ -44,11 +44,11 @@ ktf_map_elem_name(struct ktf_map_elem *elem, char *name)
 		return NULL;
 
 	if (!elem || !elem->map)
-		(void) strlcpy(name, "<none>", KTF_MAX_NAME);
+		(void)strlcpy(name, "<none>", KTF_MAX_NAME);
 	else if (!elem->map->elem_comparefn)
-		(void) strlcpy(name, elem->key, KTF_MAX_NAME);
+		(void)strlcpy(name, elem->key, KTF_MAX_NAME);
 	else
-		(void) snprintf(name, KTF_MAX_NAME, "'%*ph'", 8, elem->key);
+		(void)snprintf(name, KTF_MAX_NAME, "'%*ph'", 8, elem->key);
 
 	return name;
 }

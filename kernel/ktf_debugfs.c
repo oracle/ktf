@@ -157,7 +157,7 @@ static void _ktf_debugfs_destroy_test(struct ktf_test *t)
 		debugfs_remove(t->debugfs.debugfs_results_test);
 	if (t->debugfs.debugfs_run_test)
 		debugfs_remove(t->debugfs.debugfs_run_test);
-	memset(&t->debugfs, 0, sizeof (t->debugfs));
+	memset(&t->debugfs, 0, sizeof(t->debugfs));
 }
 
 void ktf_debugfs_create_test(struct ktf_test *t)
@@ -167,7 +167,7 @@ void ktf_debugfs_create_test(struct ktf_test *t)
 	if (!testset)
 		return;
 
-	memset(&t->debugfs, 0, sizeof (t->debugfs));
+	memset(&t->debugfs, 0, sizeof(t->debugfs));
 
 	t->debugfs.debugfs_results_test =
 		debugfs_create_file(t->name, S_IFREG | 0444,
@@ -252,7 +252,7 @@ void ktf_debugfs_create_testset(struct ktf_case *testset)
 	char tests_subdir[KTF_DEBUGFS_NAMESZ];
 	const char *name = ktf_case_name(testset);
 
-	memset(&testset->debugfs, 0, sizeof (testset->debugfs));
+	memset(&testset->debugfs, 0, sizeof(testset->debugfs));
 
 	/* First add /sys/kernel/debug/ktf/[results|run]/<testset> */
 	testset->debugfs.debugfs_results_testset =
@@ -273,7 +273,7 @@ void ktf_debugfs_create_testset(struct ktf_case *testset)
 	 * which live in
 	 * /sys/kernel/debug/ktf/[results|run]/<testset>-tests/<testname>
 	 */
-	(void) snprintf(tests_subdir, sizeof (tests_subdir), "%s%s",
+	(void)snprintf(tests_subdir, sizeof(tests_subdir), "%s%s",
 			name, KTF_DEBUGFS_TESTS_SUFFIX);
 
 	testset->debugfs.debugfs_results_test =
