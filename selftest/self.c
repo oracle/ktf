@@ -406,20 +406,17 @@ static void add_thread_tests(void)
 
 int selftest_module_var;
 
-/**
- * symbol()
- *
- * Verify finding kernel-internal symbol works.
- * Verify finding module symbols works, both when we specify the
- * module name and we do.
- **/
+/*
+ * Test that ktf_find_symbol works both for module symbols and
+ * core kernel symbols:
+ */
 TEST(selftest, symbol)
 {
 	/* Verify finding kernel-internal symbol works. */
 	ASSERT_ADDR_NE(ktf_find_symbol(NULL, "skbuff_head_cache"), NULL);
 
 	/* Verify finding module symbols works, both when we specify the
-	 * module name and we do.
+	 * module name and when we don't.
 	 */
 	ASSERT_ADDR_EQ(ktf_find_symbol(NULL, "selftest_module_var"),
 		       &selftest_module_var);
