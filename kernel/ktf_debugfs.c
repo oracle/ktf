@@ -210,10 +210,10 @@ static int ktf_results_testset_open(struct inode *inode, struct file *file)
 }
 
 static struct file_operations ktf_results_testset_fops = {
-        .open = ktf_results_testset_open,
-        .read = seq_read,
-        .llseek = seq_lseek,
-        .release = ktf_debugfs_release,
+	.open = ktf_results_testset_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = ktf_debugfs_release,
 };
 
 static int ktf_run_testset_open(struct inode *inode, struct file *file)
