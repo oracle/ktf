@@ -257,7 +257,7 @@ void ktf_debugfs_create_testset(struct ktf_case *testset)
 	/* First add /sys/kernel/debug/ktf/[results|run]/<testset> */
 	testset->debugfs.debugfs_results_testset =
 		debugfs_create_file(name, S_IFREG | 0444,
-			         ktf_debugfs_resultsdir,
+				 ktf_debugfs_resultsdir,
 				 testset, &ktf_results_testset_fops);
 	if (!testset->debugfs.debugfs_results_testset)
 		goto err;
