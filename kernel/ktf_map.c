@@ -176,7 +176,7 @@ int ktf_map_insert(struct ktf_map *map, struct ktf_map_elem *elem)
 	unsigned long flags;
 
 	spin_lock_irqsave(&map->lock, flags);
-	newobj = &(map->root.rb_node);
+	newobj = &map->root.rb_node;
 	while (*newobj) {
 		struct ktf_map_elem *this = container_of(*newobj, struct ktf_map_elem, node);
 		int result;
