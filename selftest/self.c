@@ -78,9 +78,9 @@ TEST(selftest, simplemap)
 	struct ktf_map_elem *elem;
 
 	if (mctx) {
-		tlog(T_DEBUG, "ctx %s\n", mctx->k.elem.key);
+		tlog(T_DEBUG, "ctx %s", mctx->k.elem.key);
 	} else
-		tlog(T_DEBUG, "ctx <none>\n");
+		tlog(T_DEBUG, "ctx <none>");
 
 	ktf_map_init(&tm, NULL, NULL);
 	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[0].foo, "foo"));
@@ -178,7 +178,7 @@ TEST(selftest, probeentry)
 {
 	probecount = 0;
 	ASSERT_INT_EQ(KTF_REGISTER_ENTRY_PROBE(printk, printkhandler), 0);
-	printk(KERN_INFO "Testing kprobe entry...");
+	tlog(T_INFO, "Testing kprobe entry...");
 	ASSERT_INT_GT_GOTO(probecount, 0, done);
 
 done:
@@ -219,16 +219,16 @@ done:
 
 noinline int probesum(int a, int b)
 {
-	printk(KERN_INFO "probesum: Adding %d + %d\n", a, b);
+	tlog(T_INFO, "probesum: Adding %d + %d", a, b);
 	return a + b;
 }
 
 KTF_RETURN_PROBE(probesum, probesumhandler)
 {
-	printk(KERN_INFO "probesum: return value before modifying %ld\n",
+	tlog(T_DEBUG, "probesum: return value before modifying %ld",
 	       regs_return_value(regs));
 	KTF_SET_RETURN_VALUE(-1);
-	printk(KERN_INFO "probesum: return value after modifying %ld\n",
+	tlog(T_DEBUG, "probesum: return value after modifying %ld",
 	       regs_return_value(regs));
 	return 0;
 }
@@ -269,7 +269,7 @@ static void add_probe_tests(void)
 
 noinline void cov_counted(void)
 {
-	printk(KERN_INFO "cov_counted ran!\n");
+	tlog(T_INFO, "cov_counted ran!");
 }
 
 noinline void *doalloc(struct kmem_cache *c, size_t sz)
@@ -294,8 +294,7 @@ TEST(selftest, cov)
 
 	ASSERT_ADDR_NE(NULL, c);
 
-	printk(KERN_INFO "Allocated cache %p : %s %u\n",
-	    c, c->name, c->object_size);
+	tlog(T_INFO, "Allocated cache %p : %s %u\n", c, c->name, c->object_size);
 	ASSERT_INT_EQ(0, ktf_cov_enable((THIS_MODULE)->name, KTF_COV_OPT_MEM));
 
 	e = ktf_cov_entry_find((unsigned long)cov_counted, 0);

@@ -38,8 +38,7 @@ int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx, const ch
 	unsigned long flags;
 	int ret;
 
-	DM(T_DEBUG,
-	   printk(KERN_INFO "ktf: added context %s (at %p)\n", name, ctx));
+	tlog(T_DEBUG, "added context %s (at %p)", name, ctx);
 	ktf_map_elem_init(&ctx->elem, name);
 
 	spin_lock_irqsave(&context_lock, flags);
@@ -84,9 +83,7 @@ static void __ktf_context_remove(struct ktf_context *ctx, bool locked)
 
 	if (!locked)
 		spin_unlock_irqrestore(&context_lock, flags);
-	DM(T_DEBUG,
-	   printk(KERN_INFO "ktf: removed context %s at %p\n",
-	   ctx->elem.key, ctx));
+	tlog(T_DEBUG, "removed context %s at %p", ctx->elem.key, ctx);
 }
 
 void ktf_context_remove(struct ktf_context *ctx)
@@ -163,8 +160,7 @@ void ktf_handle_cleanup_check(struct ktf_handle *handle)
 	for (curr = ktf_find_first_context(handle);
 	     curr != NULL;
 	     curr = ktf_find_next_context(curr)) {
-		printk(KERN_WARNING "ktf: context %s found during handle %p cleanup\n",
-		       curr->elem.key, handle);
+		twarn("context %s found during handle %p cleanup", curr->elem.key, handle);
 	}
 	spin_unlock_irqrestore(&context_lock, flags);
 }
@@ -190,22 +186,22 @@ static int __init ktf_init(void)
 	 */
 	ki.module_kallsyms_lookup_name = (void*)kallsyms_lookup_name(ks);
 	if (!ki.module_kallsyms_lookup_name) {
-		printk(KERN_ERR "Unable to look up \"%s\" in kallsyms - maybe interface has changed?",
-			ks);
+		terr("Unable to look up \"%s\" in kallsyms - maybe interface has changed?",
+		     ks);
 		return -EINVAL;
 	}
 	ks = "kallsyms_lookup_size_offset";
 	ki.kallsyms_lookup_size_offset = (void *)kallsyms_lookup_name(ks);
 	if (!ki.kallsyms_lookup_size_offset) {
-		printk(KERN_ERR "Unable to look up \"%s\" in kallsyms - maybe interface has changed?",
-		       ks);
+		terr("Unable to look up \"%s\" in kallsyms - maybe interface has changed?",
+		     ks);
 		return -EINVAL;
 	}
 
 	ktf_debugfs_init();
 	ret = ktf_nl_register();
 	if (ret) {
-		printk(KERN_ERR "Unable to register protocol with netlink");
+		terr("Unable to register protocol with netlink");
 		ktf_debugfs_cleanup();
 		goto failure;
 	}

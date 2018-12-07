@@ -152,7 +152,7 @@ static void _ktf_debugfs_destroy_test(struct ktf_test *t)
 	if (!t)
 		return;
 
-	DM(T_DEBUG, printk(KERN_INFO "Destroying debugfs test %s", t->name));
+	tlog(T_DEBUG, "Destroying debugfs test %s", t->name);
 	if (t->debugfs.debugfs_results_test)
 		debugfs_remove(t->debugfs.debugfs_results_test);
 	if (t->debugfs.debugfs_run_test)
@@ -297,8 +297,7 @@ err:
 
 void ktf_debugfs_destroy_testset(struct ktf_case *testset)
 {
-	DM(T_DEBUG, printk(KERN_INFO "Destroying debugfs testset %s",
-	       ktf_case_name(testset)));
+	tlog(T_DEBUG, "Destroying debugfs testset %s", ktf_case_name(testset));
 	_ktf_debugfs_destroy_testset(testset);
 	/* Remove our debugfs reference cout to testset */
 	ktf_case_put(testset);
@@ -329,7 +328,7 @@ static struct file_operations ktf_cov_fops = {
 
 void ktf_debugfs_cleanup(void)
 {
-	DM(T_DEBUG, printk(KERN_INFO "Removing ktf debugfs dirs..."));
+	tlog(T_DEBUG, "Removing ktf debugfs dirs...");
 	if (ktf_debugfs_cov_file)
 		debugfs_remove(ktf_debugfs_cov_file);
 	if (ktf_debugfs_rundir)
@@ -362,6 +361,6 @@ void ktf_debugfs_init(void)
 	if (ktf_debugfs_cov_file)
 		return;
 err:
-	printk(KERN_INFO "Could not init %s\n", KTF_DEBUGFS_ROOT);
+	terr("Could not init %s\n", KTF_DEBUGFS_ROOT);
 	ktf_debugfs_cleanup();
 }

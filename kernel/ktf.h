@@ -382,7 +382,6 @@ u32 ktf_get_assertion_count(void);
 #define EXPECT_STRNE(X, Y) _ck_assert_str_ne(X, Y)
 
 extern ulong ktf_debug_mask;
-#define DM(m, x) do { if (ktf_debug_mask & m) { x; } } while (0)
 
 /* Defined debug bits - higher values should represent more
  * verbose categories:
@@ -404,6 +403,26 @@ extern ulong ktf_debug_mask;
 				   "ktf pid [%d] " "%s: " format "\n", \
 				   current->pid, __func__, \
 				   ## arg); \
+	} while (0)
+#define twarn(format, arg...)	\
+	do { \
+		printk(KERN_WARNING				       \
+		       "ktf pid [%d] " "%s: " format "\n",	       \
+		       current->pid, __func__,			       \
+		       ## arg);				       \
+	} while (0)
+#define terr(format, arg...)	\
+	do { \
+		printk(KERN_ERR				       \
+		       "ktf pid [%d] " "%s: " format "\n",	       \
+		       current->pid, __func__,			       \
+		       ## arg);				       \
+	} while (0)
+#define tlogs(class, stmt_list) \
+	do { \
+		if (unlikely((ktf_debug_mask) & (class))) { \
+			stmt_list;\
+		} \
 	} while (0)
 
 

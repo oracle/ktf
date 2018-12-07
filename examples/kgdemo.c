@@ -19,7 +19,7 @@ int *bogus_ref = NULL;
 TEST(kgdb, breakpoint)
 {
 	kgdemo_cnt = 0;
-	printk("** Please set kgdemo_cnt = 1 **\n");
+	printk(KERN_INFO "** Please set kgdemo_cnt = 1 **\n");
 	kgdb_breakpoint();
 	EXPECT_INT_EQ(1, kgdemo_cnt);
 }

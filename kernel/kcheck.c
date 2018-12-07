@@ -22,16 +22,15 @@
 int ktf_version_check(u64 version)
 {
 	if (version != KTF_VERSION_LATEST) {
-		printk(KERN_INFO
-		       "KTF version mismatch - expected %llu.%llu.%llu.%llu, got %llu.%llu.%llu.%llu\n",
-		       KTF_VERSION(MAJOR, KTF_VERSION_LATEST),
-		       KTF_VERSION(MINOR, KTF_VERSION_LATEST),
-		       KTF_VERSION(MICRO, KTF_VERSION_LATEST),
-		       KTF_VERSION(BUILD, KTF_VERSION_LATEST),
-		       KTF_VERSION(MAJOR, version),
-		       KTF_VERSION(MINOR, version),
-		       KTF_VERSION(MICRO, version),
-		       KTF_VERSION(BUILD, version));
+		terr("KTF version mismatch - expected %llu.%llu.%llu.%llu, got %llu.%llu.%llu.%llu\n",
+		     KTF_VERSION(MAJOR, KTF_VERSION_LATEST),
+		     KTF_VERSION(MINOR, KTF_VERSION_LATEST),
+		     KTF_VERSION(MICRO, KTF_VERSION_LATEST),
+		     KTF_VERSION(BUILD, KTF_VERSION_LATEST),
+		     KTF_VERSION(MAJOR, version),
+		     KTF_VERSION(MINOR, version),
+		     KTF_VERSION(MICRO, version),
+		     KTF_VERSION(BUILD, version));
 		return -EINVAL;
 	}
 	return 0;
@@ -117,7 +116,7 @@ struct ktf_case *ktf_case_create(const char *name)
 		return NULL;
 	}
 	ktf_debugfs_create_testset(tc);
-	DM(T_DEBUG, printk(KERN_INFO "ktf: Added test set %s\n", name));
+	tlog(T_DEBUG, "ktf: Added test set %s\n", name);
 	return tc;
 }
 
@@ -251,8 +250,8 @@ void  _tcase_add_test(struct __test_desc td,
 	tc = ktf_case_find_create(td.tclass);
 	if (!tc || ktf_map_elem_init(&t->kmap, td.name) ||
 	    ktf_map_insert(&tc->tests, &t->kmap)) {
-		printk(KERN_INFO "ERROR: Failed to add test %s from %s to test case \"%s\"",
-			td.name, td.file, td.tclass);
+		terr("Failed to add test %s from %s to test case \"%s\"",
+		     td.name, td.file, td.tclass);
 		if (tc)
 			ktf_case_put(tc);
 		mutex_unlock(&tc_lock);
@@ -293,7 +292,7 @@ void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 		 * pointer.
 		 */
 		t->handle->current_test = t;
-		DM(T_DEBUG,
+		tlogs(T_DEBUG,
 			printk(KERN_INFO "Running test %s.%s", t->tclass, t->name);
 			if (ctx)
 				printk("_%s", ktf_context_name(ctx));
@@ -325,9 +324,8 @@ void _tcase_cleanup(struct ktf_handle *th)
 		t = ktf_map_first_entry(&tc->tests, struct ktf_test, kmap);
 		while (t) {
 			if (t->handle == th) {
-				DM(T_DEBUG,
-				   printk(KERN_INFO "ktf: delete test %s.%s\n",
-				   t->tclass, t->name));
+				tlog(T_DEBUG, "ktf: delete test %s.%s",
+				     t->tclass, t->name);
 				/* removes ref for debugfs */
 				ktf_debugfs_destroy_test(t);
 				/* removes ref for testset map of tests */
@@ -370,12 +368,9 @@ int ktf_cleanup(void)
 	/* Unloading of dependencies means we should have no testcases/tests. */
 	mutex_lock(&tc_lock);
 	ktf_for_each_testcase(tc) {
-		printk(KERN_WARNING
-		       "ktf: (memory leak) test set %s still active at unload!\n",
-		       ktf_case_name(tc));
+		twarn("(memory leak) test set %s still active at unload!", ktf_case_name(tc));
 		ktf_testcase_for_each_test(t, tc) {
-			printk(KERN_WARNING
-				"ktf: (memory leak) test set %s still active with test %s at unload!\n",
+			twarn("(memory leak) test set %s still active with test %s at unload!",
 				ktf_case_name(tc), t->name);
 		}
 		return -EBUSY;

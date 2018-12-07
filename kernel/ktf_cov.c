@@ -204,9 +204,8 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 	/* Check if we're already covered for this module/symbol. */
 	entry = ktf_cov_entry_find(addr, 0);
 	if (entry) {
-		DM(T_DEBUG,
-		   printk(KERN_INFO "%s already present in coverage: %s\n",
-		   name, entry->name));
+		tlog(T_DEBUG, "%s already present in coverage: %s",
+		     name, entry->name);
 		ktf_cov_entry_put(entry);
 		goto out;
 	}
@@ -236,10 +235,9 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 		kfree(entry);
 		goto out;
 	}
-	DM(T_DEBUG,
-	   printk(KERN_INFO "Added %s/%s (%p, size %lu) to coverage: %s",
-		   mod->name, entry->name, (void *)entry->kprobe.addr,
-		   entry->key.size, buf));
+	tlog(T_DEBUG, "Added %s/%s (%p, size %lu) to coverage: %s",
+	     mod->name, entry->name, (void *)entry->kprobe.addr,
+	     entry->key.size, buf);
 
 	cov->total++;
 	ktf_cov_entry_put(entry);
@@ -352,12 +350,10 @@ static int ktf_cov_kmem_alloc_return(struct ktf_cov_mem *m,
 		 * the second time.  Annoying but the end result is
 		 * we track the allocation once, which is what we want.
 		 */
-		DM(T_DEBUG, printk(KERN_INFO "Failed to insert cov_mem %p\n",
-		   (void *)ret));
+		terr("Failed to insert cov_mem %p", (void *)ret);
 		kmem_cache_free(cov_mem_cache, mm);
 	}
-	DM(T_DEBUG, printk(KERN_INFO "cov_mem: tracking allocation %p\n",
-	   (void *)m->key.address));
+	tlog(T_DEBUG, "cov_mem: tracking allocation %p", (void *)m->key.address);
 	m->stack.nr_entries = 0;
 	return 0;
 }
@@ -393,9 +389,8 @@ static int ktf_cov_kmem_free_entry(unsigned long tofree)
 
 	m = ktf_cov_mem_find(tofree, 0);
 	if (m) {
-		DM(T_DEBUG,
-		   printk(KERN_INFO "cov_mem: freeing allocation %p\n",
-		   (void *)m->key.address));
+		tlog(T_DEBUG, "cov_mem: freeing allocation %p",
+		     (void *)m->key.address);
 		ktf_cov_mem_remove(m);
 		ktf_cov_mem_put(m);
 	}
@@ -477,9 +472,9 @@ static int ktf_cov_init_opts(struct ktf_cov *cov)
 			cov_mem_probes[i].kp.flags = 0;
 			ret = register_kretprobe(&cov_mem_probes[i]);
 			if (ret) {
-				DM(T_DEBUG,
-				   printk(KERN_INFO "%d: failed to register retprobe for %s",
-				   ret, cov_mem_probes[i].kp.symbol_name));
+				tlog(T_DEBUG,
+				     "%d: failed to register retprobe for %s",
+				     ret, cov_mem_probes[i].kp.symbol_name);
 				return ret;
 			}
 		}
@@ -495,10 +490,9 @@ static void ktf_cov_cleanup_opts(struct ktf_cov *cov)
 	if (cov->opts & KTF_COV_OPT_MEM && --cov_opt_mem_cnt == 0) {
 		for (i = 0; i < ARRAY_SIZE(cov_mem_probes); i++) {
 			if (cov_mem_probes[i].nmissed > 0) {
-				DM(T_INFO,
-				   printk(KERN_INFO "%s: retprobe missed %d.\n",
-				   cov_mem_probes[i].kp.symbol_name,
-				   cov_mem_probes[i].nmissed));
+				tlog(T_INFO, "%s: retprobe missed %d.",
+				     cov_mem_probes[i].kp.symbol_name,
+				     cov_mem_probes[i].nmissed);
 			}
 			if (cov_mem_probes[i].kp.addr != NULL)
 				unregister_kretprobe(&cov_mem_probes[i]);
@@ -539,17 +533,14 @@ static void ktf_cov_update_entries(const char *name, struct ktf_cov *cov)
 		entry->key.size = ktf_symbol_size(entry->key.address);
 		if (ktf_map_elem_init(&entry->kmap, (char *)&entry->key) < 0 ||
 		    ktf_map_insert(&cov_entry_map, &entry->kmap) < 0) {
-			DM(T_DEBUG,
-			   printk(KERN_INFO "Failed to add %s/%s\n",
-			   name, entry->name));
+			tlog(T_DEBUG, "Failed to add %s/%s", name, entry->name);
 			unregister_kprobe(&entry->kprobe);
 			entry->refcnt--;
 			entry = ktf_map_next_entry(entry, kmap);
 		} else {
-			DM(T_DEBUG,
-			   printk(KERN_INFO "Added %s/%s (%p, size %lu) to coverage\n",
-			   name, entry->name, (void *)entry->key.address,
-			   entry->key.size));
+			tlog(T_DEBUG, "Added %s/%s (%p, size %lu) to coverage",
+			     name, entry->name, (void *)entry->key.address,
+			     entry->key.size);
 			/* Map has changed, reset to root. */
 			entry = ktf_map_first_entry(&cov_entry_map,
 						    struct ktf_cov_entry, kmap);
@@ -572,8 +563,7 @@ int ktf_cov_enable(const char *name, unsigned int opts)
 		cov->opts = opts;
 		if (ktf_map_elem_init(&cov->kmap, name) < 0 ||
 		    ktf_map_insert(&cov_map, &cov->kmap) < 0) {
-			DM(T_DEBUG, printk(KERN_INFO "cov %s already present\n",
-			   cov->kmap.key));
+			tlog(T_DEBUG, "cov %s already present", cov->kmap.key);
 			kfree(cov);
 			return -EEXIST;
 		}
@@ -594,9 +584,8 @@ int ktf_cov_enable(const char *name, unsigned int opts)
 				entry->kprobe.symbol_name = entry->name;
 				ret = register_kprobe(&entry->kprobe);
 				if (ret) {
-					DM(T_DEBUG,
-					   printk(KERN_INFO "Failed to add %s/%s\n",
-					   name, entry->name));
+					tlog(T_DEBUG, "Failed to add %s/%s",
+					     name, entry->name);
 					entry->refcnt--;
 				}
 			}
@@ -627,9 +616,8 @@ void ktf_cov_disable(const char *module)
 		if (entry->cov == cov) {
 			if (--entry->refcnt == 0) {
 				unregister_kprobe(&entry->kprobe);
-				DM(T_DEBUG,
-				   printk(KERN_INFO "Removed coverage %s/%s\n",
-				   cov->kmap.key, entry->name));
+				tlog(T_DEBUG, "Removed coverage %s/%s",
+				     cov->kmap.key, entry->name);
 			}
 		}
 	}

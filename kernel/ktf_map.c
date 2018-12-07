@@ -61,9 +61,9 @@ void ktf_map_elem_release(struct kref *kref)
 	struct ktf_map *map = elem->map;
 	char name[KTF_MAX_KEY];
 
-	DM(T_DEBUG, printk(KERN_INFO "Releasing %s, %s free function\n",
-	   ktf_map_elem_name(elem, name),
-	   map && map->elem_freefn ? "calling" : "no"));
+	tlog(T_DEBUG, "Releasing %s, %s free function",
+	     ktf_map_elem_name(elem, name),
+	     map && map->elem_freefn ? "calling" : "no");
 	if (map && map->elem_freefn)
 		map->elem_freefn(elem);
 }
@@ -72,9 +72,9 @@ void ktf_map_elem_put(struct ktf_map_elem *elem)
 {
 	char name[KTF_MAX_KEY];
 
-	DM(T_DEBUG, printk(KERN_INFO "Decreasing refcount for %s to %d",
-	   ktf_map_elem_name(elem, name),
-	   refcount_read(&elem->refcount.refcount) - 1));
+	tlog(T_DEBUG, "Decreasing refcount for %s to %d",
+	     ktf_map_elem_name(elem, name),
+	     refcount_read(&elem->refcount.refcount) - 1);
 	kref_put(&elem->refcount, ktf_map_elem_release);
 }
 
@@ -82,9 +82,9 @@ void ktf_map_elem_get(struct ktf_map_elem *elem)
 {
 	char name[KTF_MAX_KEY];
 
-	DM(T_DEBUG, printk(KERN_INFO "Increasing refcount for %s to %d",
-	   ktf_map_elem_name(elem, name),
-	   refcount_read(&elem->refcount.refcount) + 1));
+	tlog(T_DEBUG, "Increasing refcount for %s to %d",
+	     ktf_map_elem_name(elem, name),
+	     refcount_read(&elem->refcount.refcount) + 1);
 	kref_get(&elem->refcount);
 }
 

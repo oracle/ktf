@@ -73,7 +73,7 @@ static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 	/* Dispatch on type of request */
 
 	if (!info->attrs[KTF_A_TYPE] || !info->attrs[KTF_A_VERSION]) {
-		printk(KERN_ERR "received netlink msg with no type/version!");
+		terr("received netlink msg with no type/version!");
 		return -EINVAL;
 	}
 
@@ -91,8 +91,7 @@ static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 	case KTF_CT_COV_DISABLE:
 		return ktf_cov_cmd(type, skb, info);
 	default:
-		printk(KERN_ERR "received netlink msg with invalid type (%d)",
-			type);
+		terr("received netlink msg with invalid type (%d)", type);
 	}
 	return -EINVAL;
 }
@@ -231,12 +230,10 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 
 			ktf_run_hook(skb, ctx, t, value, oob_data, oob_data_sz);
 		} else if (!t->fun)
-			DM(T_DEBUG, printk(KERN_INFO "** no function for test %s.%s **\n",
-						t->tclass, t->name));
+			tlog(T_DEBUG, "** no function for test %s.%s **", t->tclass, t->name);
 		tn++;
 	}
-	DM(T_DEBUG, printk(KERN_INFO "Set %s contained %d tests\n",
-				ktf_case_name(testset), tn));
+	tlog(T_DEBUG, "Set %s contained %d tests", ktf_case_name(testset), tn);
 	ktf_case_put(testset);
 	return 0;
 }
@@ -268,13 +265,13 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 		ctxname = NULL;
 
 	if (!info->attrs[KTF_A_SNAM])	{
-		printk(KERN_ERR "received KTF_CT_RUN msg without testset name!\n");
+		terr("received KTF_CT_RUN msg without testset name!");
 		return -EINVAL;
 	}
 	nla_strlcpy(setname, info->attrs[KTF_A_SNAM], KTF_MAX_NAME);
 
 	if (!info->attrs[KTF_A_TNAM])	{  /* Test name wo/context */
-		printk(KERN_ERR "received KTF_CT_RUN msg without test name!\n");
+		terr("received KTF_CT_RUN msg without test name!");
 		return -EINVAL;
 	}
 	nla_strlcpy(testname, info->attrs[KTF_A_TNAM], KTF_MAX_NAME);
@@ -318,9 +315,8 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 	if (!retval)
 		tlog(T_DEBUG, "Sent reply for test %s.%s\n", setname, testname);
 	else
-		printk(KERN_WARNING
-			"ktf_run: Failed to send reply for test %s.%s - value %d\n",
-			setname, testname, retval);
+		twarn("ktf_run: Failed to send reply for test %s.%s - value %d",
+		      setname, testname, retval);
 	if (oob_data)
 		kfree(oob_data);
 put_fail:
@@ -333,7 +329,7 @@ put_fail:
 static int ktf_resp(struct sk_buff *skb, struct genl_info *info)
 {
 	/* not to expect this message here */
-	printk(KERN_INFO "unexpected netlink RESP msg received");
+	terr("unexpected netlink RESP msg received");
 	return 0;
 }
 
@@ -348,8 +344,7 @@ static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 	u32 opts = 0;
 
 	if (!info->attrs[KTF_A_MOD])   {
-		printk(KERN_ERR "received KTF_CT_%s msg without module name!\n",
-		       cmd);
+		terr("received KTF_CT_%s msg without module name!", cmd);
 		return -EINVAL;
 	}
 	nla_strlcpy(module, info->attrs[KTF_A_MOD], KTF_MAX_NAME);
@@ -361,8 +356,7 @@ static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 	if (!resp_skb)
 		return -ENOMEM;
 
-	DM(T_DEBUG, printk(KERN_INFO "%s coverage for %s\n",
-	   cmd, module));
+	tlog(T_DEBUG, "%s coverage for %s\n", cmd, module);
 	if (type == KTF_CT_COV_ENABLE)
 		retval = ktf_cov_enable(module, opts);
 	else
@@ -384,9 +378,8 @@ static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 		tlog(T_DEBUG, "Sent reply for %s module %s\n",
 		     cmd, module);
 	else
-		printk(KERN_WARNING
-		       "ktf_cov_cmd: Failed to send reply for %s module %s - value %d\n",
-		       cmd, module, retval);
+		twarn("ktf_cov_cmd: Failed to send reply for %s module %s - value %d",
+		      cmd, module, retval);
 put_fail:
 	/* Free buffer if failure */
 	if (retval)
