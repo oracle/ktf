@@ -77,9 +77,9 @@ TEST(selftest, simplemap)
 	struct myelem e[nelems], *ep;
 	struct ktf_map_elem *elem;
 
-	if (mctx) {
+	if (mctx)
 		tlog(T_DEBUG, "ctx %s", mctx->k.elem.key);
-	} else
+	else
 		tlog(T_DEBUG, "ctx <none>");
 
 	ktf_map_init(&tm, NULL, NULL);

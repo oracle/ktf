@@ -231,8 +231,9 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 			struct ktf_context *ctx = ktf_find_context(t->handle, ctxname);
 
 			ktf_run_hook(skb, ctx, t, value, oob_data, oob_data_sz);
-		} else if (!t->fun)
+		} else if (!t->fun) {
 			tlog(T_DEBUG, "** no function for test %s.%s **", t->tclass, t->name);
+		}
 		tn++;
 	}
 	tlog(T_DEBUG, "Set %s contained %d tests", ktf_case_name(testset), tn);
@@ -261,9 +262,9 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 	void *oob_data = NULL;
 	size_t oob_data_sz = 0;
 
-	if (info->attrs[KTF_A_STR]) {
+	if (info->attrs[KTF_A_STR])
 		nla_strlcpy(ctxname, info->attrs[KTF_A_STR], KTF_MAX_NAME);
-	} else
+	else
 		ctxname = NULL;
 
 	if (!info->attrs[KTF_A_SNAM])	{

@@ -179,9 +179,9 @@ void ktf_debugfs_create_test(struct ktf_test *t)
 			debugfs_create_file(t->name, S_IFREG | 0444,
 				 testset->debugfs.debugfs_run_test,
 				 t, &ktf_run_test_fops);
-		if (!t->debugfs.debugfs_run_test)
+		if (!t->debugfs.debugfs_run_test) {
 			_ktf_debugfs_destroy_test(t);
-		else {
+		} else {
 			/* Take reference for test for debugfs */
 			ktf_test_get(t);
 		}

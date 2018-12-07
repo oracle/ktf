@@ -174,9 +174,9 @@ long _fail_unless(struct ktf_test *self, int result, const char *file,
 	char bufprefix[256];
 	unsigned long flags;
 
-	if (result)
+	if (result) {
 		atomic_inc(&assert_cnt);
-	else {
+	} else {
 		flush_assert_cnt(self);
 		buf = (char*)kmalloc(MAX_PRINTF, GFP_KERNEL);
 		if (!buf) {
@@ -339,8 +339,9 @@ void _tcase_cleanup(struct ktf_handle *th)
 				/* Need to reset to root */
 				t = ktf_map_first_entry(&tc->tests,
 							struct ktf_test, kmap);
-			} else
+			} else {
 				t = ktf_map_next_entry(t, kmap);
+			}
 		}
 		/* If no modules have tests for this test case, we can
 		 * free resources safely.
@@ -351,8 +352,9 @@ void _tcase_cleanup(struct ktf_handle *th)
 			ktf_case_put(tc);
 			tc = ktf_map_first_entry(&test_cases, struct ktf_case,
 						 kmap);
-		} else
+		} else {
 			tc = ktf_map_next_entry(tc, kmap);
+		}
 	}
 	mutex_unlock(&tc_lock);
 }

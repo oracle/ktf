@@ -246,9 +246,9 @@ void* ktf_find_symbol(const char *mod, const char *sym)
 	}
 	if (!addr)
 		addr = ki.module_kallsyms_lookup_name(symref);
-	if (addr)
+	if (addr) {
 		tlog(T_DEBUG, "Found %s at %0lx\n", sym, addr);
-	else {
+	} else {
 		tlog(T_INFO, "Fatal error: %s not found\n", sym);
 		return NULL;
 	}

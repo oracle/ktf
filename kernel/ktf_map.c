@@ -106,11 +106,11 @@ struct ktf_map_elem *ktf_map_find(struct ktf_map *map, const char *key)
 		else
 			result = strncmp(key, elem->key, KTF_MAX_KEY);
 
-		if (result < 0)
+		if (result < 0) {
 			node = node->rb_left;
-		else if (result > 0)
+		} else if (result > 0) {
 			node = node->rb_right;
-		else {
+		} else {
 			ktf_map_elem_get(elem);
 			spin_unlock_irqrestore(&map->lock, flags);
 			return elem;
@@ -187,11 +187,11 @@ int ktf_map_insert(struct ktf_map *map, struct ktf_map_elem *elem)
 			result = strncmp(elem->key, this->key, KTF_MAX_KEY);
 
 		parent = *newobj;
-		if (result < 0)
+		if (result < 0) {
 			newobj = &((*newobj)->rb_left);
-		else if	(result > 0)
+		} else if (result > 0) {
 			newobj = &((*newobj)->rb_right);
-		else {
+		} else {
 			spin_unlock_irqrestore(&map->lock, flags);
 			return -EEXIST;
 		}
