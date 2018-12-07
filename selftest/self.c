@@ -469,6 +469,5 @@ static void __exit selftest_exit(void)
 	/* Nothing to do here */
 }
 
-
 module_init(selftest_init);
 module_exit(selftest_exit);

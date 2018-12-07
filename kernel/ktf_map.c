@@ -120,7 +120,6 @@ struct ktf_map_elem *ktf_map_find(struct ktf_map *map, const char *key)
 	return NULL;
 }
 
-
 /* Find the first map elem in 'map' */
 struct ktf_map_elem *ktf_map_find_first(struct ktf_map *map)
 {

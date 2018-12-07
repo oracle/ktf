@@ -97,7 +97,6 @@ static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 	return -EINVAL;
 }
 
-
 /* Send data about one testcase */
 static int send_test_data(struct sk_buff *resp_skb, struct ktf_case *tc)
 {
@@ -121,8 +120,6 @@ static int send_test_data(struct sk_buff *resp_skb, struct ktf_case *tc)
 	nla_nest_end(resp_skb, nest_attr);
 	return 0;
 }
-
-
 
 static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
 {
@@ -149,8 +146,6 @@ static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
 	nla_nest_end(resp_skb, nest_attr);
 	return 0;
 }
-
-
 
 static int ktf_query(struct sk_buff *skb, struct genl_info *info)
 {
@@ -216,8 +211,6 @@ resp_failure:
 	return retval;
 }
 
-
-
 static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 			const char *setname, const char *testname,
 			u32 value, void *oob_data, size_t oob_data_sz)
@@ -235,6 +228,7 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 	ktf_testcase_for_each_test(t, testset) {
 		if (t->fun && strcmp(t->name, testname) == 0) {
 			struct ktf_context *ctx = ktf_find_context(t->handle, ctxname);
+
 			ktf_run_hook(skb, ctx, t, value, oob_data, oob_data_sz);
 		} else if (!t->fun)
 			DM(T_DEBUG, printk(KERN_INFO "** no function for test %s.%s **\n",
@@ -247,14 +241,12 @@ static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
 	return 0;
 }
 
-
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0))
 static inline void *nla_memdup(const struct nlattr *src, gfp_t gfp)
 {
 	return kmemdup(nla_data(src), nla_len(src), gfp);
 }
 #endif
-
 
 static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 {
@@ -337,8 +329,6 @@ put_fail:
 		nlmsg_free(resp_skb);
 	return retval;
 }
-
-
 
 static int ktf_resp(struct sk_buff *skb, struct genl_info *info)
 {

@@ -608,7 +608,6 @@ int ktf_cov_enable(const char *name, unsigned int opts)
 		ktf_cov_update_entries(name, cov);
 	}
 
-
 	ret = ktf_cov_init_opts(cov);
 
 	ktf_cov_put(cov);

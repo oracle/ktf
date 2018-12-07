@@ -213,7 +213,6 @@ out:
 }
 EXPORT_SYMBOL(_fail_unless);
 
-
 /* Add a test to a testcase:
  * Tests are represented by ktf_test objects that are linked into
  * a per-test case map TCase:tests map.

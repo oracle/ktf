@@ -99,6 +99,7 @@ EXPORT_SYMBOL(ktf_context_remove);
 struct ktf_context *ktf_find_first_context(struct ktf_handle *handle)
 {
 	struct ktf_map_elem *elem = ktf_map_find_first(&handle->ctx_map);
+
 	if (elem)
 		return container_of(elem, struct ktf_context, elem);
 	return NULL;
@@ -107,6 +108,7 @@ struct ktf_context *ktf_find_first_context(struct ktf_handle *handle)
 struct ktf_context* ktf_find_context(struct ktf_handle *handle, const char* name)
 {
 	struct ktf_map_elem *elem;
+
 	if (!name)
 		return NULL;
 	elem = ktf_map_find(&handle->ctx_map, name);
@@ -117,6 +119,7 @@ EXPORT_SYMBOL(ktf_find_context);
 struct ktf_context *ktf_find_next_context(struct ktf_context* ctx)
 {
 	struct ktf_map_elem *elem = ktf_map_find_next(&ctx->elem);
+
 	return container_of(elem, struct ktf_context, elem);
 }
 
@@ -177,7 +180,6 @@ struct ktf_kernel_internals {
 
 static struct ktf_kernel_internals ki;
 
-
 static int __init ktf_init(void)
 {
 	int ret;
@@ -213,13 +215,11 @@ failure:
 	return ret;
 }
 
-
 static void __exit ktf_exit(void)
 {
 	ktf_cleanup();
 	ktf_nl_unregister();
 }
-
 
 /* Generic setup function for client modules */
 void ktf_add_tests(ktf_test_adder f)
@@ -227,7 +227,6 @@ void ktf_add_tests(ktf_test_adder f)
 	f();
 }
 EXPORT_SYMBOL(ktf_add_tests);
-
 
 /* Support for looking up kernel/module internal symbols to enable testing.
  * A NULL mod means either we want the kernel-internal symbol or don't care
@@ -270,7 +269,6 @@ unsigned long ktf_symbol_size(unsigned long addr)
 	return size;
 }
 EXPORT_SYMBOL(ktf_symbol_size);
-
 
 module_init(ktf_init);
 module_exit(ktf_exit);

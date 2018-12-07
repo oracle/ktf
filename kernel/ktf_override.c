@@ -30,7 +30,6 @@ void ktf_post_handler(struct kprobe *kp, struct pt_regs *regs,
 }
 EXPORT_SYMBOL(ktf_post_handler);
 
-
 /* Prior to Linux 4.19, error exit did not clear active kprobe; as a result,
  * every page fault would fail due to logic in page fault handling activated
  * when a kprobe is active.  We clean up by setting per-cpu variable
@@ -46,5 +45,6 @@ void ktf_override_function_with_return(struct pt_regs *regs)
 #endif
 	regs->ip = (unsigned long)&ktf_just_return_func;
 }
+
 NOKPROBE_SYMBOL(ktf_override_function_with_return);
 EXPORT_SYMBOL(ktf_override_function_with_return);
