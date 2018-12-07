@@ -104,7 +104,8 @@ static int send_test_data(struct sk_buff *resp_skb, struct ktf_case *tc)
 	int stat;
 
 	stat = nla_put_string(resp_skb, KTF_A_STR, ktf_case_name(tc));
-	if (stat) return stat;
+	if (stat)
+		return stat;
 	nest_attr = nla_nest_start(resp_skb, KTF_A_TEST);
 	ktf_testcase_for_each_test(t, tc) {
 		if (t->handle->id)
@@ -130,7 +131,8 @@ static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
 
 	/* Send HID */
 	stat = nla_put_u32(resp_skb, KTF_A_HID, handle->id);
-	if (stat) return stat;
+	if (stat)
+		return stat;
 
 	/* Send contexts */
 	nest_attr = nla_nest_start(resp_skb, KTF_A_LIST);
