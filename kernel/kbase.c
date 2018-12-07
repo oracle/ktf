@@ -27,7 +27,7 @@ DEFINE_SPINLOCK(context_lock);
 /* global linked list of all ktf_handle objects that have contexts */
 LIST_HEAD(context_handles);
 
-module_param_named(debug_mask, ktf_debug_mask, ulong, S_IRUGO | S_IWUSR);
+module_param_named(debug_mask, ktf_debug_mask, ulong, 0644);
 EXPORT_SYMBOL(ktf_debug_mask);
 
 /* Defined in kcheck.c */
