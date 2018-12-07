@@ -212,11 +212,11 @@ resp_failure:
 	return retval;
 }
 
-static int ktf_run_func(struct sk_buff *skb, const char* ctxname,
+static int ktf_run_func(struct sk_buff *skb, const char *ctxname,
 			const char *setname, const char *testname,
 			u32 value, void *oob_data, size_t oob_data_sz)
 {
-	struct ktf_case* testset = ktf_case_find(setname);
+	struct ktf_case *testset = ktf_case_find(setname);
 	struct ktf_test *t;
 	int tn = 0;
 

@@ -102,7 +102,7 @@ struct ktf_context *ktf_find_first_context(struct ktf_handle *handle)
 	return NULL;
 }
 
-struct ktf_context* ktf_find_context(struct ktf_handle *handle, const char* name)
+struct ktf_context *ktf_find_context(struct ktf_handle *handle, const char *name)
 {
 	struct ktf_map_elem *elem;
 
@@ -113,7 +113,7 @@ struct ktf_context* ktf_find_context(struct ktf_handle *handle, const char* name
 }
 EXPORT_SYMBOL(ktf_find_context);
 
-struct ktf_context *ktf_find_next_context(struct ktf_context* ctx)
+struct ktf_context *ktf_find_next_context(struct ktf_context *ctx)
 {
 	struct ktf_map_elem *elem = ktf_map_find_next(&ctx->elem);
 
@@ -184,7 +184,7 @@ static int __init ktf_init(void)
 	/* We rely on being able to resolve this symbol for looking up module
 	 * specific internal symbols (multiple modules may define the same symbol):
 	 */
-	ki.module_kallsyms_lookup_name = (void*)kallsyms_lookup_name(ks);
+	ki.module_kallsyms_lookup_name = (void *)kallsyms_lookup_name(ks);
 	if (!ki.module_kallsyms_lookup_name) {
 		terr("Unable to look up \"%s\" in kallsyms - maybe interface has changed?",
 		     ks);
@@ -228,7 +228,7 @@ EXPORT_SYMBOL(ktf_add_tests);
  * A NULL mod means either we want the kernel-internal symbol or don't care
  * which module the symbol is in.
  */
-void* ktf_find_symbol(const char *mod, const char *sym)
+void *ktf_find_symbol(const char *mod, const char *sym)
 {
 	char sm[200];
 	const char *symref;
@@ -252,7 +252,7 @@ void* ktf_find_symbol(const char *mod, const char *sym)
 		tlog(T_INFO, "Fatal error: %s not found\n", sym);
 		return NULL;
 	}
-	return (void*)addr;
+	return (void *)addr;
 }
 EXPORT_SYMBOL(ktf_find_symbol);
 
