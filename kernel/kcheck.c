@@ -178,7 +178,7 @@ long _fail_unless(struct ktf_test *self, int result, const char *file,
 		atomic_inc(&assert_cnt);
 	} else {
 		flush_assert_cnt(self);
-		buf = (char*)kmalloc(MAX_PRINTF, GFP_KERNEL);
+		buf = kmalloc(MAX_PRINTF, GFP_KERNEL);
 		if (!buf) {
 			tlog(T_ERROR,
 			     "file %s line %d: Unable to allocate memory for the error report!",
@@ -233,7 +233,7 @@ void  _tcase_add_test(struct __test_desc td,
 	if (!log)
 		return;
 
-	t = (struct ktf_test *)kzalloc(sizeof(struct ktf_test), GFP_KERNEL);
+	t = kzalloc(sizeof(struct ktf_test), GFP_KERNEL);
 	if (!t) {
 		kfree(log);
 		return;
