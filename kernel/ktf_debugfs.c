@@ -121,7 +121,7 @@ static int ktf_debugfs_release(struct inode *inode, struct file *file)
 	return single_release(inode, file);
 }
 
-static struct file_operations ktf_run_test_fops = {
+static const struct file_operations ktf_run_test_fops = {
 	.open = ktf_run_test_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
@@ -140,7 +140,7 @@ static int ktf_results_test_open(struct inode *inode, struct file *file)
 	return single_open(file, ktf_debugfs_result, t);
 }
 
-static struct file_operations ktf_results_test_fops = {
+static const struct file_operations ktf_results_test_fops = {
 	.open = ktf_results_test_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
@@ -209,7 +209,7 @@ static int ktf_results_testset_open(struct inode *inode, struct file *file)
 	return single_open(file, ktf_debugfs_results_all, testset);
 }
 
-static struct file_operations ktf_results_testset_fops = {
+static const struct file_operations ktf_results_testset_fops = {
 	.open = ktf_results_testset_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
@@ -228,7 +228,7 @@ static int ktf_run_testset_open(struct inode *inode, struct file *file)
 	return single_open(file, ktf_debugfs_run_all, testset);
 }
 
-static struct file_operations ktf_run_testset_fops = {
+static const struct file_operations ktf_run_testset_fops = {
 	.open = ktf_run_testset_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
@@ -319,7 +319,7 @@ static int ktf_cov_open(struct inode *inode, struct file *file)
 	return single_open(file, ktf_debugfs_cov, NULL);
 }
 
-static struct file_operations ktf_cov_fops = {
+static const struct file_operations ktf_cov_fops = {
 	.open = ktf_cov_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
