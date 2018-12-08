@@ -164,7 +164,7 @@ static int ktf_query(struct sk_buff *skb, struct genl_info *info)
 
 	data = genlmsg_put_reply(resp_skb, info, &ktf_gnl_family,
 				0, KTF_C_RESP);
-	if (data == NULL) {
+	if (!data) {
 		retval = -ENOMEM;
 		goto resp_failure;
 	}
@@ -300,7 +300,7 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 
 	data = genlmsg_put_reply(resp_skb, info, &ktf_gnl_family,
 				0, KTF_C_REQ);
-	if (data == NULL) {
+	if (!data) {
 		retval = -ENOMEM;
 		goto put_fail;
 	}
@@ -367,7 +367,7 @@ static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 
 	data = genlmsg_put_reply(resp_skb, info, &ktf_gnl_family,
 				 0, KTF_C_REQ);
-	if (data == NULL) {
+	if (!data) {
 		retval = -ENOMEM;
 		goto put_fail;
 	}

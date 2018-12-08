@@ -244,6 +244,6 @@ void ktf_map_delete_all(struct ktf_map *map)
 			elem = container_of(node, struct ktf_map_elem, node);
 			ktf_map_elem_put(elem);
 		}
-	} while (node != NULL);
+	} while (node);
 	spin_unlock_irqrestore(&map->lock, flags);
 }

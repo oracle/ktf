@@ -155,7 +155,7 @@ void ktf_handle_cleanup_check(struct ktf_handle *handle)
 	spin_lock_irqsave(&context_lock, flags);
 
 	for (curr = ktf_find_first_context(handle);
-	     curr != NULL;
+	     curr;
 	     curr = ktf_find_next_context(curr)) {
 		twarn("context %s found during handle %p cleanup", curr->elem.key, handle);
 	}

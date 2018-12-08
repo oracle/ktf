@@ -494,7 +494,7 @@ static void ktf_cov_cleanup_opts(struct ktf_cov *cov)
 				     cov_mem_probes[i].kp.symbol_name,
 				     cov_mem_probes[i].nmissed);
 			}
-			if (cov_mem_probes[i].kp.addr != NULL)
+			if (cov_mem_probes[i].kp.addr)
 				unregister_kretprobe(&cov_mem_probes[i]);
 		}
 	}
