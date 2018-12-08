@@ -30,9 +30,6 @@ LIST_HEAD(context_handles);
 module_param_named(debug_mask, ktf_debug_mask, ulong, 0644);
 EXPORT_SYMBOL(ktf_debug_mask);
 
-/* Defined in kcheck.c */
-void ktf_cleanup_check(void);
-
 int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx, const char *name)
 {
 	unsigned long flags;

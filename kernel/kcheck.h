@@ -196,6 +196,7 @@ struct ktf_handle {
 
 void _tcase_cleanup(struct ktf_handle *th);
 void ktf_handle_cleanup_check(struct ktf_handle *handle);
+void ktf_cleanup_check(void);
 
 #define KTF_HANDLE_INIT_VERSION(__test_handle, __version)	    \
 	struct ktf_handle __test_handle = { \
