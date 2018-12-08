@@ -444,7 +444,7 @@ static int __init selftest_init(void)
 	if (ret)
 		return ret;
 
-	resolve_symbols();
+	ktf_resolve_symbols();
 
 	add_map_tests();
 	add_probe_tests();

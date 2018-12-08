@@ -171,10 +171,10 @@ for m in all_modules:
     m.write_defines(output)
 
 output.write('\n\nextern struct ktf_syms ktf_syms;\n')
-output.write('\nint resolve_symbols(void);\n#ifndef KTF_CLIENT\n')
+output.write('\nint ktf_resolve_symbols(void);\n#ifndef KTF_CLIENT\n')
 output.write('struct ktf_syms ktf_syms;\n\n')
 
-output.write('\nint resolve_symbols(void)\n{\n')
+output.write('\nint ktf_resolve_symbols(void)\n{\n')
 
 for m in all_modules:
     m.write_resolve_calls(output)
