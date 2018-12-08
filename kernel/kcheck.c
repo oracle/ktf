@@ -233,7 +233,7 @@ void  _tcase_add_test(struct __test_desc td,
 	if (!log)
 		return;
 
-	t = kzalloc(sizeof(struct ktf_test), GFP_KERNEL);
+	t = kzalloc(sizeof(*t), GFP_KERNEL);
 	if (!t) {
 		kfree(log);
 		return;

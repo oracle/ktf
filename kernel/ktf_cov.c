@@ -209,7 +209,7 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 		ktf_cov_entry_put(entry);
 		goto out;
 	}
-	entry = kzalloc(sizeof(struct ktf_cov_entry), GFP_KERNEL);
+	entry = kzalloc(sizeof(*entry), GFP_KERNEL);
 	(void)strlcpy(entry->name, name, sizeof(entry->name));
 	entry->magic = KTF_COV_ENTRY_MAGIC;
 	entry->cov = cov;
@@ -555,7 +555,7 @@ int ktf_cov_enable(const char *name, unsigned int opts)
 	int ret = 0;
 
 	if (!cov) {
-		cov = kzalloc(sizeof(struct ktf_cov), GFP_KERNEL);
+		cov = kzalloc(sizeof(*cov), GFP_KERNEL);
 		if (!cov)
 			return -ENOMEM;
 
