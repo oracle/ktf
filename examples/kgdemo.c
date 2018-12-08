@@ -13,8 +13,8 @@ KTF_INIT();
 #define MAX_CNT 3
 #include <linux/kgdb.h>
 
-int kgdemo_cnt = 0;
-int *bogus_ref = NULL;
+static int kgdemo_cnt;
+static int *bogus_ref;
 
 TEST(kgdb, breakpoint)
 {

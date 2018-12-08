@@ -20,9 +20,9 @@ MODULE_LICENSE("GPL");
 
 ulong ktf_debug_mask = T_INFO | T_ERROR;
 
-unsigned int ktf_context_maxid = 0;
+static unsigned int ktf_context_maxid;
 
-DEFINE_SPINLOCK(context_lock);
+static DEFINE_SPINLOCK(context_lock);
 
 /* global linked list of all ktf_handle objects that have contexts */
 LIST_HEAD(context_handles);

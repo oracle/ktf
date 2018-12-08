@@ -12,7 +12,7 @@ struct hello_ctx {
 	int value[MAX_CNT];
 };
 
-struct hello_ctx myctx = { .value = { 0, 1, 4 } };
+static struct hello_ctx myctx = { .value = { 0, 1, 4 } };
 
 TEST(examples, cmp)
 {

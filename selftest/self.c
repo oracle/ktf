@@ -22,7 +22,7 @@ struct map_test_ctx {
 	struct ktf_context k;
 };
 
-struct map_test_ctx s_mctx[3];
+static struct map_test_ctx s_mctx[3];
 
 /* Declare a simple handle with no contexts for simple (unparameterized) tests: */
 KTF_INIT();
@@ -31,12 +31,12 @@ KTF_INIT();
  * (e.g. if the test scope requires application of each test on several devices or
  *  other abstract contexts, definable by the test module)
  */
-KTF_HANDLE_INIT(dual_handle);
-KTF_HANDLE_INIT(single_handle);
-KTF_HANDLE_INIT(no_handle);
-KTF_HANDLE_INIT_VERSION(wrongversion_handle, 0);
+static KTF_HANDLE_INIT(dual_handle);
+static KTF_HANDLE_INIT(single_handle);
+static KTF_HANDLE_INIT(no_handle);
+static KTF_HANDLE_INIT_VERSION(wrongversion_handle, 0);
 
-struct map_test_ctx *to_mctx(struct ktf_context *ctx)
+static struct map_test_ctx *to_mctx(struct ktf_context *ctx)
 {
 	return container_of(ctx, struct map_test_ctx, k);
 }
@@ -48,7 +48,7 @@ struct myelem {
 };
 
 /* should be called when refcount is 0. */
-void myelem_free(struct ktf_map_elem *elem)
+static void myelem_free(struct ktf_map_elem *elem)
 {
 	struct myelem *myelem = container_of(elem, struct myelem, foo);
 
@@ -56,7 +56,7 @@ void myelem_free(struct ktf_map_elem *elem)
 }
 
 /* key comparison function */
-int myelem_cmp(const char *key1, const char *key2)
+static int myelem_cmp(const char *key1, const char *key2)
 {
 	int i1 = *((int *)key1);
 	int i2 = *((int *)key2);
@@ -185,9 +185,9 @@ done:
 	KTF_UNREGISTER_ENTRY_PROBE(printk, printkhandler);
 }
 
-int override_failed;
+static int override_failed;
 
-noinline int myfunc(int i)
+static noinline int myfunc(int i)
 {
 	override_failed = 1;
 	return i;
@@ -267,12 +267,12 @@ static void add_probe_tests(void)
 	ADD_TEST(override);
 }
 
-noinline void cov_counted(void)
+static noinline void cov_counted(void)
 {
 	tlog(T_INFO, "cov_counted ran!");
 }
 
-noinline void *doalloc(struct kmem_cache *c, size_t sz)
+static noinline void *doalloc(struct kmem_cache *c, size_t sz)
 {
 	if (c)
 		return kmem_cache_alloc(c, GFP_KERNEL);
@@ -379,7 +379,7 @@ KTF_THREAD(test_thread)
 
 #define NUM_TEST_THREADS 20
 
-struct ktf_thread test_threads[NUM_TEST_THREADS];
+static struct ktf_thread test_threads[NUM_TEST_THREADS];
 
 TEST(selftest, thread)
 {
@@ -403,7 +403,7 @@ static void add_thread_tests(void)
 	ADD_TEST(thread);
 }
 
-int selftest_module_var;
+static int selftest_module_var;
 
 /*
  * Test that ktf_find_symbol works both for module symbols and

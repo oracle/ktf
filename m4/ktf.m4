@@ -273,7 +273,7 @@ Makefile: \$(srcdir)/Makefile.in \$(top_builddir)/config.status
 	    cd \$(top_builddir) && \$(SHELL) ./config.status \$(subdir)/\$[]@ ;; \\
 	esac;
 
-ktf_syms.h: \$(srcdir)/ktf_syms.txt
+ktf_syms.h: \$(srcdir)/ktf_syms.txt \$(ktf_scripts)/resolve
 	\$(ktf_scripts)/resolve \$(ccflags-y) \$< \$[]@
 
 install: \$(obj-installed)

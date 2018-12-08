@@ -84,7 +84,7 @@ void ktf_cov_entry_put(struct ktf_cov_entry *entry)
  * and size combination, see ktf_cov_obj_compare() above for comparison
  * logic.
  */
-DEFINE_KTF_MAP(cov_entry_map, ktf_cov_obj_compare, ktf_cov_entry_free);
+static DEFINE_KTF_MAP(cov_entry_map, ktf_cov_obj_compare, ktf_cov_entry_free);
 
 struct ktf_cov_entry *ktf_cov_entry_find(unsigned long addr, unsigned long size)
 {
@@ -110,7 +110,7 @@ void ktf_cov_put(struct ktf_cov *cov)
 }
 
 /* Coverage object map. Just modules supported for now, sort by name. */
-DEFINE_KTF_MAP(cov_map, NULL, ktf_cov_free);
+static DEFINE_KTF_MAP(cov_map, NULL, ktf_cov_free);
 
 struct ktf_cov *ktf_cov_find(const char *module)
 {
@@ -153,7 +153,7 @@ void ktf_cov_mem_put(struct ktf_cov_mem *m)
 	ktf_map_elem_put(&m->kmap);
 }
 
-void ktf_cov_mem_remove(struct ktf_cov_mem *m)
+static void ktf_cov_mem_remove(struct ktf_cov_mem *m)
 {
 	ktf_map_remove_elem(&cov_mem_map, &m->kmap);
 }
@@ -421,7 +421,7 @@ static int ktf_cov_kmem_cache_free_entry_handler(struct kretprobe_instance *ri,
 	return ktf_cov_kmem_free_entry(tofree);
 }
 
-struct kretprobe cov_mem_probes[] = {
+static struct kretprobe cov_mem_probes[] = {
 	{	.kp = { .symbol_name = "__kmalloc" },
 		.handler = ktf_cov_kmalloc_handler,
 		.entry_handler = ktf_cov_kmalloc_entry_handler,
@@ -625,7 +625,7 @@ void ktf_cov_disable(const char *module)
 	ktf_cov_put(cov);
 }
 
-void ktf_cov_mem_seq_print(struct seq_file *seq)
+static void ktf_cov_mem_seq_print(struct seq_file *seq)
 {
 	struct ktf_cov_mem *m;
 	char buf[256];

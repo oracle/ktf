@@ -49,7 +49,7 @@ enum ktf_attr {
 
 /* attribute policy */
 #ifdef NL_INTERNAL
-struct nla_policy ktf_gnl_policy[KTF_A_MAX] = {
+static struct nla_policy ktf_gnl_policy[KTF_A_MAX] = {
 	[KTF_A_TYPE]  = { .type = NLA_U32 },
 	[KTF_A_VERSION] = { .type = NLA_U64 },
 	[KTF_A_SNAM]  = { .type = NLA_STRING },

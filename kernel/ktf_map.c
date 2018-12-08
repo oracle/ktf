@@ -54,7 +54,7 @@ ktf_map_elem_name(struct ktf_map_elem *elem, char *name)
 }
 
 /* Called when refcount of elem is 0. */
-void ktf_map_elem_release(struct kref *kref)
+static void ktf_map_elem_release(struct kref *kref)
 {
 	struct ktf_map_elem *elem = container_of(kref, struct ktf_map_elem,
 						 refcount);

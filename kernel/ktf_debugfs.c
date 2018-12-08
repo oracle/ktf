@@ -28,10 +28,10 @@
  *
  */
 
-struct dentry *ktf_debugfs_rootdir = NULL;
-struct dentry *ktf_debugfs_rundir = NULL;
-struct dentry *ktf_debugfs_resultsdir = NULL;
-struct dentry *ktf_debugfs_cov_file = NULL;
+static struct dentry *ktf_debugfs_rootdir;
+static struct dentry *ktf_debugfs_rundir;
+static struct dentry *ktf_debugfs_resultsdir;
+static struct dentry *ktf_debugfs_cov_file;
 
 static void ktf_debugfs_print_result(struct seq_file *seq, struct ktf_test *t)
 {
@@ -235,7 +235,7 @@ static const struct file_operations ktf_run_testset_fops = {
 	.release = ktf_debugfs_release,
 };
 
-void _ktf_debugfs_destroy_testset(struct ktf_case *testset)
+static void _ktf_debugfs_destroy_testset(struct ktf_case *testset)
 {
 	if (testset->debugfs.debugfs_run_testset)
 		debugfs_remove(testset->debugfs.debugfs_run_testset);

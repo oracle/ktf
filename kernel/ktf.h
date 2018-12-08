@@ -218,7 +218,7 @@ extern struct ktf_handle __test_handle;
 #define	KTF_THREAD(name) \
 	static void __##name(struct ktf_thread *thread, struct ktf_test *self, \
 			     struct ktf_context *ctx, int _i, u32 _value); \
-	int name(void *data) \
+	static int name(void *data) \
 	{ \
 		struct ktf_thread *t = data; \
 		complete(&t->started); \

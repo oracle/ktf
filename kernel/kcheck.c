@@ -63,7 +63,7 @@ void ktf_case_put(struct ktf_case *tc)
 DEFINE_KTF_MAP(test_cases, NULL, ktf_case_free);
 
 /* a lock to protect this datastructure */
-DEFINE_MUTEX(tc_lock);
+static DEFINE_MUTEX(tc_lock);
 
 /* Current total number of test cases defined */
 size_t ktf_case_count(void)
@@ -76,7 +76,7 @@ const char *ktf_case_name(struct ktf_case *tc)
 	return tc->kmap.key;
 }
 
-size_t ktf_case_test_count(struct ktf_case *tc)
+static size_t ktf_case_test_count(struct ktf_case *tc)
 {
 	return ktf_map_size(&tc->tests);
 }
@@ -100,7 +100,7 @@ void ktf_test_put(struct ktf_test *t)
 	ktf_map_elem_put(&t->kmap);
 }
 
-struct ktf_case *ktf_case_create(const char *name)
+static struct ktf_case *ktf_case_create(const char *name)
 {
 	struct ktf_case *tc = kmalloc(sizeof(*tc), GFP_KERNEL);
 	int ret;
@@ -126,7 +126,7 @@ struct ktf_case *ktf_case_find(const char *name)
 }
 
 /* Returns with case refcount increased.  Called with tc_lock held. */
-struct ktf_case *ktf_case_find_create(const char *name)
+static struct ktf_case *ktf_case_find_create(const char *name)
 {
 	struct ktf_case *tc;
 	int ret = 0;
@@ -145,7 +145,7 @@ struct ktf_case *ktf_case_find_create(const char *name)
 	return tc;
 }
 
-atomic_t assert_cnt = ATOMIC_INIT(0);
+static atomic_t assert_cnt = ATOMIC_INIT(0);
 
 void flush_assert_cnt(struct ktf_test *self)
 {
@@ -163,7 +163,7 @@ u32 ktf_get_assertion_count(void)
 }
 EXPORT_SYMBOL(ktf_get_assertion_count);
 
-DEFINE_SPINLOCK(assert_lock);
+static DEFINE_SPINLOCK(assert_lock);
 
 long _fail_unless(struct ktf_test *self, int result, const char *file,
 			int line, const char *fmt, ...)
