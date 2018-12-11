@@ -175,6 +175,18 @@ TEST(selftest, mapcmpfunc)
 	EXPECT_LONG_EQ(0, ktf_map_size(&tm));
 }
 
+/* --- Verify that key name overflow is detected (github issue #6) --- */
+TEST(selftest, map_keyoverflow)
+{
+	struct myelem e;
+	struct ktf_map tm;
+	char jumbokey[KTF_MAX_NAME + 2];
+
+	ktf_map_init(&tm, NULL, NULL);
+	memset(jumbokey, 'x', KTF_MAX_NAME + 1);
+	EXPECT_INT_EQ(ENOMEM, -ktf_map_elem_init(&e.foo, jumbokey));
+}
+
 TEST(selftest, dummy)
 {
 	EXPECT_TRUE(true);
@@ -192,6 +204,7 @@ static void add_map_tests(void)
 	ADD_TEST_TO(dual_handle, simplemap);
 	ADD_TEST_TO(dual_handle, mapref);
 	ADD_TEST_TO(dual_handle, mapcmpfunc);
+	ADD_TEST(map_keyoverflow);
 
 	/* This should fail */
 	ADD_TEST_TO(wrongversion_handle, wrongversion);
