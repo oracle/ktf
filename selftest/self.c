@@ -47,35 +47,15 @@ struct myelem {
 	int order;
 };
 
-/* should be called when refcount is 0. */
-static void myelem_free(struct ktf_map_elem *elem)
-{
-	struct myelem *myelem = container_of(elem, struct myelem, foo);
-
-	myelem->freed = 1;
-}
-
-/* key comparison function */
-static int myelem_cmp(const char *key1, const char *key2)
-{
-	int i1 = *((int *)key1);
-	int i2 = *((int *)key2);
-
-	if (i1 < i2)
-		return -1;
-	else if (i1 > i2)
-		return 1;
-	return 0;
-}
+/* --- Simple insertion and removal test --- */
 
 TEST(selftest, simplemap)
 {
 	int i;
 	const int nelems = 3;
 	struct map_test_ctx *mctx = to_mctx(ctx);
-	struct ktf_map tm, tm2, tm3;
-	struct myelem e[nelems], *ep;
-	struct ktf_map_elem *elem;
+	struct ktf_map tm;
+	struct myelem e[nelems];
 
 	if (mctx)
 		tlog(T_DEBUG, "ctx %s", mctx->k.elem.key);
@@ -101,9 +81,27 @@ TEST(selftest, simplemap)
 		EXPECT_ADDR_EQ(&e[i].foo, ktf_map_remove(&tm, e[i].foo.key));
 	}
 	EXPECT_LONG_EQ(0, ktf_map_size(&tm));
+}
 
-	/* Reference counting test */
-	ktf_map_init(&tm2, NULL, myelem_free);
+/* --- Reference counting test --- */
+
+/* should be called when refcount is 0. */
+static void myelem_free(struct ktf_map_elem *elem)
+{
+	struct myelem *myelem = container_of(elem, struct myelem, foo);
+
+	myelem->freed = 1;
+}
+
+TEST(selftest, mapref)
+{
+	int i;
+	const int nelems = 3;
+	struct myelem e[nelems], *ep;
+	struct ktf_map tm;
+	struct ktf_map_elem *elem;
+
+	ktf_map_init(&tm, NULL, myelem_free);
 	/* Init map elems with "foo" "bar" "zax" */
 	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[0].foo, "foo"));
 	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[1].foo, "bar"));
@@ -111,24 +109,53 @@ TEST(selftest, simplemap)
 
 	/* Insert elems and drop our refcounts (map still holds ref) */
 	for (i = 0; i < nelems; i++) {
-		EXPECT_INT_EQ(0, ktf_map_insert(&tm2, &e[i].foo));
+		EXPECT_INT_EQ(0, ktf_map_insert(&tm, &e[i].foo));
 		ktf_map_elem_put(&e[i].foo);
 	}
 
 	/* This macro takes (and drops) refcount for each elem */
-	ktf_map_for_each_entry(ep, &tm2, foo)
+	ktf_map_for_each_entry(ep, &tm, foo)
 		ep->freed = 0;
 
 	for (i = 0; i < nelems; i++) {
-		elem = ktf_map_remove(&tm2, e[i].foo.key);
+		elem = ktf_map_remove(&tm, e[i].foo.key);
 		EXPECT_INT_EQ(0, e[i].freed);
 		/* free our ref, now free function should be called. */
 		ktf_map_elem_put(elem);
 		EXPECT_INT_EQ(1, e[i].freed);
 	}
 
-	/* Compare function test */
-	ktf_map_init(&tm3, myelem_cmp, NULL);
+	ktf_map_delete_all(&tm);
+	EXPECT_LONG_EQ(0, ktf_map_size(&tm));
+}
+
+/* --- Compare function test --- */
+
+/* key comparison function */
+static int myelem_cmp(const char *key1, const char *key2)
+{
+	int i1 = *((int *)key1);
+	int i2 = *((int *)key2);
+
+	if (i1 < i2)
+		return -1;
+	else if (i1 > i2)
+		return 1;
+	return 0;
+}
+
+TEST(selftest, mapcmpfunc)
+{
+	int i;
+	const int nelems = 3;
+	struct myelem e[nelems], *ep;
+	struct ktf_map tm;
+
+	ktf_map_init(&tm, myelem_cmp, NULL);
+	/* Init map elems with keys "foo" "bar" "zax" */
+	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[0].foo, "foo"));
+	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[1].foo, "bar"));
+	EXPECT_INT_EQ(0, ktf_map_elem_init(&e[2].foo, "zax"));
 
 	/* Insert elems with order values 3, 2, 1. Ensure we see order
 	 * 1, 2, 3 on retrieval.
@@ -137,12 +164,15 @@ TEST(selftest, simplemap)
 		e[i].order = nelems - i;
 		EXPECT_INT_EQ(0, ktf_map_elem_init(&e[i].foo,
 			      (char *)&e[i].order));
-		EXPECT_INT_EQ(0, ktf_map_insert(&tm3, &e[i].foo));
+		EXPECT_INT_EQ(0, ktf_map_insert(&tm, &e[i].foo));
 	}
 	i = 1;
 	/* Ensure ordering via compare function is respected */
-	ktf_map_for_each_entry(ep, &tm3, foo)
+	ktf_map_for_each_entry(ep, &tm, foo)
 		EXPECT_INT_EQ(ep->order, i++);
+
+	ktf_map_delete_all(&tm);
+	EXPECT_LONG_EQ(0, ktf_map_size(&tm));
 }
 
 TEST(selftest, dummy)
@@ -160,6 +190,9 @@ static void add_map_tests(void)
 {
 	ADD_TEST(dummy);
 	ADD_TEST_TO(dual_handle, simplemap);
+	ADD_TEST_TO(dual_handle, mapref);
+	ADD_TEST_TO(dual_handle, mapcmpfunc);
+
 	/* This should fail */
 	ADD_TEST_TO(wrongversion_handle, wrongversion);
 }
