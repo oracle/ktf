@@ -386,9 +386,8 @@ extern ulong ktf_debug_mask;
 /* Defined debug bits - higher values should represent more
  * verbose categories:
  */
-#define T_ERROR		0x1
-#define T_INFO		0x2
-#define T_LIST		0x4
+#define T_INFO		0x1
+#define T_LIST		0x2
 #define T_INTR	      0x200
 #define T_INFO_V      0x800
 #define T_DEBUG	     0x1000

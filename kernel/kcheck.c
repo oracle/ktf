@@ -180,8 +180,7 @@ long _fail_unless(struct ktf_test *self, int result, const char *file,
 		flush_assert_cnt(self);
 		buf = kmalloc(MAX_PRINTF, GFP_KERNEL);
 		if (!buf) {
-			tlog(T_ERROR,
-			     "file %s line %d: Unable to allocate memory for the error report!",
+			terr("file %s line %d: Unable to allocate memory for the error report!",
 			     file, line);
 			goto out;
 		}
@@ -198,7 +197,7 @@ long _fail_unless(struct ktf_test *self, int result, const char *file,
 		(void)snprintf(bufprefix, sizeof(bufprefix) - 1,
 				"file %s line %d: result %d: ", file, line,
 				result);
-		tlog(T_ERROR, "%s%s", bufprefix, buf);
+		terr("%s%s", bufprefix, buf);
 
 		/* Multiple threads may try to update log */
 		spin_lock_irqsave(&assert_lock, flags);

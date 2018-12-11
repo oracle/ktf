@@ -18,7 +18,7 @@
 
 MODULE_LICENSE("GPL");
 
-ulong ktf_debug_mask = T_INFO | T_ERROR;
+ulong ktf_debug_mask = T_INFO;
 
 static unsigned int ktf_context_maxid;
 
@@ -65,7 +65,7 @@ static void __ktf_context_remove(struct ktf_context *ctx, bool locked)
 	unsigned long flags = 0;
 
 	if (!ctx) {
-		tlog(T_ERROR, "A test case tried to remove an invalid context!");
+		terr("A test case tried to remove an invalid context!");
 		return;
 	}
 	handle = ctx->handle;
