@@ -187,7 +187,7 @@ done:
 
 static int override_failed;
 
-static noinline int myfunc(int i)
+noinline int myfunc(int i)
 {
 	override_failed = 1;
 	return i;
@@ -267,12 +267,12 @@ static void add_probe_tests(void)
 	ADD_TEST(override);
 }
 
-static noinline void cov_counted(void)
+noinline void cov_counted(void)
 {
 	tlog(T_INFO, "cov_counted ran!");
 }
 
-static noinline void *doalloc(struct kmem_cache *c, size_t sz)
+noinline void *doalloc(struct kmem_cache *c, size_t sz)
 {
 	if (c)
 		return kmem_cache_alloc(c, GFP_KERNEL);
