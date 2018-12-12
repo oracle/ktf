@@ -7,6 +7,7 @@
  * ktf_override.c: support for overriding function entry.
  */
 #include <linux/kprobes.h>
+#include <linux/ptrace.h>
 #include "ktf.h"
 #include "ktf_override.h"
 
@@ -43,7 +44,7 @@ void ktf_override_function_with_return(struct pt_regs *regs)
 	if (*current_kprobe)
 		*current_kprobe = NULL;
 #endif
-	regs->ip = (unsigned long)&ktf_just_return_func;
+	KTF_SET_INSTRUCTION_POINTER(regs, (unsigned long)&ktf_just_return_func);
 }
 
 NOKPROBE_SYMBOL(ktf_override_function_with_return);

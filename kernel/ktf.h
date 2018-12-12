@@ -12,6 +12,7 @@
 #include <linux/completion.h>
 #include <linux/kprobes.h>
 #include <linux/kthread.h>
+#include <linux/ptrace.h>
 #include "kcheck.h"
 #include "ktf_override.h"
 #include "ktf_map.h"
@@ -120,16 +121,30 @@ extern struct ktf_handle __test_handle;
 #define KTF_REGISTER_ENTRY_PROBE(func, probehandler) \
 	KTF_REGISTER_PROBE(entry_handler, func, probehandler)
 
-/* x86_64 calling conventions specify rdi/rsi contains first/second arguments
- * kretprobes entry handlers.  Define more if needed.
+/* arch-specific calling conventions for kretprobes entry handlers.  Define
+ * more args/architectures if needed.
  */
 #ifdef CONFIG_X86_64
 #define	KTF_ENTRY_PROBE_ARG0		(regs->di)
 #define	KTF_ENTRY_PROBE_ARG1		(regs->si)
-#else
-#define	KTF_ENTRY_PROBE_ARG0		(0)
-#define	KTF_ENTRY_PROBE_ARG1		(0)
 #endif /* CONFIG_X86_64 */
+#ifdef CONFIG_ARM
+#define	KTF_ENTRY_PROBE_ARG0		(regs->ARM_r0)
+#define	KTF_ENTRY_PROBE_ARG1		(regs->ARM_r1)
+#endif /* CONFIG_ARM */
+#ifdef CONFIG_ARM64
+#define	KTF_ENTRY_PROBE_ARG0		(regs->orig_x0)
+#define	KTF_ENTRY_PROBE_ARG1		(regs->regs[1])
+#endif /* CONFIG_ARM64 */
+#ifdef CONFIG_SPARC
+#define	KTF_ENTRY_PROBE_ARG0		(regs->u_regs[UREG_I0])
+#define	KTF_ENTRY_PROBE_ARG1		(regs->u_regs[UREG_I1])
+#endif /* CONFIG_SPARC */
+
+/* Note that we could define dummy values for unsupported architectures but
+ * better that the compile fails than it succeeds and we are misled that our
+ * tests are modifying these values.
+ */
 
 #define KTF_ENTRY_PROBE_RETURN(retval) \
 	do { \
@@ -152,9 +167,13 @@ extern struct ktf_handle __test_handle;
 
 #ifdef CONFIG_X86_64
 #define KTF_SET_RETURN_VALUE(value)     regs->ax = (value)
-#else
-#define KTF_SET_RETURN_VALUE(value)     do { } while (0)
 #endif /* CONFIG_X86_64 */
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+#define	KTF_SET_RETURN_VALUE(value)	regs->ARM_r0 = (value)
+#endif /* CONFIG_ARM[64] */
+#if defined(CONFIG_SPARC)
+#define	KTF_SET_RETURN_VALUE(value)	regs->u_regs[UREG_I0] = (value)
+#endif /* CONFIG_SPARC */
 
 #define KTF_UNREGISTER_RETURN_PROBE(func, probehandler) \
 	KTF_UNREGISTER_PROBE(handler, func, probehandler)
@@ -189,6 +208,9 @@ extern struct ktf_handle __test_handle;
 		ktf_override_function_with_return(regs); \
 		return 1; \
 	} while (0)
+
+#define	KTF_SET_INSTRUCTION_POINTER(regs, value) \
+	instruction_pointer_set(regs, (value))
 
 /* Interfaces for creating kthreads in tests. */
 #define	KTF_THREAD_INIT(threadname, t) \
