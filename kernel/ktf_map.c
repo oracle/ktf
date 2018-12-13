@@ -24,12 +24,13 @@ void ktf_map_init(struct ktf_map *map, ktf_map_elem_comparefn elem_comparefn,
 	spin_lock_init(&map->lock);
 }
 
-/* returns 0 upon success or -ENOMEM if key got truncated */
 int ktf_map_elem_init(struct ktf_map_elem *elem, const char *key)
 {
-	if (strlen(key) >= KTF_MAX_KEY)
-		return -ENOMEM;
-	strncpy(elem->key, key, KTF_MAX_KEY);
+	memcpy(elem->key, key, KTF_MAX_KEY);
+	/* For strings that are too long, ensure truncation at
+	 * KTF_MAX_NAME == KTF_MAX_KEY - 1 length:
+	 */
+	elem->key[KTF_MAX_NAME] = '\0';
 	elem->map = NULL;
 	kref_init(&elem->refcount);
 	return 0;

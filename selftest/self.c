@@ -175,16 +175,21 @@ TEST(selftest, mapcmpfunc)
 	EXPECT_LONG_EQ(0, ktf_map_size(&tm));
 }
 
-/* --- Verify that key name overflow is detected (github issue #6) --- */
+/* --- Verify that key name is truncated at KTF_MAX_NAME length --- */
+
 TEST(selftest, map_keyoverflow)
 {
 	struct myelem e;
 	struct ktf_map tm;
 	char jumbokey[KTF_MAX_NAME + 2];
+	char jumbokey_truncated[KTF_MAX_NAME + 1];
 
 	ktf_map_init(&tm, NULL, NULL);
 	memset(jumbokey, 'x', KTF_MAX_NAME + 1);
-	EXPECT_INT_EQ(ENOMEM, -ktf_map_elem_init(&e.foo, jumbokey));
+	memset(jumbokey_truncated, 'x', KTF_MAX_NAME);
+	jumbokey_truncated[KTF_MAX_NAME] = '\0';
+	EXPECT_INT_EQ(0, ktf_map_elem_init(&e.foo, jumbokey));
+	EXPECT_TRUE(strcmp(e.foo.key, jumbokey_truncated) == 0);
 }
 
 TEST(selftest, dummy)
@@ -370,13 +375,13 @@ TEST(selftest, cov)
 	ASSERT_ADDR_NE_GOTO(p4, NULL, done);
 
 	ktf_for_each_cov_mem(m) {
-		if (m->key.address == (unsigned long)p1 && m->key.size == 8)
+		if (m->key.address == (unsigned long)p1)
 			foundp1 = 1;
 		if (m->key.address == (unsigned long)p2 && m->key.size == 16)
 			foundp2 = 1;
 		if (m->key.address == (unsigned long)p3 && m->key.size == 32)
 			foundp3 = 1;
-		if (m->key.address == (unsigned long)p4 && m->key.size == 32)
+		if (m->key.address == (unsigned long)p4)
 			foundp4 = 1;
 	}
 	ASSERT_INT_EQ_GOTO(foundp1, 1, done);
