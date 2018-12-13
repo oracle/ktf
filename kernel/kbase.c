@@ -164,10 +164,11 @@ EXPORT_SYMBOL(ktf_handle_cleanup_check);
 
 struct ktf_kernel_internals {
 	/* From module.h: Look up a module symbol - supports syntax module:name */
-	unsigned long (*module_kallsyms_lookup_name)(const char *);
-	unsigned long (*kallsyms_lookup_size_offset)(unsigned long,
-						     unsigned long *,
-						     unsigned long *);
+	unsigned long (*module_kallsyms_lookup_name)(const char *name);
+	/* From kallsyms.h: Look up a symbol w/size and offset */
+	unsigned long (*kallsyms_lookup_size_offset)(unsigned long addr,
+						     unsigned long *symbolsize,
+						     unsigned long *offset);
 };
 
 static struct ktf_kernel_internals ki;
