@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0
  *
- * nl.c: TBD: **insert desc here**
+ * nl.c: ktf netlink protocol implementation
  */
 #include <net/netlink.h>
 #include <net/genetlink.h>
@@ -291,7 +291,7 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 		oob_data_sz = nla_len(data_attr);
 	}
 
-	tlog(T_DEBUG, "ktf_run: Request for testset %s, test %s\n", setname, testname);
+	tlog(T_DEBUG, "Request for testset %s, test %s\n", setname, testname);
 
 	/* Start building a response */
 	resp_skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
@@ -318,7 +318,7 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 	if (!retval)
 		tlog(T_DEBUG, "Sent reply for test %s.%s\n", setname, testname);
 	else
-		twarn("ktf_run: Failed to send reply for test %s.%s - value %d",
+		twarn("Failed to send reply for test %s.%s - value %d",
 		      setname, testname, retval);
 	if (oob_data)
 		kfree(oob_data);
@@ -381,7 +381,7 @@ static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 		tlog(T_DEBUG, "Sent reply for %s module %s\n",
 		     cmd, module);
 	else
-		twarn("ktf_cov_cmd: Failed to send reply for %s module %s - value %d",
+		twarn("Failed to send reply for %s module %s - value %d",
 		      cmd, module, retval);
 put_fail:
 	/* Free buffer if failure */

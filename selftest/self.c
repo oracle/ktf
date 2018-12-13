@@ -270,16 +270,16 @@ done:
 
 noinline int probesum(int a, int b)
 {
-	tlog(T_INFO, "probesum: Adding %d + %d", a, b);
+	tlog(T_INFO, "Adding %d + %d", a, b);
 	return a + b;
 }
 
 KTF_RETURN_PROBE(probesum, probesumhandler)
 {
-	tlog(T_DEBUG, "probesum: return value before modifying %ld",
+	tlog(T_DEBUG, "return value before modifying %ld",
 	       regs_return_value(regs));
 	KTF_SET_RETURN_VALUE(-1);
-	tlog(T_DEBUG, "probesum: return value after modifying %ld",
+	tlog(T_DEBUG, "return value after modifying %ld",
 	       regs_return_value(regs));
 	return 0;
 }
@@ -320,7 +320,7 @@ static void add_probe_tests(void)
 
 noinline void cov_counted(void)
 {
-	tlog(T_INFO, "cov_counted ran!");
+	tlog(T_INFO, "got called!");
 }
 
 noinline void *doalloc(struct kmem_cache *c, size_t sz)
