@@ -46,6 +46,5 @@ void ktf_override_function_with_return(struct pt_regs *regs)
 #endif
 	KTF_SET_INSTRUCTION_POINTER(regs, (unsigned long)&ktf_just_return_func);
 }
-
-NOKPROBE_SYMBOL(ktf_override_function_with_return);
 EXPORT_SYMBOL(ktf_override_function_with_return);
+NOKPROBE_SYMBOL(ktf_override_function_with_return);

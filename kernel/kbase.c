@@ -19,6 +19,7 @@
 MODULE_LICENSE("GPL");
 
 ulong ktf_debug_mask = T_INFO;
+EXPORT_SYMBOL(ktf_debug_mask);
 
 static unsigned int ktf_context_maxid;
 
@@ -28,7 +29,6 @@ static DEFINE_SPINLOCK(context_lock);
 LIST_HEAD(context_handles);
 
 module_param_named(debug_mask, ktf_debug_mask, ulong, 0644);
-EXPORT_SYMBOL(ktf_debug_mask);
 
 int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx, const char *name)
 {
@@ -87,7 +87,6 @@ void ktf_context_remove(struct ktf_context *ctx)
 {
 	__ktf_context_remove(ctx, false);
 }
-
 EXPORT_SYMBOL(ktf_context_remove);
 
 struct ktf_context *ktf_find_first_context(struct ktf_handle *handle)
