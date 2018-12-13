@@ -192,6 +192,74 @@ TEST(selftest, map_keyoverflow)
 	EXPECT_TRUE(strcmp(e.foo.key, jumbokey_truncated) == 0);
 }
 
+struct mykey {
+	unsigned long address;
+	unsigned long size;
+};
+
+/* Comparison here is to check if k1's address falls in range
+ * [k2->address, k2->address + k2->size].  Similar compare used in
+ * ktf_cov to figure out if a function address lies within the function
+ * code.
+ */
+static int custom_compare(const char *key1, const char *key2)
+{
+	struct mykey *k1 = (struct mykey *)key1;
+	struct mykey *k2 = (struct mykey *)key2;
+
+	if (k1->address < k2->address)
+		return -1;
+	if (k1->address >= (k2->address + k2->size))
+		return 1;
+	return 0;
+}
+
+/* --- Verify that opaque keys with custom compare function work --- */
+
+TEST(selftest, map_customkey)
+{
+	const int nelems = 3;
+	int baseaddr = 1024;
+	struct ktf_map cm;
+	struct mykey keys[nelems], search;
+	struct myelem elems[nelems];
+	int i, j;
+
+	ktf_map_init(&cm, custom_compare, NULL);
+
+	/* Ensure we can add entries and then retrieve them via search key. */
+	for (i = 0; i < nelems; i++) {
+		baseaddr += (i << 2);
+		keys[i].address = baseaddr;
+		keys[i].size = (i + 1) << 2;
+		ASSERT_INT_EQ_GOTO(ktf_map_elem_init(&elems[i].foo,
+						     (char *)&keys[i]),
+				   0, done);
+		ASSERT_INT_EQ_GOTO(ktf_map_insert(&cm, &elems[i].foo), 0, done);
+	}
+
+	baseaddr = 1024;
+
+	/* Ensure all search addresses within range of [base address, size]
+	 * find appropriate entries.
+	 */
+	for (i = 0; i < nelems; i++) {
+		baseaddr += (i << 2);
+		for (j = 0; j < (i + 1) << 2; j++) {
+			search.address = baseaddr + j;
+			search.size = 0;
+			ASSERT_ADDR_EQ_GOTO(ktf_map_find_entry(&cm,
+							       (char *)&search,
+							       struct myelem,
+							       foo),
+					    &elems[i], done);
+		}
+	}
+
+done:
+	ktf_map_delete_all(&cm);
+}
+
 TEST(selftest, dummy)
 {
 	EXPECT_TRUE(true);
@@ -210,6 +278,7 @@ static void add_map_tests(void)
 	ADD_TEST_TO(dual_handle, mapref);
 	ADD_TEST_TO(dual_handle, mapcmpfunc);
 	ADD_TEST(map_keyoverflow);
+	ADD_TEST(map_customkey);
 
 	/* This should fail */
 	ADD_TEST_TO(wrongversion_handle, wrongversion);
