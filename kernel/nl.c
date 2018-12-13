@@ -320,8 +320,8 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 	else
 		twarn("Failed to send reply for test %s.%s - value %d",
 		      setname, testname, retval);
-	if (oob_data)
-		kfree(oob_data);
+
+	kfree(oob_data);
 put_fail:
 	/* Free buffer if failure */
 	if (retval)

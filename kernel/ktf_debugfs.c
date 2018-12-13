@@ -153,10 +153,8 @@ static void _ktf_debugfs_destroy_test(struct ktf_test *t)
 		return;
 
 	tlog(T_DEBUG, "Destroying debugfs test %s", t->name);
-	if (t->debugfs.debugfs_results_test)
-		debugfs_remove(t->debugfs.debugfs_results_test);
-	if (t->debugfs.debugfs_run_test)
-		debugfs_remove(t->debugfs.debugfs_run_test);
+	debugfs_remove(t->debugfs.debugfs_results_test);
+	debugfs_remove(t->debugfs.debugfs_run_test);
 	memset(&t->debugfs, 0, sizeof(t->debugfs));
 }
 
@@ -237,14 +235,10 @@ static const struct file_operations ktf_run_testset_fops = {
 
 static void _ktf_debugfs_destroy_testset(struct ktf_case *testset)
 {
-	if (testset->debugfs.debugfs_run_testset)
-		debugfs_remove(testset->debugfs.debugfs_run_testset);
-	if (testset->debugfs.debugfs_run_test)
-		debugfs_remove(testset->debugfs.debugfs_run_test);
-	if (testset->debugfs.debugfs_results_testset)
-		debugfs_remove(testset->debugfs.debugfs_results_testset);
-	if (testset->debugfs.debugfs_results_test)
-		debugfs_remove(testset->debugfs.debugfs_results_test);
+	debugfs_remove(testset->debugfs.debugfs_run_testset);
+	debugfs_remove(testset->debugfs.debugfs_run_test);
+	debugfs_remove(testset->debugfs.debugfs_results_testset);
+	debugfs_remove(testset->debugfs.debugfs_results_test);
 }
 
 void ktf_debugfs_create_testset(struct ktf_case *testset)
@@ -329,14 +323,10 @@ static const struct file_operations ktf_cov_fops = {
 void ktf_debugfs_cleanup(void)
 {
 	tlog(T_DEBUG, "Removing ktf debugfs dirs...");
-	if (ktf_debugfs_cov_file)
-		debugfs_remove(ktf_debugfs_cov_file);
-	if (ktf_debugfs_rundir)
-		debugfs_remove(ktf_debugfs_rundir);
-	if (ktf_debugfs_resultsdir)
-		debugfs_remove(ktf_debugfs_resultsdir);
-	if (ktf_debugfs_rootdir)
-		debugfs_remove(ktf_debugfs_rootdir);
+	debugfs_remove(ktf_debugfs_cov_file);
+	debugfs_remove(ktf_debugfs_rundir);
+	debugfs_remove(ktf_debugfs_resultsdir);
+	debugfs_remove(ktf_debugfs_rootdir);
 }
 
 void ktf_debugfs_init(void)

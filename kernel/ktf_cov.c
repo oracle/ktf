@@ -667,6 +667,16 @@ void ktf_cov_seq_print(struct seq_file *seq)
 	ktf_cov_mem_seq_print(seq);
 }
 
+#if (KERNEL_VERSION(4, 2, 0) > LINUX_VERSION_CODE)
+inline void __kmem_cache_destroy_safe(struct kmem_cache *c)
+{
+	if (c)
+		kmem_cache_destroy(c);
+}
+
+#define kmem_cache_destroy __kmem_cache_destroy_safe
+#endif
+
 void ktf_cov_cleanup(void)
 {
 	struct ktf_cov *cov;
@@ -678,6 +688,5 @@ void ktf_cov_cleanup(void)
 	ktf_map_delete_all(&cov_map);
 	ktf_map_delete_all(&cov_entry_map);
 	ktf_map_delete_all(&cov_mem_map);
-	if (cov_mem_cache)
-		kmem_cache_destroy(cov_mem_cache);
+	kmem_cache_destroy(cov_mem_cache);
 }
