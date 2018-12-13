@@ -276,8 +276,7 @@ static int ktf_cov_kmem_alloc_entry(struct ktf_cov_mem *m, unsigned long bytes)
 	m->stack.max_entries = KTF_COV_MAX_STACK_DEPTH;
 	m->stack.skip = 1;
 	save_stack_trace(&m->stack);
-	/* First few entries relate to tracing; we can skip them. */
-	for (n = 3; n < m->stack.nr_entries; n++) {
+	for (n = 0; n < m->stack.nr_entries; n++) {
 		/* avoid recursive enter when allocating cov mem */
 		if (m->stack.entries[n] ==
 		    (unsigned long)ktf_cov_kmem_cache_alloc_handler)
