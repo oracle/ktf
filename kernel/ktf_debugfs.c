@@ -52,7 +52,7 @@ static int ktf_debugfs_result(struct seq_file *seq, void *v)
 
 	ktf_debugfs_print_result(seq, t);
 
-	return (0);
+	return 0;
 }
 
 /* /sys/kernel/debug/ktf/results/<testset> shows all results for testset. */
@@ -62,13 +62,13 @@ static int ktf_debugfs_results_all(struct seq_file *seq, void *v)
 	struct ktf_test *t;
 
 	if (!testset)
-		return (0);
+		return 0;
 
 	seq_printf(seq, "%s results:\n", ktf_case_name(testset));
 	ktf_testcase_for_each_test(t, testset)
 		ktf_debugfs_print_result(seq, t);
 
-	return (0);
+	return 0;
 }
 
 /* /sys/kernel/debug/ktf/run/<testset>-tests/<test> runs specific test. */
@@ -77,12 +77,12 @@ static int ktf_debugfs_run(struct seq_file *seq, void *v)
 	struct ktf_test *t = (struct ktf_test *)seq->private;
 
 	if (!t)
-		return (0);
+		return 0;
 
 	ktf_run_hook(NULL, NULL, t, 0, NULL, 0);
 	ktf_debugfs_print_result(seq, t);
 
-	return (0);
+	return 0;
 }
 
 /* /sys/kernel/debug/ktf/run/<testset> runs all tests in testset. */
@@ -92,7 +92,7 @@ static int ktf_debugfs_run_all(struct seq_file *seq, void *v)
 	struct ktf_test *t;
 
 	if (!testset)
-		return (0);
+		return 0;
 
 	seq_printf(seq, "Running %s\n", ktf_case_name(testset));
 	ktf_testcase_for_each_test(t, testset) {
@@ -100,7 +100,7 @@ static int ktf_debugfs_run_all(struct seq_file *seq, void *v)
 		ktf_debugfs_print_result(seq, t);
 	}
 
-	return (0);
+	return 0;
 }
 
 static int ktf_run_test_open(struct inode *inode, struct file *file)
