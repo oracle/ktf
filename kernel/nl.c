@@ -393,9 +393,8 @@ put_fail:
 int ktf_nl_register(void)
 {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 7))
-	int stat = genl_register_family_with_ops(
-		&ktf_gnl_family,
-		ktf_ops, ARRAY_SIZE(ktf_ops));
+	int stat = genl_register_family_with_ops(&ktf_gnl_family, ktf_ops,
+						 ARRAY_SIZE(ktf_ops));
 #else
 	int stat = genl_register_family(&ktf_gnl_family);
 #endif
