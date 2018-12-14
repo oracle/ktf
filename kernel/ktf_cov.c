@@ -177,7 +177,7 @@ static int ktf_cov_handler(struct kprobe *p, struct pt_regs *regs)
 }
 
 static int ktf_cov_init_symbol(void *data, const char *name,
-			struct module *mod, unsigned long addr)
+			       struct module *mod, unsigned long addr)
 {
 	struct ktf_cov_entry *entry;
 	struct ktf_cov *cov = data;
@@ -249,7 +249,7 @@ out:
 }
 
 static int ktf_cov_kmem_cache_alloc_handler(struct kretprobe_instance *,
-	struct pt_regs *);
+					    struct pt_regs *);
 
 static unsigned long register_kretprobe_size;
 
@@ -305,7 +305,7 @@ static int ktf_cov_kmem_alloc_entry(struct ktf_cov_mem *m, unsigned long bytes)
 
 /* Handler tracking kmalloc allocations. */
 static int ktf_cov_kmalloc_entry_handler(struct kretprobe_instance *ri,
-	struct pt_regs *regs)
+					 struct pt_regs *regs)
 {
 	struct ktf_cov_mem *m = (struct ktf_cov_mem *)ri->data;
 	unsigned long bytes = (unsigned long)KTF_ENTRY_PROBE_ARG0;
@@ -314,7 +314,7 @@ static int ktf_cov_kmalloc_entry_handler(struct kretprobe_instance *ri,
 }
 
 static int ktf_cov_kmem_cache_alloc_entry_handler(struct kretprobe_instance *ri,
-	struct pt_regs *regs)
+						  struct pt_regs *regs)
 {
 	struct kmem_cache *cache =
 		(struct kmem_cache *)KTF_ENTRY_PROBE_ARG0;
@@ -331,7 +331,7 @@ static int ktf_cov_kmem_cache_alloc_entry_handler(struct kretprobe_instance *ri,
 }
 
 static int ktf_cov_kmem_alloc_return(struct ktf_cov_mem *m,
-	unsigned long ret)
+				     unsigned long ret)
 {
 	struct ktf_cov_mem *mm;
 
@@ -358,7 +358,7 @@ static int ktf_cov_kmem_alloc_return(struct ktf_cov_mem *m,
 }
 
 static int ktf_cov_kmalloc_handler(struct kretprobe_instance *ri,
-	struct pt_regs *regs)
+				   struct pt_regs *regs)
 {
 	struct ktf_cov_mem *m = (struct ktf_cov_mem *)ri->data;
 	unsigned long ret = regs_return_value(regs);
@@ -369,7 +369,7 @@ static int ktf_cov_kmalloc_handler(struct kretprobe_instance *ri,
 }
 
 static int ktf_cov_kmem_cache_alloc_handler(struct kretprobe_instance *ri,
-	struct pt_regs *regs)
+					    struct pt_regs *regs)
 {
 	struct ktf_cov_mem *m = (struct ktf_cov_mem *)ri->data;
 	unsigned long ret = regs_return_value(regs);
@@ -397,7 +397,7 @@ static int ktf_cov_kmem_free_entry(unsigned long tofree)
 }
 
 static int ktf_cov_kfree_entry_handler(struct kretprobe_instance *ri,
-	struct pt_regs *regs)
+				       struct pt_regs *regs)
 {
 	unsigned long tofree = (unsigned long)KTF_ENTRY_PROBE_ARG0;
 
@@ -408,7 +408,7 @@ static int ktf_cov_kfree_entry_handler(struct kretprobe_instance *ri,
 }
 
 static int ktf_cov_kmem_cache_free_entry_handler(struct kretprobe_instance *ri,
-	struct pt_regs *regs)
+						 struct pt_regs *regs)
 {
 	struct kmem_cache *cache =
 		(struct kmem_cache *)KTF_ENTRY_PROBE_ARG0;

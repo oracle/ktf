@@ -166,7 +166,7 @@ EXPORT_SYMBOL(ktf_get_assertion_count);
 static DEFINE_SPINLOCK(assert_lock);
 
 long _fail_unless(struct ktf_test *self, int result, const char *file,
-			int line, const char *fmt, ...)
+		  int line, const char *fmt, ...)
 {
 	int len;
 	va_list ap;
@@ -216,7 +216,7 @@ EXPORT_SYMBOL(_fail_unless);
  * a per-test case map TCase:tests map.
  */
 void  _tcase_add_test(struct __test_desc td,
-				struct ktf_handle *th,
+		      struct ktf_handle *th,
 				int _signal,
 				int allowed_exit_value,
 				int start, int end)
@@ -276,7 +276,7 @@ void  _tcase_add_test(struct __test_desc td,
 EXPORT_SYMBOL(_tcase_add_test);
 
 void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
-		struct ktf_test *t, u32 value,
+		  struct ktf_test *t, u32 value,
 		void *oob_data, size_t oob_data_sz)
 {
 	int i;
@@ -292,7 +292,7 @@ void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 		 */
 		t->handle->current_test = t;
 		tlogs(T_DEBUG,
-			printk(KERN_INFO "Running test %s.%s", t->tclass, t->name);
+		      printk(KERN_INFO "Running test %s.%s", t->tclass, t->name);
 			if (ctx)
 				printk("_%s", ktf_context_name(ctx));
 			printk("[%d:%d]\n", t->start, t->end);
@@ -372,7 +372,7 @@ int ktf_cleanup(void)
 		twarn("(memory leak) test set %s still active at unload!", ktf_case_name(tc));
 		ktf_testcase_for_each_test(t, tc) {
 			twarn("(memory leak) test set %s still active with test %s at unload!",
-				ktf_case_name(tc), t->name);
+			      ktf_case_name(tc), t->name);
 		}
 		return -EBUSY;
 	}

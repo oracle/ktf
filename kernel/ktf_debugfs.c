@@ -169,13 +169,13 @@ void ktf_debugfs_create_test(struct ktf_test *t)
 
 	t->debugfs.debugfs_results_test =
 		debugfs_create_file(t->name, S_IFREG | 0444,
-				 testset->debugfs.debugfs_results_test,
+				    testset->debugfs.debugfs_results_test,
 				 t, &ktf_results_test_fops);
 
 	if (t->debugfs.debugfs_results_test) {
 		t->debugfs.debugfs_run_test =
 			debugfs_create_file(t->name, S_IFREG | 0444,
-				 testset->debugfs.debugfs_run_test,
+					    testset->debugfs.debugfs_run_test,
 				 t, &ktf_run_test_fops);
 		if (!t->debugfs.debugfs_run_test) {
 			_ktf_debugfs_destroy_test(t);
@@ -251,7 +251,7 @@ void ktf_debugfs_create_testset(struct ktf_case *testset)
 	/* First add /sys/kernel/debug/ktf/[results|run]/<testset> */
 	testset->debugfs.debugfs_results_testset =
 		debugfs_create_file(name, S_IFREG | 0444,
-				 ktf_debugfs_resultsdir,
+				    ktf_debugfs_resultsdir,
 				 testset, &ktf_results_testset_fops);
 	if (!testset->debugfs.debugfs_results_testset)
 		goto err;

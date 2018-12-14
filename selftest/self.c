@@ -163,7 +163,7 @@ TEST(selftest, mapcmpfunc)
 	for (i = 0; i < nelems; i++) {
 		e[i].order = nelems - i;
 		EXPECT_INT_EQ(0, ktf_map_elem_init(&e[i].foo,
-			      (char *)&e[i].order));
+						   (char *)&e[i].order));
 		EXPECT_INT_EQ(0, ktf_map_insert(&tm, &e[i].foo));
 	}
 	i = 1;
@@ -277,10 +277,10 @@ noinline int probesum(int a, int b)
 KTF_RETURN_PROBE(probesum, probesumhandler)
 {
 	tlog(T_DEBUG, "return value before modifying %ld",
-	       regs_return_value(regs));
+	     regs_return_value(regs));
 	KTF_SET_RETURN_VALUE(-1);
 	tlog(T_DEBUG, "return value after modifying %ld",
-	       regs_return_value(regs));
+	     regs_return_value(regs));
 	return 0;
 }
 
@@ -340,7 +340,7 @@ TEST(selftest, cov)
 	int oldcount;
 
 	c = kmem_cache_create("selftest_cov_cache",
-			     32, 0,
+			      32, 0,
 			     SLAB_HWCACHE_ALIGN | SLAB_PANIC, NULL);
 
 	ASSERT_ADDR_NE(NULL, c);

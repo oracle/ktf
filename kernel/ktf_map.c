@@ -15,7 +15,7 @@
 #endif
 
 void ktf_map_init(struct ktf_map *map, ktf_map_elem_comparefn elem_comparefn,
-	ktf_map_elem_freefn elem_freefn)
+		  ktf_map_elem_freefn elem_freefn)
 {
 	map->root = RB_ROOT;
 	map->size = 0;
