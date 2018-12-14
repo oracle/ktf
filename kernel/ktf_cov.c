@@ -630,7 +630,7 @@ static void ktf_cov_mem_seq_print(struct seq_file *seq)
 	char buf[256];
 	int n;
 
-	seq_printf(seq, "\nMemory in use allocated by covered functions:\n\n");
+	seq_puts(seq, "\nMemory in use allocated by covered functions:\n\n");
 	seq_printf(seq, "%44s %16s %10s\n", "ALLOCATION STACK", "ADDRESS",
 		   "SIZE");
 	ktf_for_each_cov_mem(m) {
@@ -641,9 +641,9 @@ static void ktf_cov_mem_seq_print(struct seq_file *seq)
 				seq_printf(seq, " %16p %10lu",
 					   (void *)m->key.address,
 					   m->key.size);
-			seq_printf(seq, "\n");
+			seq_puts(seq, "\n");
 		}
-		seq_printf(seq, "\n");
+		seq_puts(seq, "\n");
 	}
 }
 
