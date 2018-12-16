@@ -14,6 +14,7 @@
 #include <rdma/ib_verbs.h>
 #include "ktf.h"
 #include "kcheck.h"
+#include "ktf_debugfs.h"
 #include "nl.h"
 
 MODULE_LICENSE("GPL");

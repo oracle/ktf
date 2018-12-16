@@ -16,6 +16,7 @@
 #include "unlproto.h"
 #include "ktf.h"
 #include "ktf_cov.h"
+#include "ktf_debugfs.h"
 
 #define MAX_PRINTF 4096
 

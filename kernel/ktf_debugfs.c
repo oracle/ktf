@@ -8,7 +8,7 @@
 #include <asm/unistd.h>
 #include <linux/module.h>
 #include <linux/time.h>
-#include <linux/debugfs.h>
+#include "ktf_debugfs.h"
 #include "ktf.h"
 #include "kcheck.h"
 #include "ktf_cov.h"

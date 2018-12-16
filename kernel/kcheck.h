@@ -26,14 +26,6 @@ struct ktf_test;
 
 typedef void (*ktf_test_fun) (struct ktf_test *, struct ktf_context* tdev, int, u32);
 
-#define KTF_DEBUGFS_ROOT                        "ktf"
-#define KTF_DEBUGFS_RUN                         "run"
-#define KTF_DEBUGFS_RESULTS                     "results"
-#define KTF_DEBUGFS_COV				"coverage"
-#define KTF_DEBUGFS_TESTS_SUFFIX                "-tests"
-
-#define KTF_DEBUGFS_NAMESZ                      256
-
 struct ktf_debugfs {
         struct dentry *debugfs_results_testset;
         struct dentry *debugfs_results_test;
@@ -73,13 +65,6 @@ struct ktf_test_state {
 	int iter;
 	u32 value;
 };
-
-void ktf_debugfs_create_test(struct ktf_test *);
-void ktf_debugfs_destroy_test(struct ktf_test *);
-void ktf_debugfs_create_testset(struct ktf_case *);
-void ktf_debugfs_destroy_testset(struct ktf_case *);
-void ktf_debugfs_init(void);
-void ktf_debugfs_cleanup(void);
 
 extern struct ktf_map test_cases;
 
