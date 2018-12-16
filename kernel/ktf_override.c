@@ -39,10 +39,13 @@ EXPORT_SYMBOL(ktf_post_handler);
 void ktf_override_function_with_return(struct pt_regs *regs)
 {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
-	const struct kprobe * __percpu *current_kprobe =
-	    raw_cpu_ptr(ktf_find_symbol(NULL, "current_kprobe"));
-	if (*current_kprobe)
-		*current_kprobe = NULL;
+	const struct kprobe __percpu **current_kprobe_ref;
+
+	preempt_disable();
+	current_kprobe_ref = raw_cpu_ptr(ktf_find_symbol(NULL, "current_kprobe"));
+	if (*current_kprobe_ref)
+		*current_kprobe_ref = NULL;
+	preempt_enable();
 #endif
 	KTF_SET_INSTRUCTION_POINTER(regs, (unsigned long)&ktf_just_return_func);
 }
