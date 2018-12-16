@@ -204,13 +204,6 @@ void ktf_cleanup_check(void);
 
 #define KTF_CLEANUP() KTF_HANDLE_CLEANUP(__test_handle)
 
-/* Define KTF_ALL_TESTS to have the compiler fail if a test is not added
- * to the list of tests to run:
- */
-#ifdef KTF_ALL_TESTS
-#define _KTF_DUMMY_USE_TEST_SETUP(__testname) (void)__testname##_setup
-#endif
-
 /* Start a unit test with TEST(suite_name,unit_name)
 */
 #define TEST(__testsuite, __testname)\
