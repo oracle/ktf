@@ -129,8 +129,8 @@ extern struct ktf_handle __test_handle;
 #define	KTF_ENTRY_PROBE_ARG1		(regs->si)
 #endif /* CONFIG_X86_64 */
 #ifdef CONFIG_ARM
-#define	KTF_ENTRY_PROBE_ARG0		(regs->ARM_r0)
-#define	KTF_ENTRY_PROBE_ARG1		(regs->ARM_r1)
+#define	KTF_ENTRY_PROBE_ARG0		(regs->regs[0])
+#define	KTF_ENTRY_PROBE_ARG1		(regs->regs[1])
 #endif /* CONFIG_ARM */
 #ifdef CONFIG_ARM64
 #define	KTF_ENTRY_PROBE_ARG0		(regs->orig_x0)
@@ -169,7 +169,7 @@ extern struct ktf_handle __test_handle;
 #define KTF_SET_RETURN_VALUE(value)     regs->ax = (value)
 #endif /* CONFIG_X86_64 */
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
-#define	KTF_SET_RETURN_VALUE(value)	regs->ARM_r0 = (value)
+#define	KTF_SET_RETURN_VALUE(value)	regs->regs[0] = (value)
 #endif /* CONFIG_ARM[64] */
 #if defined(CONFIG_SPARC)
 #define	KTF_SET_RETURN_VALUE(value)	regs->u_regs[UREG_I0] = (value)
