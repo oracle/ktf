@@ -4,16 +4,16 @@
  *
  * SPDX-License-Identifier: GPL-2.0
  *
- * kcheck.c: Kernel side code for tracking and reporting ktf test results
+ * ktf_test.c: Kernel side code for tracking and reporting ktf test results
  */
 #include <linux/module.h>
 #include <linux/time.h>
-#include "kcheck.h"
+#include "ktf_test.h"
 #include <net/netlink.h>
 #include <net/genetlink.h>
 
-#include "nl.h"
-#include "unlproto.h"
+#include "ktf_nl.h"
+#include "ktf_unlproto.h"
 #include "ktf.h"
 #include "ktf_cov.h"
 #include "ktf_debugfs.h"

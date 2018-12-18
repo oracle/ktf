@@ -8,13 +8,13 @@
  * framework, adapted by Knut Omang to build with the linux kernel.
  */
 
-#ifndef KCHECK_H
-#define KCHECK_H
+#ifndef KTF_TEST_H
+#define KTF_TEST_H
 
 #include <net/netlink.h>
 #include <linux/version.h>
 #include "ktf_map.h"
-#include "unlproto.h"
+#include "ktf_unlproto.h"
 
 /* A test context is an extendable object that a test client module
  * can supply, and that all tests will be invoked with as an implicit
@@ -381,4 +381,4 @@ long _fail_unless (struct ktf_test *self, int result, const char *file,
 		  x, y);\
 	} while (0)
 
-#endif /* KCHECK_H */
+#endif /* KTF_TEST_H */

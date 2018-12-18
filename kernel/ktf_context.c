@@ -4,18 +4,18 @@
  *
  * SPDX-License-Identifier: GPL-2.0
  *
- * kbase.c: Main part of ktf kernel module that implements a generic unit test
- *   framework for tests written in kernel code, with support for gtest
- *   (googletest) user space tools for invocation and reporting.
+ * kft_context.c: Main part of ktf kernel module that implements a generic
+ *   unit test framework for tests written in kernel code, with support for
+ *   gtest (googletest) user space tools for invocation and reporting.
  */
 
 #include <linux/module.h>
 #include <linux/kallsyms.h>
 #include <rdma/ib_verbs.h>
 #include "ktf.h"
-#include "kcheck.h"
+#include "ktf_test.h"
 #include "ktf_debugfs.h"
-#include "nl.h"
+#include "ktf_nl.h"
 
 MODULE_LICENSE("GPL");
 

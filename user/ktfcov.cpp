@@ -12,7 +12,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "ktf.h"
-#include "../kernel/unlproto.h"
+#include "../kernel/ktf_unlproto.h"
 
 using namespace std;
 

@@ -6,6 +6,7 @@
  * self.c: Some simple self tests for KTF
  */
 #include <linux/module.h>
+#include <linux/mm_types.h>
 #include <linux/slab.h>
 #include <linux/slab_def.h>
 

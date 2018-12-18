@@ -11,7 +11,7 @@
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
 #include <unistd.h>
-#include "kernel/unlproto.h"
+#include "kernel/ktf_unlproto.h"
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>

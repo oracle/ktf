@@ -10,7 +10,7 @@
 #include <linux/time.h>
 #include "ktf_debugfs.h"
 #include "ktf.h"
-#include "kcheck.h"
+#include "ktf_test.h"
 #include "ktf_cov.h"
 
 /* Create a debugfs representation of test sets/tests.  Hierarchy looks like

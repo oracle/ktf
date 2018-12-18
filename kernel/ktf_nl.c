@@ -4,14 +4,14 @@
  *
  * SPDX-License-Identifier: GPL-2.0
  *
- * nl.c: ktf netlink protocol implementation
+ * ktf_nl.c: ktf netlink protocol implementation
  */
 #include <net/netlink.h>
 #include <net/genetlink.h>
 #define NL_INTERNAL 1
-#include "unlproto.h"
-#include "kcheck.h"
-#include "nl.h"
+#include "ktf_unlproto.h"
+#include "ktf_test.h"
+#include "ktf_nl.h"
 #include "ktf.h"
 #include "ktf_cov.h"
 

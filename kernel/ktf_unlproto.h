@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0
  *
- * unlproto.h: implements interfaces for user-kernel netlink interactions
+ * ktf_unlproto.h: implements interfaces for user-kernel netlink interactions
  *   for querying/running tests.
  */
 #ifndef _KTF_UNLPROTO_H

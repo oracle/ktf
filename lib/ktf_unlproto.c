@@ -12,7 +12,7 @@
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
 #define NL_INTERNAL 1
-#include "kernel/unlproto.h"
+#include "kernel/ktf_unlproto.h"
 
 
 struct nla_policy *get_ktf_gnl_policy()

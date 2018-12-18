@@ -11,7 +11,7 @@ AM_CXXFLAGS = -I$(top_srcdir) $(NETLINK_CFLAGS) $(KTF_CXXFLAGS) \
 		-D__FILENAME__=\"`basename $<`\"
 
 lib_LTLIBRARIES = libktf.la
-libktf_la_SOURCES = ktf_int.cpp ktf_run.cpp unlproto.c ktf_debug.cpp
+libktf_la_SOURCES = ktf_int.cpp ktf_run.cpp ktf_unlproto.c ktf_debug.cpp
 
 libktf_includedir = $(includedir)
 libktf_include_HEADERS = ktf_debug.h ktf_int.h ktf.h
@@ -20,11 +20,11 @@ libktf_include_HEADERS = ktf_debug.h ktf_int.h ktf.h
 
 KTF_K_HDRS = \
     ktf.h \
-    kcheck.h \
+    ktf_test.h \
     ktf_map.h \
     ktf_override.h \
-    nl.h \
-    unlproto.h
+    ktf_nl.h \
+    ktf_unlproto.h
 
 kernel_headers_src = $(KTF_K_HDRS:%=$(top_srcdir)/kernel/%)
 kernel_headers = $(KTF_K_HDRS:%=$(includedir)/ktf/%)

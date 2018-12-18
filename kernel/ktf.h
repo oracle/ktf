@@ -13,10 +13,10 @@
 #include <linux/kprobes.h>
 #include <linux/kthread.h>
 #include <linux/ptrace.h>
-#include "kcheck.h"
+#include "ktf_test.h"
 #include "ktf_override.h"
 #include "ktf_map.h"
-#include "unlproto.h"
+#include "ktf_unlproto.h"
 
 #define	KTF_MAX_LOG			2048
 
