@@ -81,6 +81,18 @@ extern struct ktf_handle __test_handle;
  * mixed with gkdb usage.
  */
 
+#if (defined(CONFIG_KPROBES) && defined(CONFIG_KRETPROBES) && \
+    (defined(CONFIG_X86_64) || defined(CONFIG_ARM) || \
+     defined(CONFIG_ARM64) || defined(CONFIG_SPARC)))
+#define KTF_PROBE_SUPPORT
+#else
+static inline int ktf_no_probe_support(void)
+{
+	twarn("No support for k[ret]probes, or platform not supported.")
+	return -ENOTSUPP);
+}
+#endif
+
 /* Entry/return probe - type is handler type (entry_handler for entry,
  * handler for return), func is function to be probed; probehandler is name
  * of probe handling function we will invoke on entry/return.
@@ -98,8 +110,13 @@ extern struct ktf_handle __test_handle;
 	static int probehandler(struct kretprobe_instance *ri, \
 				struct pt_regs *regs)
 
+#ifdef KTF_PROBE_SUPPORT
 #define KTF_REGISTER_PROBE(type, func, probehandler) \
 	register_kretprobe(&__ktf_##type##_##probehandler)
+#else
+#define	KTF_REGISTER_PROBE(type, func, probehandler) \
+	ktf_no_probe_support()
+#endif
 
 /* Note on the complexity below - to re-use a statically-defined kretprobe for
  * registration, we need to clean up state in the struct kretprobe.  Hence
@@ -124,6 +141,7 @@ extern struct ktf_handle __test_handle;
 /* arch-specific calling conventions for kretprobes entry handlers.  Define
  * more args/architectures if needed.
  */
+#ifdef KTF_PROBE_SUPPORT
 #ifdef CONFIG_X86_64
 #define	KTF_ENTRY_PROBE_ARG0		(regs->di)
 #define	KTF_ENTRY_PROBE_ARG1		(regs->si)
@@ -140,11 +158,13 @@ extern struct ktf_handle __test_handle;
 #define	KTF_ENTRY_PROBE_ARG0		(regs->u_regs[UREG_I0])
 #define	KTF_ENTRY_PROBE_ARG1		(regs->u_regs[UREG_I1])
 #endif /* CONFIG_SPARC */
+#endif /* KTF_PROBE_SUPPORT */
 
-/* Note that we could define dummy values for unsupported architectures but
- * better that the compile fails than it succeeds and we are misled that our
- * tests are modifying these values.
- */
+/* For unsupported platforms. */
+#ifndef KTF_ENTRY_PROBE_ARG0
+#define	KTF_ENTRY_PROBE_ARG0		(0)
+#define	KTF_ENTRY_PROBE_ARG1		(1)
+#endif
 
 #define KTF_ENTRY_PROBE_RETURN(retval) \
 	do { \
@@ -165,6 +185,7 @@ extern struct ktf_handle __test_handle;
 
 #define KTF_RETURN_VALUE()	regs_return_value(regs)
 
+#ifdef KTF_PROBE_SUPPORT
 #ifdef CONFIG_X86_64
 #define KTF_SET_RETURN_VALUE(value)     regs->ax = (value)
 #endif /* CONFIG_X86_64 */
@@ -174,6 +195,12 @@ extern struct ktf_handle __test_handle;
 #if defined(CONFIG_SPARC)
 #define	KTF_SET_RETURN_VALUE(value)	regs->u_regs[UREG_I0] = (value)
 #endif /* CONFIG_SPARC */
+#endif /* KTF_PROBE_SUPPORT */
+
+/* For unsupported platforms. */
+#ifndef KTF_PROBE_SUPPORT
+#define	KTF_SET_RETURN_VALUE(value)	do { } while (0)
+#endif /* KTF_PROBE_SUPPORT */
 
 #define KTF_UNREGISTER_RETURN_PROBE(func, probehandler) \
 	KTF_UNREGISTER_PROBE(handler, func, probehandler)
@@ -189,8 +216,13 @@ extern struct ktf_handle __test_handle;
         }; \
         static int probehandler(struct kprobe *kp, struct pt_regs *regs)
 
+#ifdef KTF_PROBE_SUPPORT
 #define	KTF_REGISTER_OVERRIDE(func, probehandler) \
 	ktf_register_override(&__ktf_override_##probehandler)
+#else
+#define	KTF_REGISTER_OVERRIDE(func, probehandler) \
+	ktf_no_probe_support()
+#endif
 
 #define	KTF_UNREGISTER_OVERRIDE(func, probehandler) \
 	do { \
@@ -209,8 +241,12 @@ extern struct ktf_handle __test_handle;
 		return 1; \
 	} while (0)
 
+#ifdef KTF_PROBE_SUPPORT
 #define	KTF_SET_INSTRUCTION_POINTER(regs, value) \
 	instruction_pointer_set(regs, (value))
+#else
+#define	KTF_SET_INSTRUCTION_POINTER(regs, value)	do { } while (0)
+#endif
 
 /* Interfaces for creating kthreads in tests. */
 #define	KTF_THREAD_INIT(threadname, t) \

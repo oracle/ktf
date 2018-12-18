@@ -553,6 +553,9 @@ int ktf_cov_enable(const char *name, unsigned int opts)
 	struct ktf_cov_entry *entry;
 	int ret = 0;
 
+#ifndef KTF_PROBE_SUPPORT
+	return -ENOTSUPP;
+#endif
 	if (!cov) {
 		cov = kzalloc(sizeof(*cov), GFP_KERNEL);
 		if (!cov)
@@ -607,6 +610,10 @@ void ktf_cov_disable(const char *module)
 {
 	struct ktf_cov *cov = ktf_cov_find(module);
 	struct ktf_cov_entry *entry;
+
+#ifndef	KTF_PROBE_SUPPORT
+	return;
+#endif
 
 	if (!cov)
 		return;

@@ -298,7 +298,8 @@ TEST(selftest, probeentry)
 {
 	probecount = 0;
 	ASSERT_INT_EQ(KTF_REGISTER_ENTRY_PROBE(printk, printkhandler), 0);
-	tlog(T_INFO, "Testing kprobe entry...");
+	/* Need T_WARN for unconditional printk() */
+	twarn("Testing kprobe entry...");
 	ASSERT_INT_GT_GOTO(probecount, 0, done);
 
 done:

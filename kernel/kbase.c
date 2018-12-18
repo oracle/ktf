@@ -247,6 +247,9 @@ void *ktf_find_symbol(const char *mod, const char *sym)
 	if (addr) {
 		tlog(T_DEBUG, "Found %s at %0lx\n", sym, addr);
 	} else {
+#ifndef CONFIG_KALLSYMS_ALL
+		twarn("CONFIG_KALLSYMS_ALL is not set, so non-exported symbols are not available\n");
+#endif
 		tlog(T_INFO, "Fatal error: %s not found\n", sym);
 		return NULL;
 	}

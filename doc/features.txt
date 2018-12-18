@@ -78,6 +78,9 @@ return.  In order to probe function return:
 See example h4.c in examples/ for a simple case where we verify return value
 of printk().
 
+Note that this functionality is only available on kernels with CONFIG_KPPROBES
+and CONFIG_KRETPROBES set to "y".
+
 Overriding functions
 ********************
 in some cases, we wish to override harmful functions when inducing failues in
@@ -99,6 +102,9 @@ tests (e.g. skb_panic()). Override is done via kprobes and we define as follows:
 
 Override should be used sparingly; we'd rather test the code as-is and use
 entry/return probes where possible.
+
+Note that this functionality is only available on kernels with CONFIG_KPPROBES
+and CONFIG_KRETPROBES set to "y".
 
 Coverage analytics
 ******************
@@ -142,6 +148,11 @@ Coverage can be enabled via the "ktfcov" utility.  Syntax is as follows::
 "-e" enables coverage for the specified module; "-d" disables coverage.
 "-m" in combination with "-e" enables memory tracking for the module under
 test.
+
+Note that this functionality is only available on kernels with CONFIG_KPPROBES
+and CONFIG_KRETPROBES set to "y", and that CONFIG_KALLSYMS and
+CONFIG_KALLSYMS_ALL should be set to "y" also to get all exported and
+non-exported symbols.
 
 Thread execution
 ****************
