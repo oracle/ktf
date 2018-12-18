@@ -12,3 +12,4 @@
 void ktf_post_handler(struct kprobe *kp, struct pt_regs *regs,
 		      unsigned long flags);
 void ktf_override_function_with_return(struct pt_regs *regs);
+int ktf_register_override(struct kprobe *kp);

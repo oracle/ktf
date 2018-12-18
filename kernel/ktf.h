@@ -133,7 +133,7 @@ extern struct ktf_handle __test_handle;
 #define	KTF_ENTRY_PROBE_ARG1		(regs->regs[1])
 #endif /* CONFIG_ARM */
 #ifdef CONFIG_ARM64
-#define	KTF_ENTRY_PROBE_ARG0		(regs->orig_x0)
+#define	KTF_ENTRY_PROBE_ARG0		(regs->regs[0])
 #define	KTF_ENTRY_PROBE_ARG1		(regs->regs[1])
 #endif /* CONFIG_ARM64 */
 #ifdef CONFIG_SPARC
@@ -190,7 +190,7 @@ extern struct ktf_handle __test_handle;
         static int probehandler(struct kprobe *kp, struct pt_regs *regs)
 
 #define	KTF_REGISTER_OVERRIDE(func, probehandler) \
-	register_kprobe(&__ktf_override_##probehandler)
+	ktf_register_override(&__ktf_override_##probehandler)
 
 #define	KTF_UNREGISTER_OVERRIDE(func, probehandler) \
 	do { \
