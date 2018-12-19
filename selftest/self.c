@@ -295,6 +295,20 @@ KTF_ENTRY_PROBE(printk, printkhandler)
 	KTF_ENTRY_PROBE_RETURN(0);
 }
 
+static int entryarg0, entryarg1;
+
+KTF_ENTRY_PROBE(probeargtest, probeargtesthandler)
+{
+	entryarg0 = (int)KTF_ENTRY_PROBE_ARG0;
+	entryarg1 = (int)KTF_ENTRY_PROBE_ARG1;
+	KTF_ENTRY_PROBE_RETURN(0);
+}
+
+noinline void probeargtest(int arg0, int arg1)
+{
+	tlog(T_INFO, "got args %d, %d\n", arg0, arg1);
+}
+
 TEST(selftest, probeentry)
 {
 	probecount = 0;
@@ -302,8 +316,14 @@ TEST(selftest, probeentry)
 	/* Need T_WARN for unconditional printk() */
 	twarn("Testing kprobe entry...");
 	ASSERT_INT_GT_GOTO(probecount, 0, done);
-
+	ASSERT_INT_EQ_GOTO(KTF_REGISTER_ENTRY_PROBE(probeargtest,
+						    probeargtesthandler),
+			   0, done);
+	probeargtest(1, 2);
+	ASSERT_INT_EQ_GOTO(entryarg0, 1, done);
+	ASSERT_INT_EQ_GOTO(entryarg1, 2, done);
 done:
+	KTF_UNREGISTER_ENTRY_PROBE(probeargtest, probeargtesthandler);
 	KTF_UNREGISTER_ENTRY_PROBE(printk, printkhandler);
 }
 
