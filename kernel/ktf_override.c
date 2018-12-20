@@ -31,10 +31,12 @@ void ktf_post_handler(struct kprobe *kp, struct pt_regs *regs,
 }
 EXPORT_SYMBOL(ktf_post_handler);
 
-void *ktf_find_current_kprobe_sym(void)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
+static void *ktf_find_current_kprobe_sym(void)
 {
 	return ktf_find_symbol(NULL, "current_kprobe");
 }
+#endif
 
 /* Prior to Linux 4.19, error exit did not clear active kprobe; as a result,
  * every page fault would fail due to logic in page fault handling activated
