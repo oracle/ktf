@@ -23,11 +23,11 @@ help:
 htmldocs: $(TARGETS)
 
 $(TARGETS): Makefile $(srcdir)/*.txt
-	@if test x$V != x1; then export Q="-q"; echo -n "  HTMLDOC "`pwd`; fi; \
+	@if test x$V != x1; then export Q="-q"; echo -n "  HTMLDOC $$(pwd)"; fi; \
 	$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $$Q $(SPHINXOPTS) $(O) | \
 	if test x$V != x1; then grep -v 'Build finished'; else cat -; fi; \
 	$(SPHINXBUILD) -M htmlhelp "$(SOURCEDIR)" "$(BUILDDIR)" $$Q $(SPHINXOPTS) $(O) | \
-	if test x$V != x1; then grep -v 'Build finished'; else cat -; fi
+	if test x$V != x1; then grep -v 'Build finished' || echo ""; else cat -; fi
 	@rsync -a html/_sources htmlhelp/
 
 clean-local:
