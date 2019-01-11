@@ -101,6 +101,12 @@ testing::internal::ParamGenerator<Kernel::ParamType> gtest_query_tests(void);
 std::string gtest_name_from_info(const testing::TestParamInfo<Kernel::ParamType>&);
 void gtest_handle_test(int result,  const char* file, int line, const char* report);
 
+#ifndef INSTANTIATE_TEST_SUITE_P
+/* This rename happens in Googletest commit 3a460a26b7.
+ * Make sure we compile both before and after it:
+ */
+#define AddTestSuiteInstantiation AddTestCaseInstantiation
+#endif
 
 int Kernel::AddToRegistry()
 {
@@ -119,7 +125,7 @@ int Kernel::AddToRegistry()
     tci->AddTestPattern(it->c_str(), "", mf);
   }
 
-  tci->AddTestCaseInstantiation("", &gtest_query_tests, &gtest_name_from_info, NULL, 0);
+  tci->AddTestSuiteInstantiation("", &gtest_query_tests, &gtest_name_from_info, NULL, 0);
   return 0;
 }
 
