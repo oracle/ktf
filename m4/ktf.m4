@@ -46,7 +46,7 @@ AC_DEFUN([AC_CHECK_CXXFLAGS],
 AC_LANG_PUSH([C++])
 dnl Enable C++11 if possible. If it cannot be enabled,
 dnl googletest would have had to be compiled without it too, implying
-dnl an older version which doesn't need it:
+dnl an older version where the flag was named c++0x, if existing at all:
 AX_CHECK_COMPILE_FLAG([-std=c++11],
 	[KTF_CXXFLAGS="-std=c++11 $KTF_CXXFLAGS"],
 	[KTF_CXXFLAGS="-std=c++0x $KTF_CXXFLAGS"])
