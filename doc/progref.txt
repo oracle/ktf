@@ -48,29 +48,28 @@ abstractions provided by KTF. These are kernel side, if not otherwise noted:
 +----------------------------+--------------------------------------------------+
 | TEST_F(s, f, n) {...}      | Define a test named 's.n' operating in fixture f	|
 +----------------------------+--------------------------------------------------+
-| KTF_ENTRY_PROBE            | Define function entry probe for function f with  |
-|  (f, h) {...}              | handler function h. Must be used at global level.|
+| KTF_ENTRY_PROBE(f, h)      | Define function entry probe for function f with  |
+| {...}              	     | handler function h. Must be used at global level.|
 +----------------------------+--------------------------------------------------+
 | KTF_ENTRY_PROBE_RETURN(r)  | Return from probed function with return value r. |
 |  			     | Must be called within KTF_ENTRY_PROBE().         |
 +----------------------------+--------------------------------------------------+
-| KTF_REGISTER_ENTRY_PROBE   |                                                  |
-|  (f, h)                    | Enable probe on entry to kernel function f with  |
-|                            | handler h.                                       |
+| KTF_REGISTER_ENTRY_PROBE   | Enable probe on entry to kernel function f	|
+| (f, h)                     | with handler h.                                  |
 +----------------------------+--------------------------------------------------+
 | KTF_UNREGISTER_ENTRY_PROBE | Disable probe on entry to kernel function f      |
-|  (f, h)		     | which used handler h.                            |
+| (f, h)		     | which used handler h.                            |
 +----------------------------+--------------------------------------------------+
 | KTF_RETURN_PROBE(f, h)     | Define function return probe for function f with |
-|  {..}			     | handler h.  Must be used at a global level.      |
+| {..}			     | handler h.  Must be used at a global level.      |
 +----------------------------+--------------------------------------------------+
 | KTF_RETURN_VALUE()         | Retrieve return value in body of return probe.   |
 +----------------------------+--------------------------------------------------+
 | KTF_REGISTER_RETURN_PROBE  | Enable probe for return of function f with       |
-|  (f, h)                    | handler h.                                       |
+| (f, h)                     | handler h.                                       |
 +----------------------------+--------------------------------------------------+
 | KTF_UNREGISTER_RETURN_PROBE| Disable probe for return of function f and       |
-|  (f, h)                    | handler h.                                       |
+| (f, h)                     | handler h.                                       |
 +----------------------------+--------------------------------------------------+
 | ktf_cov_enable(m, flags)   | Enable coverage analytics for module m.          |
 |			     | Flag must be either 0 or KTF_COV_OPT_MEM.        |
@@ -86,7 +85,7 @@ abstractions provided by KTF. These are kernel side, if not otherwise noted:
 | KTF_THREAD_WAIT_STARTED(t) | Wait for start of struct ktf_thread * t.         |
 +----------------------------+--------------------------------------------------+
 | KTF_THREAD_WAIT_COMPLETED  | Wait for completion of struct ktf_thread * t.    |
-|  (t)                       |                                                  |
+| (t)                        |                                                  |
 +----------------------------+--------------------------------------------------+
 | HTEST(s, n) { ... }        | Declares a hybrid test. A correspondingly named  |
 | (NB! User mode only!)      | test must be declared using TEST() from kernel   |
