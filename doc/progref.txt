@@ -29,6 +29,16 @@ abstractions provided by KTF. These are kernel side, if not otherwise noted:
 +----------------------------+--------------------------------------------------+
 | KTF_CLEANUP()		     | Call this in the __exit function to clean up     |
 +----------------------------+--------------------------------------------------+
+| KTF_CONTEXT_ADD(ctx, name) | Add a new context to the default handle		|
++----------------------------+--------------------------------------------------+
+| KTF_CONTEXT_FIND(name)     | Return a struct ktf_context reference to	context	|
+| 			     | 'name', if it exists		     		|
++----------------------------+--------------------------------------------------+
+| KTF_CONTEXT_GET(name,type) | Return the structure of type 'type' containing   |
+| 			     | the ktf_context named 'name', if 'name' exists.  |
++----------------------------+--------------------------------------------------+
+| KTF_CONTEXT_REMOVE(ctx)    | Remove a previously added context from KTF	|
++----------------------------+--------------------------------------------------+
 | EXPECT_*		     | non-fatal assertions                             |
 +----------------------------+--------------------------------------------------+
 | ASSERT_*		     | "fatal" assertions that would cause return/goto	|
@@ -47,6 +57,14 @@ abstractions provided by KTF. These are kernel side, if not otherwise noted:
 |			     | fixture						|
 +----------------------------+--------------------------------------------------+
 | TEST_F(s, f, n) {...}      | Define a test named 's.n' operating in fixture f	|
++----------------------------+--------------------------------------------------+
+| ADD_TEST(n)		     | Add a test previously declared with TEST or	|
+| 			     | TEST_F to the default handle.  	   		|
++----------------------------+--------------------------------------------------+
+| ADD_LOOP_TEST(n, from, to) | Add a test to be executed repeatedly with a range|
+| 		   	     | of values [from,to] to the implicit variable _i	|
++----------------------------+--------------------------------------------------+
+| DEL_TEST(n)		     | Remove a test previously added with ADD_TEST	|
 +----------------------------+--------------------------------------------------+
 | KTF_ENTRY_PROBE(f, h)      | Define function entry probe for function f with  |
 | {...}              	     | handler function h. Must be used at global level.|
@@ -97,7 +115,7 @@ abstractions provided by KTF. These are kernel side, if not otherwise noted:
 +----------------------------+--------------------------------------------------+
 
 The ``KTF_INIT()`` macro must be called at a global level as it just
-defines a variable ``__test_handle`` which is referred to which existence
+defines a variable ``__test_handle`` which is referred to, and which existence
 is assumed to continue until the call to KTF_CLEANUP(), typically done in
 the ``__exit`` function of the test module.
 
