@@ -6,13 +6,31 @@ The googletest project has seen some structural changes in moving from a
 project specific gtest-config via no package management support at all to
 recently introduce pkgconfig support. This version of KTF only supports
 building against a googletest (gtest) with pkgconfig support, which means
-that as of February 2018 you have to build googletest from source at github.
+that as of February 2018 you have to build googletest from source at
+github.
 
-Let's assume for the rest of these instructions that your source trees are
-below ``~/src``::
+Googletest has also recently been fairly in flux, and while we
+try to keep up to date with the official googletest version on Github,
+we have seen issues with changes that breaks KTF. We also have a small
+queue of enhancements and fixes to Googletest based on our experience
+and use of it a.o. with KTF. You can find the latest rebase of this
+version in the ktf branch of knuto/googletest at Github, but expect it
+to rebase as we move forward to keep it up-to-date.
+This version will at any time have been tested with KTF by us, since
+we use it internally. Let's assume for the rest of these instructions
+that your source trees are below ``~/src`` and your build trees are
+under ``~/build``::
+
+	cd ~/src
+	git clone https://github.com/knuto/googletest.git
+
+or::
 
         cd ~/src
         git clone https://github.com/google/googletest.git
+
+then::
+
 	mkdir -p ~/build/$(uname -r)
 	cd ~/build/$(uname -r)
 	mkdir googletest
@@ -23,8 +41,7 @@ below ``~/src``::
 
 Default for googletest is to use static libraries.  If you want to use shared
 libraries for googletest, you can specify ``-DBUILD_SHARED_LIBS=ON`` to
-cmake.  This version of KTF has been tested against commit 718fd88d8f of
-googletest. If you don't want to install googletest into /usr/local, you can
+cmake. If you don't want to install googletest into /usr/local, you can
 specify an alternate install path using ``-DCMAKE_INSTALL_PREFIX=<your path>``
 to cmake for googletest, and similarly use ``--prefix=<your path>`` both for
 KTF and your own test modules. Note that on some distros, cmake version
