@@ -1,4 +1,4 @@
-7. Debugging KTF
+8. Debugging KTF
 --------------------
 
 So your KTF test crashed the kernel? Let's see how you can use crash to

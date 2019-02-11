@@ -1,4 +1,4 @@
-5. Example test code
+6. Example test code
 --------------------
 
 Here is a minimal dummy example of a KTF unit test suite that defines

@@ -228,13 +228,13 @@ void ktf_cleanup_check(void);
  *   Usage:
  *      SETUP_F(fixture_name,setup)
  *      {
- *             <setup code, set ctx->ok to true to have the test executed>
+ *             <setup code, set fixture_name->ok to true to have the test executed>
  *      }
  *      TEARDOWN_F(fixture_name,teardown)
  *      {
  *             <teardown code>
  *      }
- *      TEST_F(fixture_name,unit_name,test_name)
+ *      TEST_F(fixture_name,suite_name,test_name)
  *      {
  *             <test code>
  *      }

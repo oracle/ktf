@@ -1,4 +1,4 @@
-6. KTF programming reference
+7. KTF programming reference
 ----------------------------
 
 KTF itself contains no tests but provides primitives and data structures to

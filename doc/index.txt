@@ -13,6 +13,7 @@ Kernel Test Framework documentation
    implementation.txt
    features.txt
    installation.txt
+   concepts.txt
    examples.txt
    progref.txt
    debugging.txt

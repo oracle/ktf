@@ -1,0 +1,124 @@
+
+5. KTF Basic Concepts
+---------------------
+
+Tests and test suites
+*********************
+
+The simplest form of test is to just specify::
+
+	TEST(suite_name, test_name)
+	{
+		<test code and assertions go here>
+	}
+
+A KTF test is declared with TEST() or TEST_F(), which both
+takes both a test suite name and a test name, which are two different
+name spaces. Consequently, each test belongs to one test suite, and
+the test suites are created based on what tests that exists.
+A test suite is just a container of tests which in user space
+contributes to the extended name of a test. Test names must be
+unique within a suite, and test names must also be unique within a
+source file, since the test name is the only parameter needed
+when adding a test.
+
+All tests must be added using ADD_TEST or ADD_LOOP_TEST to be visible
+to KTF's runtime framework. This allows tests to be declared while
+under development, but not added (or the ADD_TEST could be commented
+out) if the test or the kernel module under test is not ready
+yet for some reason.
+
+Test fixtures
+*************
+
+As in other unit test frameworks, a test fixture is a mechanism to
+allow several tests to run under the same conditions, in that setup
+and teardown is done before and after each test. In KTF a test fixture
+must first be declared with DECLARE_F() which takes a fixture name
+followed by a list of attributes and an end brace, and initialized
+with INIT_F() which takes the fixture name and a setup and teardown
+function to be subsequently defined using Note that there ate
+no start brace, which is intentional::
+
+	DECLARE_F(a_fixture)
+		int value;
+		struct my_details;
+		...
+	};
+        INIT_F(a_fixture, a_setup, a_teardown);
+
+Then to the implementation of the fixture, in the form of actual setup and
+a teardown functions that may operate on the attributes of the fixture::
+
+	SETUP_F(a_fixture, a_setup)
+	{
+		a_fixture->value = 42; /* or whatever.. */
+		<other actions needed to set up>
+		/* If everything went well during setup: */
+		a_fixture->ok = true;
+	}
+
+	TEARDOWN_F(a_fixture, a_teardown)
+	{
+		<necessary cleanup code>
+	}
+
+Now individual tests that uses this fixture can be declared with::
+
+	TEST_F(a_fixture, suite_name, test_name)
+	{
+		<test code>
+	}
+
+Contexts
+********
+
+A context provides a way to instantiate a test in multiple ways.
+A typical use case is if you have multiple similar devices
+you want to run a set of tests on. Another use case could be that
+you want to run a set of tests under different configurations.
+
+You are free to let the number and names of these contexts
+vary as to where you run your test. For the devices use case, you can
+have the init function loop through all available devices, to identify
+the ones the tests applies to, then instantiate a context for each
+device, possibly using the device name for trackability. The context
+names will be prepended to the test name and the number of tests will
+be multipled by the number of contexts.
+
+Note that the state of a context persists through the whole "life" of
+the module (until it gets unloaded) so it can be used to store more
+long term bookeeping in addition to any configuration information.
+The test writer must make sure that subsequent runs of the test suite
+(or parallel runs!) does not interfere with
+each other. Similar to fixtures, there's a generic part that KTF uses,
+and it can be extended the normal way. Make sure to declare the
+test specific context struct type with an element named::
+
+	struct ktf_context k;
+
+typically as the first element of the struct, then you can continue
+with whatever other datastructure desired. A test module can declare
+and use as many contexts as desired.
+
+Handles
+*******
+
+Unlike user land unit test frameworks, which can rely on everything
+being cleaned up when the test program finished, KTF and test writers
+must pay the normal kernel level attention to allocations, references and
+deallocations.
+
+KTF itself uses the concept of a *handle* to track tests and
+test suites associated with a kernel module. The normal, simple mode
+of usage is for each module to use KTF_INIT() and KTF_CLEANUP() in
+it's __init and __exit functions. KTF_INIT implicitly declares and
+initializes a global handle __test_handle that gets cleaned up again
+in KTF_CLEANUP, making the handle something a test developer does not
+need to think too much about. However, sometimes a KTF kernel module
+may be such organized that it makes sense to use more than one handle.
+KTF allows the creation/cleanup of explicitly named handles by means of
+KTF_HANDLE_INIT(name) and KTF_HANDLE_CLEANUP(name). This can be used
+as an alternative to KTF_INIT()/KTF_CLEANUP() but requires the use of
+ADD_TEST_TO(handle, testname) instead of the normal ADD_TEST(testname)
+for adding tests to be executed.

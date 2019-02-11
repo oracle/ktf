@@ -14,7 +14,6 @@
 int main (int argc, char** argv)
 {
   ktf::setup();
-  testing::GTEST_FLAG(output) = "xml:ktfrun.xml";
   testing::InitGoogleTest(&argc,argv);
 
   return RUN_ALL_TESTS();
