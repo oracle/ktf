@@ -298,17 +298,17 @@ u32 ktf_get_assertion_count(void);
  * @C: Boolean expression to evaluate
  *
  */
-#define ASSERT_TRUE(C) { \
-	if (!fail_unless((C))) return;	\
-}
+#define ASSERT_TRUE(C) do { \
+		if (!fail_unless((C))) return;	\
+	} while (0)
 
 /**
  * ASSERT_FALSE() - fail and return if @C evaluates to true
  * @C: Boolean expression to evaluate
  */
-#define ASSERT_FALSE(C) { \
-	if (!fail_unless(!(C))) return;	\
-}
+#define ASSERT_FALSE(C) do { \
+		if (!fail_unless(!(C))) return;	\
+	} while (0)
 
 /**
  * ASSERT_TRUE_GOTO() - fail and jump to @_lbl if @C evaluates to false
@@ -392,13 +392,8 @@ u32 ktf_get_assertion_count(void);
  * @C: Boolean expression to evaluate
  *
  */
-#define EXPECT_TRUE(C) { \
-	fail_unless(C); \
-}
-
-#define EXPECT_FALSE(C) { \
-	fail_unless(!(C));\
-}
+#define EXPECT_TRUE(C) fail_unless(C)
+#define EXPECT_FALSE(C) fail_unless(!(C))
 
 #define OK_ADDR(X) (X && !IS_ERR(X))
 
@@ -406,19 +401,19 @@ u32 ktf_get_assertion_count(void);
 #define EXPECT_OK_ADDR(X) \
 	ck_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - was 0x%Lx", (X))
 
-#define ASSERT_OK_ADDR(X) { \
-	if (!ck_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - value 0x%Lx", (X))) \
-		return; \
-}
-#define ASSERT_OK_ADDR_GOTO(X,_lbl) { \
-	if (!ck_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - was 0x%Lx", (X))) \
-		goto _lbl; \
-}
+#define ASSERT_OK_ADDR(X) do { \
+		if (!ck_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - value 0x%Lx", (X))) \
+			return;						\
+	} while (0)
+#define ASSERT_OK_ADDR_GOTO(X,_lbl) do { \
+		if (!ck_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - was 0x%Lx", (X))) \
+			goto _lbl;					\
+	} while (0)
 
-#define ASSERT_OK_ADDR_BREAK(X) { \
+#define ASSERT_OK_ADDR_BREAK(X) do { \
 	if (!ck_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - was 0x%Lx", (X))) \
 		break; \
-}
+	} while (0)
 
 #define EXPECT_INT_EQ(X,Y) _ck_assert_int(X, ==, Y)
 #define EXPECT_INT_GT(X,Y) _ck_assert_int(X, >, Y)

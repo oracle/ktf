@@ -130,6 +130,30 @@ TEST(selftest, mapref)
 	EXPECT_LONG_EQ(0, ktf_map_size(&tm));
 }
 
+/* --- Test that the expect macros work as if-then-else single statement */
+TEST(selftest, statements)
+{
+	char c;
+	char *cp = &c;
+	/* These are mostly intended as compilation syntax tests */
+	if (_i)
+		EXPECT_TRUE(true);
+	else
+		EXPECT_FALSE(false);
+	if (_i)
+		ASSERT_TRUE(true);
+	else
+		ASSERT_FALSE(false);
+	if (_i)
+		ASSERT_OK_ADDR(cp);
+	else
+		ASSERT_OK_ADDR_GOTO(cp, out);
+	if (_i)
+		ASSERT_OK_ADDR_BREAK(cp);
+out:
+	EXPECT_TRUE(true);
+}
+
 /* --- Compare function test --- */
 
 /* key comparison function */
@@ -275,6 +299,7 @@ TEST(selftest, wrongversion)
 static void add_map_tests(void)
 {
 	ADD_TEST(dummy);
+	ADD_LOOP_TEST(statements, 0, 2);
 	ADD_TEST_TO(dual_handle, simplemap);
 	ADD_TEST_TO(dual_handle, mapref);
 	ADD_TEST_TO(dual_handle, mapcmpfunc);
