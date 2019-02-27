@@ -1,6 +1,33 @@
 8. Debugging KTF
 --------------------
 
+Structured debugging/tracing by printf
+======================================
+
+KTF implements it's own simple printk based logging abstraction.
+You can create log entries by means of calls to the macro
+tlog(level, format,...) - level is a bitmask where individual bits
+represents log classes. You can read and set this bitmask via a
+writable ``/sys`` file::
+
+  # cat /sys/module/ktf/parameters/debug_mask
+  0x1
+  echo 0x3 > /sys/module/ktf/parameters/debug_mask
+  # cat /sys/module/ktf/parameters/debug_mask
+  0x3
+
+The default value of ``debug_mask`` is 0x1 = INFO level.
+Bits are by convention supposed to be
+ordered by verbosity, with the lowest bits reserved for low volume,
+important messages, while the higher bist are left for more verbose
+debugging. You can also use this mechanism for simple debugging of KTF's
+interaction with your tests, as the core KTF code contains some log
+statements to make it easier to follow and debug involved
+instances of KTF objects.
+
+Debugging fatal errors in tests
+===============================
+
 So your KTF test crashed the kernel? Let's see how you can use crash to
 examine KTF test cases, individual test logs and see which test is running.
 
