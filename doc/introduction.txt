@@ -131,5 +131,5 @@ developing unit test for a particular area of the kernel:
   understanding of the kernel.
 
 * Sometimes you may find yourself relying on some specific feature or property of the kernel.
-  If you encode a test that guards the assumption syou have made, you will capture if someone
+  If you encode a test that guards the assumptions you have made, you will capture if someone
   changes it, or if your code is ported to an older kernel which does not support it.

@@ -23,7 +23,7 @@
 int ktf_version_check(u64 version)
 {
 	if (version != KTF_VERSION_LATEST) {
-		terr("KTF version mismatch - expected %llu.%llu.%llu.%llu, got %llu.%llu.%llu.%llu\n",
+		terr("KTF version mismatch - expected %llu.%llu.%llu.%llu, got %llu.%llu.%llu.%llu",
 		     KTF_VERSION(MAJOR, KTF_VERSION_LATEST),
 		     KTF_VERSION(MINOR, KTF_VERSION_LATEST),
 		     KTF_VERSION(MICRO, KTF_VERSION_LATEST),

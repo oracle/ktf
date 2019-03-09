@@ -39,7 +39,21 @@ The output is a header file and a struct containing function pointers and
 some convenience macro definitions to make it possible to 'use' the
 internal functions just as one would if within the module. This logic is
 based on kallsyms, and would of course only work if that functionality is
-enabled in the kernel KTF compiles against.
+enabled in the kernel KTF compiles against. Access to internal symbols
+this way is controlled by the kernel config options CONFIG_KALLSYMS
+and CONFIG_KALLSYMS_ALL, which must be set to "y".
+
+If you create a new test project using the ``ktfnew`` script, you can
+put your private symbol definitions in a file ``ktf_syms.txt`` in the
+kernel directory, and KTF will automatically generate ``ktf_syms.h``,
+which you can then include in your test file to get to these symbols.
+This functionality is also used by the KTF selftests, which might
+serve as an example to get started.
+
+Note also that for exported symbols, if you build your module out-of-tree in
+addition to KTF and the test modules, you might need to also add those
+module's ``Module.symvers`` files to ``KBUILD_EXTRA_SYMBOLS``
+(See kernel documentation for this) to find them during test module build.
 
 Requesting callbacks when a certain function gets called/returns
 ****************************************************************

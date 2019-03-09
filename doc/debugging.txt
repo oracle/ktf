@@ -4,8 +4,8 @@
 Structured debugging/tracing by printf
 ======================================
 
-KTF implements it's own simple printk based logging abstraction.
-You can create log entries by means of calls to the macro
+The kernel side of KTF implements it's own simple printk based logging
+abstraction. You can create log entries by means of calls to the macro
 tlog(level, format,...) - level is a bitmask where individual bits
 represents log classes. You can read and set this bitmask via a
 writable ``/sys`` file::
@@ -24,6 +24,11 @@ debugging. You can also use this mechanism for simple debugging of KTF's
 interaction with your tests, as the core KTF code contains some log
 statements to make it easier to follow and debug involved
 instances of KTF objects.
+
+Similarly, the user library implementing the interaction with the
+user land test runner can log details about this. You can enable such
+logging by providing a similar bitmask via the environment variable
+KTF_DEBUG_MASK.
 
 Debugging fatal errors in tests
 ===============================

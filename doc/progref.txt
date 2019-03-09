@@ -25,7 +25,20 @@ abstractions provided by KTF. These are kernel side, if not otherwise noted:
 |		     	     | another kernel object.		                |
 +----------------------------+--------------------------------------------------+
 | KTF_INIT()		     | Call this at the global level in the main file   |
-|			     | for each test module.                            |
+|			     | for each test module. Declares an implicit, 	|
+|			     | default test handle used by macros which do not  |
+|			     | provide a handle argument.			|
++----------------------------+--------------------------------------------------+
+| KTF_CTX_INIT()	     | Use this instead of KTF_INIT if the tests require|
+|			     | a context to execute. Tests will only show up as |
+| 			     | options if a context has been provided.		|
++----------------------------+--------------------------------------------------+
+| KTF_HANDLE_INIT(handle)    | Declare a named handle to associate tests and	|
+|			     | contexts with. This is an alternative to 	|
+|			     | KTF_INIT() to allow the use of separate test 	|
+|			     | handles for separate sets of tests.	    	|
++----------------------------+--------------------------------------------------+
+| KTF_HANDLE_CTX_INIT(handle)| Equivalent of KTF_CTX_INIT for a named handle	|
 +----------------------------+--------------------------------------------------+
 | KTF_CLEANUP()		     | Call this in the __exit function to clean up     |
 +----------------------------+--------------------------------------------------+

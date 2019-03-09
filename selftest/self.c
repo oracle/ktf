@@ -308,6 +308,7 @@ static void add_map_tests(void)
 	ADD_TEST(map_keyoverflow);
 	ADD_TEST(map_customkey);
 
+	terr("-- version check test: --");
 	/* This should fail */
 	ADD_TEST_TO(wrongversion_handle, wrongversion);
 }
@@ -638,7 +639,7 @@ static int __init selftest_init(void)
 	add_hybrid_tests();
 	add_context_tests();
 	add_symbol_tests();
-	tlog(T_INFO, "selftest: loaded\n");
+	tlog(T_INFO, "selftest: loaded");
 	return 0;
 }
 
@@ -651,8 +652,7 @@ static void __exit selftest_exit(void)
 	KTF_HANDLE_CLEANUP(dual_handle);
 	KTF_HANDLE_CLEANUP(no_handle);
 	KTF_CLEANUP();
-	tlog(T_INFO, "selftest: unloaded\n");
-	/* Nothing to do here */
+	tlog(T_INFO, "selftest: unloaded");
 }
 
 module_init(selftest_init);
