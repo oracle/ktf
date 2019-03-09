@@ -16,6 +16,7 @@
 #include "ktf_syms.h"
 
 #include "hybrid.h"
+#include "context.h"
 
 MODULE_LICENSE("GPL");
 
@@ -23,7 +24,7 @@ struct map_test_ctx {
 	struct ktf_context k;
 };
 
-static struct map_test_ctx s_mctx[3];
+static struct map_test_ctx s_mctx[4];
 
 /* Declare a simple handle with no contexts for simple (unparameterized) tests: */
 KTF_INIT();
@@ -35,7 +36,7 @@ KTF_INIT();
 static KTF_HANDLE_INIT(dual_handle);
 static KTF_HANDLE_INIT(single_handle);
 static KTF_HANDLE_INIT(no_handle);
-static KTF_HANDLE_INIT_VERSION(wrongversion_handle, 0);
+static KTF_HANDLE_INIT_VERSION(wrongversion_handle, 0, false);
 
 static struct map_test_ctx *to_mctx(struct ktf_context *ctx)
 {
@@ -287,7 +288,8 @@ done:
 
 TEST(selftest, dummy)
 {
-	EXPECT_TRUE(true);
+	/* The default handle does not have any contexts in this test set */
+	ASSERT_FALSE(ctx);
 }
 
 TEST(selftest, wrongversion)
@@ -614,16 +616,16 @@ static void add_symbol_tests(void)
 
 static int __init selftest_init(void)
 {
-	int ret = ktf_context_add(&dual_handle, &s_mctx[0].k, "map1");
+	int ret = KTF_CONTEXT_ADD_TO(dual_handle, &s_mctx[1].k, "map1");
 
 	if (ret)
 		return ret;
 
-	ret = ktf_context_add(&dual_handle, &s_mctx[1].k, "map2");
+	ret = KTF_CONTEXT_ADD_TO(dual_handle, &s_mctx[2].k, "map2");
 	if (ret)
 		return ret;
 
-	ret = ktf_context_add(&single_handle, &s_mctx[2].k, "map3");
+	ret = KTF_CONTEXT_ADD_TO(single_handle, &s_mctx[3].k, "map3");
 	if (ret)
 		return ret;
 
@@ -634,6 +636,7 @@ static int __init selftest_init(void)
 	add_cov_tests();
 	add_thread_tests();
 	add_hybrid_tests();
+	add_context_tests();
 	add_symbol_tests();
 	tlog(T_INFO, "selftest: loaded\n");
 	return 0;
@@ -641,6 +644,7 @@ static int __init selftest_init(void)
 
 static void __exit selftest_exit(void)
 {
+	context_tests_cleanup();
 	ktf_context_remove_all(&single_handle);
 	ktf_context_remove_all(&dual_handle);
 	KTF_HANDLE_CLEANUP(single_handle);

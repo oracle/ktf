@@ -26,6 +26,7 @@ static int ktf_req(struct sk_buff *skb, struct genl_info *info);
 static int ktf_resp(struct sk_buff *skb, struct genl_info *info);
 static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 		       struct genl_info *info);
+static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info);
 
 /* operation definition */
 static struct genl_ops ktf_ops[] = {
@@ -63,7 +64,10 @@ static struct genl_family ktf_gnl_family = {
 };
 
 /* handler, returns 0 on success, negative
- * values on failure
+ * values on failure. It doesn't make much difference
+ * what error values are used, as they are anyway discarded
+ * at the netlink level, but do result in a nonzero return
+ * from nl_wait_for_ack() in user space.
  */
 static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 {
@@ -90,6 +94,8 @@ static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 	case KTF_CT_COV_ENABLE:
 	case KTF_CT_COV_DISABLE:
 		return ktf_cov_cmd(type, skb, info);
+	case KTF_CT_CTX_CFG:
+		return ktf_ctx_cfg(skb, info);
 	default:
 		terr("received netlink msg with invalid type (%d)", type);
 	}
@@ -108,8 +114,11 @@ static int send_test_data(struct sk_buff *resp_skb, struct ktf_case *tc)
 		return stat;
 	nest_attr = nla_nest_start(resp_skb, KTF_A_TEST);
 	ktf_testcase_for_each_test(t, tc) {
+		/* A test is not valid if the handle requires a context and none is present */
 		if (t->handle->id)
 			nla_put_u32(resp_skb, KTF_A_HID, t->handle->id);
+		else if (t->handle->require_context)
+			continue;
 		stat = nla_put_string(resp_skb, KTF_A_STR, t->name);
 		if (stat) {
 			/* we hold reference to t here - drop it! */
@@ -142,6 +151,10 @@ static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
 	ctx = ktf_find_first_context(handle);
 	while (ctx) {
 		nla_put_string(resp_skb, KTF_A_STR, ktf_context_name(ctx));
+		if (ctx->config_cb) {
+			nla_put_u32(resp_skb, KTF_A_NUM, ctx->config_type);
+			nla_put_u32(resp_skb, KTF_A_STAT, ctx->config_errno);
+		}
 		ctx = ktf_find_next_context(ctx);
 	}
 	nla_nest_end(resp_skb, nest_attr);
@@ -388,6 +401,42 @@ put_fail:
 	if (retval)
 		nlmsg_free(resp_skb);
 	return retval;
+}
+
+/* Process request to configure a configurable context:
+ * Expected format:  KTF_CT_CTX_CFG hid context_name data
+ * placed in A_HID, A_STR and A_DATA respectively.
+ */
+static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info)
+{
+	char ctxname[KTF_MAX_NAME + 1];
+	struct nlattr *data_attr;
+	void *ctx_data = NULL;
+	size_t ctx_data_sz = 0;
+	int hid;
+	struct ktf_handle *handle;
+	struct ktf_context *ctx;
+	int ret;
+
+	if (!info->attrs[KTF_A_STR] || !info->attrs[KTF_A_HID])
+		return -EINVAL;
+	data_attr = info->attrs[KTF_A_DATA];
+	if (!data_attr)
+		return -EINVAL;
+	hid = nla_get_u32(info->attrs[KTF_A_HID]);
+	handle = ktf_handle_find(hid);
+	if (!handle)
+		return -EINVAL;
+	nla_strlcpy(ctxname, info->attrs[KTF_A_STR], KTF_MAX_NAME);
+	ctx = ktf_find_context(handle, ctxname);
+	tlog(T_DEBUG, "Received context configuration for context %s, handle %d\n",
+	     ctxname, hid);
+
+	ctx_data = nla_memdup(data_attr, GFP_KERNEL);
+	ctx_data_sz = nla_len(data_attr);
+	ret = ktf_context_set_config(ctx, ctx_data, ctx_data_sz);
+	kfree(ctx_data);
+	return ret;
 }
 
 int ktf_nl_register(void)

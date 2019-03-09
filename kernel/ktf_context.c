@@ -31,13 +31,19 @@ LIST_HEAD(context_handles);
 
 module_param_named(debug_mask, ktf_debug_mask, ulong, 0644);
 
-int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx, const char *name)
+int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx,
+		    const char *name, ktf_config_cb cfg_cb, unsigned int cfg_type_id)
 {
 	unsigned long flags;
 	int ret;
 
-	tlog(T_DEBUG, "added context %s (at %p)", name, ctx);
+	tlog(T_DEBUG, "added %scontext %s (at %p)",
+	     (cfg_cb ? "configurable " : ""), name, ctx);
 	ktf_map_elem_init(&ctx->elem, name);
+	ctx->config_cb = cfg_cb;
+	ctx->config_errno = ENOENT; /* 0 here means configuration is ok */
+	ctx->config_type = cfg_type_id;
+	ctx->cleanup = NULL;
 
 	spin_lock_irqsave(&context_lock, flags);
 	ret = ktf_map_insert(&handle->ctx_map, &ctx->elem);
@@ -53,6 +59,17 @@ int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx, const ch
 	return ret;
 }
 EXPORT_SYMBOL(ktf_context_add);
+
+int ktf_context_set_config(struct ktf_context *ctx, const void *data, size_t data_sz)
+{
+	int ret;
+
+	if (ctx->config_cb) {
+		ret = ctx->config_cb(ctx, data, data_sz);
+		ctx->config_errno = ret;
+	}
+	return ctx->config_errno;
+}
 
 const char *ktf_context_name(struct ktf_context *ctx)
 {
@@ -70,6 +87,8 @@ static void __ktf_context_remove(struct ktf_context *ctx, bool locked)
 		return;
 	}
 	handle = ctx->handle;
+	if (ctx->cleanup)
+		ctx->cleanup(ctx);
 
 	/* ktf_find_context might be called from interrupt level */
 	if (!locked)
@@ -143,6 +162,18 @@ void ktf_context_remove_all(struct ktf_handle *handle)
 	spin_unlock_irqrestore(&context_lock, flags);
 }
 EXPORT_SYMBOL(ktf_context_remove_all);
+
+/* Find the handle associated with handle id hid */
+struct ktf_handle *ktf_handle_find(int hid)
+{
+	struct ktf_handle *handle = NULL;
+
+	list_for_each_entry(handle, &context_handles, handle_list) {
+		if (handle->id == hid)
+			break;
+	}
+	return handle;
+}
 
 void ktf_handle_cleanup_check(struct ktf_handle *handle)
 {

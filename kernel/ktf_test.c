@@ -287,6 +287,11 @@ void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 	t->data = oob_data;
 	t->data_sz = oob_data_sz;
 	for (i = t->start; i < t->end; i++) {
+		if (!ctx && t->handle->require_context) {
+			terr("Test %s.%s requires a context, but none configured!",
+			     t->tclass, t->name);
+			continue;
+		}
 		/* No need to bump refcnt, this is just for debugging.  Nothing
 		 * should reference the testcase via the handle's current test
 		 * pointer.

@@ -17,7 +17,7 @@ obj-m := selftest.o
 
 -include ktf_gen.mk
 
-selftest-y := self.o hybrid.o
+selftest-y := self.o hybrid.o context.o
 
 KDIR   := @KDIR@
 PWD    := $(shell pwd)

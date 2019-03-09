@@ -29,7 +29,6 @@
 #define nl_sock nl_handle
 #endif
 
-
 extern "C"
 {
   /* From unlproto.c */
@@ -67,8 +66,86 @@ public:
   int setnum;
 };
 
+/* Keeps track of a ktf_context that requires configuration.
+ * Context names are unique within a handle, so handle ID is
+ * necessary to identify the context.
+ * The actual configuration data must be agreed upon between
+ * user mode and kernel mode on a per context basis.
+ * They can use type_id to identify which type of parameter a
+ * context needs.
+ */
+class ConfigurableContext
+{
+public:
+  ConfigurableContext(std::string& name_, unsigned type_id_, unsigned int hid, int cfg_stat_)
+    : name(name_),
+      handle_id(hid),
+      type_id(type_id_),
+      cfg_stat(cfg_stat_)
+  {
+    log(KTF_INFO, "%s[%u] (hid %d): state: %s\n",
+	name.c_str(), type_id, hid, str_state().c_str());
+  }
+
+  std::string str_state()
+  {
+    switch (cfg_stat) {
+    case 0:
+      return std::string("READY");
+    case ENOENT:
+      return std::string("UNCONFIGURED");
+    default:
+      char tmp[100];
+      sprintf(tmp, "ERROR(%d)", cfg_stat);
+      return std::string(tmp);
+    }
+  }
+
+  int Configure(void *data, size_t data_sz)
+  {
+    struct nl_msg *msg = nlmsg_alloc();
+    int err;
+
+    log(KTF_INFO, "%s, data_sz %lu\n", name.c_str(), data_sz);
+    genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
+		KTF_C_REQ, 1);
+    nla_put_u32(msg, KTF_A_TYPE, KTF_CT_CTX_CFG);
+    nla_put_u64(msg, KTF_A_VERSION, KTF_VERSION_LATEST);
+    nla_put_string(msg, KTF_A_STR, name.c_str());
+    nla_put_u32(msg, KTF_A_HID, handle_id);
+    nla_put(msg, KTF_A_DATA, data_sz, data);
+
+    // Send message over netlink socket
+    nl_send_auto_complete(sock, msg);
+
+    // Free message
+    nlmsg_free(msg);
+
+    // Wait for acknowledgement:
+    // This function also returns error status if the message
+    // was not deemed ok by the kernel, but the error status
+    // does not resemble what the netlink recipient returned.
+    //
+    // This message receives no response beyond the error code.
+    //
+    err = nl_wait_for_ack(sock);
+    return err;
+  }
+
+  unsigned int Type()
+  {
+    return type_id;
+  }
+
+  std::string name;
+  int handle_id;
+  int type_id;
+  int cfg_stat;
+};
+
 typedef std::map<std::string, testset> setmap;
 typedef std::set<std::string> stringset;
+typedef std::vector<ConfigurableContext*> context_vector;
 
 struct name_iter
 {
@@ -90,6 +167,8 @@ class KernelTestMgr
 public:
   KernelTestMgr() : next_set(0), cur(NULL)
   { }
+
+  ~KernelTestMgr();
 
   testset& find_add_set(std::string& setname);
   testset& find_add_test(std::string& setname, std::string& testname);
@@ -116,15 +195,40 @@ public:
   }
 
   void add_cset(unsigned int hid, stringvec& ctxs);
+  void add_configurable_context(std::string& ctx, unsigned int type_id,
+				unsigned int hid, int cfg_stat);
+  std::vector<ConfigurableContext*> find_contexts(const std::string& ctx);
 private:
   setmap sets;
   stringvec test_names;
   stringvec set_names;
   stringset kernelsets;
   std::map<unsigned int, stringvec> handle_to_ctxvec;
+  std::map<std::string, context_vector> cfg_contexts;
   int next_set;
   name_iter* cur;
 };
+
+KernelTestMgr::~KernelTestMgr()
+{
+  std::map<std::string, context_vector>::iterator it;
+  for (it = cfg_contexts.begin(); it != cfg_contexts.end(); ++it)
+  {
+    context_vector::iterator vit;
+    for (vit = it->second.begin(); vit != it->second.end(); ++vit)
+      delete *vit;
+  }
+}
+
+context_vector KernelTestMgr::find_contexts(const std::string& ctx)
+{
+  std::map<std::string,context_vector>::iterator it;
+  it = cfg_contexts.find(ctx);
+  if (it == cfg_contexts.end())
+    return context_vector();
+  else
+    return it->second;
+}
 
 KernelTestMgr& kmgr()
 {
@@ -220,6 +324,11 @@ void KernelTestMgr::add_cset(unsigned int hid, stringvec& ctxs)
   handle_to_ctxvec[hid] = ctxs;
 }
 
+void KernelTestMgr::add_configurable_context(std::string& ctx, unsigned int type_id,
+					     unsigned int hid, int cfg_stat)
+{
+  cfg_contexts[ctx].push_back(new ConfigurableContext(ctx, type_id, hid, cfg_stat));
+}
 
 /* Function for adding a wrapper user level test */
 void KernelTestMgr::add_wrapper(const std::string setname, const std::string testname,
@@ -532,6 +641,36 @@ void run(KernelTest* kt, std::string context)
 }
 
 
+void configure_context(const std::string context, unsigned type_id, void *data, size_t data_sz)
+{
+  context_vector ct = kmgr().find_contexts(context);
+  ASSERT_GE(ct.size(), 1UL) << " - no context found named " << context;
+  ASSERT_EQ(ct.size(), 1UL) << " - More than one context named " << context
+			  << " - use KTF_CONTEXT_CFG_FOR_TEST to uniquely identify context.";
+  ASSERT_EQ(type_id, ct[0]->Type());
+  ASSERT_EQ(ct[0]->Configure(data, data_sz), 0);
+}
+
+void configure_context_for_test(const std::string& setname, const std::string& testname,
+				unsigned type_id, void *data, size_t data_sz)
+{
+  std::string context;
+  KernelTest *kt = kmgr().find_test(setname, testname, &context);
+  context_vector ct = kmgr().find_contexts(context);
+  ASSERT_TRUE(kt) << " Could not find test " << setname << "." << testname;
+  int handle_id = kt->handle_id;
+  ASSERT_NE(handle_id, 0) << " test " << setname << "." << testname << " does not have a context";
+
+  for (context_vector::iterator it = ct.begin(); it != ct.end(); ++it)
+    if ((*it)->handle_id == handle_id)
+    {
+      ASSERT_EQ(type_id, (*it)->Type());
+      ASSERT_EQ((*it)->Configure(data, data_sz), 0);
+      return;
+    }
+  ASSERT_TRUE(false) << " unconfigurable context found for test " << setname << "." << testname << "?";
+}
+
 
 static nl_cb_action parse_one_set(std::string& setname,
 				  std::string& testname, struct nlattr* attr)
@@ -563,7 +702,7 @@ static nl_cb_action parse_one_set(std::string& setname,
 
 static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
 {
-  int alloc = 0, rem = 0, rem2 = 0;
+  int alloc = 0, rem = 0, rem2 = 0, cfg_stat;
   nl_cb_action stat;
   std::string setname,testname,ctx;
 
@@ -571,6 +710,7 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
     struct nlattr *nla, *nla2;
     stringvec contexts;
     unsigned int handle_id = 0;
+    unsigned int type_id = 0;
 
     /* Parse info on handle IDs and associated contexts: */
     nla_for_each_nested(nla, attrs[KTF_A_HLIST], rem) {
@@ -580,8 +720,19 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
 	break;
       case KTF_A_LIST:
 	nla_for_each_nested(nla2, nla, rem2) {
-	  ctx = nla_get_string(nla2);
-	  contexts.push_back(ctx);
+	  switch (nla2->nla_type) {
+	  case KTF_A_STR:
+	    ctx = nla_get_string(nla2);
+	    contexts.push_back(ctx);
+	    break;
+	  case KTF_A_NUM:
+	    type_id = nla_get_u32(nla2);
+	    break;
+	  case KTF_A_STAT:
+	    cfg_stat = nla_get_u32(nla2);
+	    kmgr().add_configurable_context(ctx, type_id, handle_id, cfg_stat);
+	    break;
+	  }
 	}
 	/* Add this set of contexts for the handle_id */
 	kmgr().add_cset(handle_id, contexts);
@@ -589,7 +740,7 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
 	contexts.clear();
 	break;
       default:
-	fprintf(stderr,"parse_result: Unexpected attribute type %d\n", nla->nla_type);
+	fprintf(stderr,"parse_query: Unexpected attribute type %d\n", nla->nla_type);
 	return NL_SKIP;
       }
     }

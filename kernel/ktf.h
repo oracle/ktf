@@ -20,9 +20,21 @@
 
 #define	KTF_MAX_LOG			2048
 
+/* Type for an optional configuration callback for contexts.
+ * Implementations should copy and store data into their private
+ * extensions of the context structure. The data pointer is
+ * only valid inside the callback:
+ */
+typedef int (*ktf_config_cb)(struct ktf_context *ctx, const void* data, size_t data_sz);
+typedef void (*ktf_context_cb)(struct ktf_context *ctx);
+
 struct ktf_context {
 	struct ktf_map_elem elem;  /* Linkage for ktf_map */
 	struct ktf_handle *handle; /* Owner of this context */
+	ktf_config_cb config_cb;   /* Optional configuration callback */
+	ktf_context_cb cleanup;	   /* Optional callback upon context release */
+	int config_errno;	   /* If config_cb set: state of configuration */
+	unsigned config_type;	   /* Parameter type info id */
 };
 
 /* type for a test function */
@@ -44,7 +56,8 @@ typedef void (*ktf_test_adder)(void);
 
 /* Generic setup function for client modules */
 void ktf_add_tests(ktf_test_adder f);
-int ktf_context_add(struct ktf_handle *handle, struct ktf_context* ctx, const char* name);
+int ktf_context_add(struct ktf_handle *handle, struct ktf_context* ctx,
+		    const char* name, ktf_config_cb cfg_cb, unsigned int cfg_type_id);
 const char *ktf_context_name(struct ktf_context *ctx);
 struct ktf_context* ktf_find_context(struct ktf_handle *handle, const char* name);
 struct ktf_context *ktf_find_first_context(struct ktf_handle *handle);
@@ -53,22 +66,43 @@ void ktf_context_remove(struct ktf_context *ctx);
 size_t ktf_has_contexts(struct ktf_handle *handle);
 void ktf_context_remove_all(struct ktf_handle *handle);
 
+/* Called by framework when a configuration is supplied,
+ * returns the return value of the configuration callback.
+ */
+int ktf_context_set_config(struct ktf_context *ctx, const void* data, size_t data_sz);
+
 /* Declare the implicit __test_handle as extern for .c files that use it
  * when adding tests with ADD_TEST but where definition is in another .c file:
  */
 extern struct ktf_handle __test_handle;
 
 /* Add/remove/find a context to/from the default handle */
-#define KTF_CONTEXT_ADD(__context, name) ktf_context_add(&__test_handle, __context, name)
-#define KTF_CONTEXT_REMOVE(__context) ktf_context_remove(__context)
+#define KTF_CONTEXT_ADD(__context, name) ktf_context_add(&__test_handle, __context, name, NULL, 0)
+#define KTF_CONTEXT_ADD_CFG(__context, name, __cb, __type_id)  \
+	ktf_context_add(&__test_handle, __context, name, __cb, __type_id)
 #define KTF_CONTEXT_FIND(name) ktf_find_context(&__test_handle, name)
 #define KTF_CONTEXT_GET(name, type) \
 	container_of(KTF_CONTEXT_FIND(name), type, k)
 
+/* Add/remove/find a context to/from a given handle */
+#define KTF_CONTEXT_ADD_TO(__handle, __context, name)		\
+	ktf_context_add(&__handle, __context, name, NULL, 0)
+#define KTF_CONTEXT_ADD_TO_CFG(__handle, __context, name, __cb, __type_id) \
+	ktf_context_add(&__handle, __context, name, __cb, __type_id)
+#define KTF_CONTEXT_FIND_IN(__handle, name) ktf_find_context(&__handle, name)
+#define KTF_CONTEXT_GET_IN(__handle, name, type) \
+	container_of(KTF_CONTEXT_FIND_IN(__handle, name), type, k)
+
+/* check if a context has been configured (if needed) */
+#define KTF_CONTEXT_CFG_OK(__context) \
+	(__context->config_cb && !__context->config_errno)
+#define KTF_CONTEXT_REMOVE(__context) ktf_context_remove(__context)
+
 /* Part of KTF support for hybrid tests: Safe get the out-of-band user data
- * Silently return if no data (to avoid failing if a generic user program without
- * specific support for the hybrid test is used)
- * Fail if an object of an unecpected size is provided.
+ * Silently return (ignoring the test) if no data is available.
+ * This is to avoid failing if a generic user program without
+ * specific support for the hybrid test attempts to run the test.
+ * Fail if an object of an unexpected size is provided.
  */
 #define KTF_USERDATA(__kt_ptr, __priv_datatype, __priv_data)			\
 	struct __priv_datatype *__priv_data = (struct __priv_datatype *)__kt_ptr->data; \

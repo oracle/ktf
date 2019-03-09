@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0
+ *
+ * context_self.h: The data structure passed between user level and kernel for the
+ *  hybrid self tests. Included both from user space and kernel space and
+ *  needs to be a C struct.
+ */
+
+#ifndef KTF_CONTEXT_SELF_H
+#define KTF_CONTEXT_SELF_H
+
+#define CONTEXT_SELF_MAX_TEXT 30
+#define CONTEXT1_TYPE_ID 0xfedbed
+#define CONTEXT2_TYPE_ID 0xbadbad
+
+/* A simple example parameter block:
+ * For verification purposes it can be useful to have a field
+ * like 'magic' below, which serves for the purpose of
+ * a sanity check that the parameters sent by the user program
+ * actually corresponds to what the kernel expects:
+ */
+struct test_parameter_block {
+	long magic;
+	char s[CONTEXT_SELF_MAX_TEXT+1];
+};
+
+/* Constants for the selftest.param_context test: */
+#define CONTEXT_MSG "from user to kernel"
+#define CONTEXT_MAGIC1 0xfaaa1234UL
+#define CONTEXT_MAGIC2 0xaabbccUL
+
+#endif

@@ -41,7 +41,7 @@ struct ktf_map {
 
 struct ktf_map_elem {
 	struct rb_node node;	      /* Linkage for the map */
-	char key[KTF_MAX_KEY] __aligned(8);
+	char key[KTF_MAX_KEY+1] __aligned(8);
 		/* Key of the element - must be unique within the same map */
 	struct ktf_map *map;  /* owning map */
 	struct kref refcount; /* reference count for element */

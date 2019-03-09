@@ -57,9 +57,25 @@ namespace ktf
   ASSERT_TRUE(__priv_data); \
   ASSERT_EQ(get_priv_sz(__kt_ptr), sizeof(struct __priv_datatype))
 
+/* KTF support for configurable contexts:
+ * Send a configuation data structure to the given context name.
+ */
+#define KTF_CONTEXT_CFG(__context_name, __context_type_id, __priv_datatype, __priv_data) \
+  ktf::configure_context(__context_name, __context_type_id, \
+  			 (struct __priv_datatype *)__priv_data, \
+			 sizeof(__priv_datatype))
+/* Alternative to KTF_CONTEXT_CFG: If there are multiple contexts with the same name
+ * (but with different handles) use a test name to identify the context to be configured
+ */
+#define KTF_CONTEXT_CFG_FOR_TEST(__test_name, __context_type_id, __priv_datatype, __priv_data) \
+  ktf::configure_context_for_test(__test_name, __context_type_id, \
+				  (struct __priv_datatype *)__priv_data, \
+				  sizeof(__priv_datatype))
 
-/* Private interfaces (needed by definition of HTEST)
- * --------------------------------------------------
+
+
+/* Private interfaces (needed by macro definitions above)
+ * ------------------------------------------------------
  */
 
 namespace ktf {
@@ -84,6 +100,12 @@ namespace ktf {
   // Initialize KTF - should normally be called as part of static
   // initialization, but some compilers may decide to optimize it away:
   int setup(void);
+
+  // Configure ktf context - to be used via KTF_CONTEXT_CFG*():
+  void configure_context(const std::string context, unsigned int type_id,
+			 void *data, size_t data_sz);
+  void configure_context_for_test(const std::string testname, unsigned int type_id,
+				  void *data, size_t data_sz);
 } // end namespace ktf
 
 #endif

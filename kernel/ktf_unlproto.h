@@ -19,6 +19,7 @@ enum ktf_cmd_type {
 	KTF_CT_RUN,
 	KTF_CT_COV_ENABLE,
 	KTF_CT_COV_DISABLE,
+	KTF_CT_CTX_CFG,
 	KTF_CT_MAX,
 };
 
@@ -91,7 +92,7 @@ enum ktf_vshift {
 	((__v & 0xffffULL) << KTF_VSHIFT_##__field)
 
 #define	KTF_VERSION_LATEST	\
-	(KTF_VERSION_SET(MAJOR, 0ULL) | KTF_VERSION_SET(MINOR, 1ULL))
+	(KTF_VERSION_SET(MAJOR, 0ULL) | KTF_VERSION_SET(MINOR, 2ULL))
 
 /* Coverage options */
 #define	KTF_COV_OPT_MEM		0x1

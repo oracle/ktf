@@ -95,6 +95,9 @@ struct ktf_case *ktf_case_find(const char *name);
  */
 struct ktf_handle;
 
+/* Find the handle associated with handle id hid */
+struct ktf_handle *ktf_handle_find(int hid);
+
 /* Called upon ktf unload to clean up test cases */
 int ktf_cleanup(void);
 
@@ -175,6 +178,7 @@ struct ktf_handle {
 	struct list_head handle_list; /* Linkage for the global list of all handles with context */
 	struct ktf_map ctx_map;     /* a (possibly empty) map from name to context for this handle */
 	unsigned int id; 	      /* A unique nonzero ID for this handle, set iff contexts */
+	bool require_context;	      /* If set, tests are only valid if a context is provided */
 	u64 version;		      /* version assoc. with handle */
 	struct ktf_test *current_test;/* Current test running */
 };
@@ -183,20 +187,26 @@ void _tcase_cleanup(struct ktf_handle *th);
 void ktf_handle_cleanup_check(struct ktf_handle *handle);
 void ktf_cleanup_check(void);
 
-#define KTF_HANDLE_INIT_VERSION(__test_handle, __version)	    \
+#define KTF_HANDLE_INIT_VERSION(__test_handle, __version, __need_ctx)	\
 	struct ktf_handle __test_handle = { \
 		.handle_list = LIST_HEAD_INIT(__test_handle.handle_list), \
 		.ctx_map = __KTF_MAP_INITIALIZER(__test_handle, NULL, NULL), \
 		.id = 0, \
+		.require_context = __need_ctx, \
 		.version = __version, \
 	};
 
 #define	KTF_HANDLE_INIT(__test_handle)	\
-	KTF_HANDLE_INIT_VERSION(__test_handle, KTF_VERSION_LATEST)
+	KTF_HANDLE_INIT_VERSION(__test_handle, KTF_VERSION_LATEST, false)
 
 #define KTF_INIT() KTF_HANDLE_INIT(__test_handle)
 
-#define KTF_HANDLE_CLEANUP(__test_handle) \
+#define	KTF_HANDLE_CTX_INIT(__test_handle)	\
+	KTF_HANDLE_INIT_VERSION(__test_handle, KTF_VERSION_LATEST, true)
+
+#define KTF_CTX_INIT() KTF_HANDLE_CTX_INIT(__test_handle)
+
+#define KTF_HANDLE_CLEANUP(__test_handle)	\
 	do { \
 		ktf_handle_cleanup_check(&__test_handle); \
 		_tcase_cleanup(&__test_handle); \

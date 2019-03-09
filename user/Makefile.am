@@ -13,11 +13,11 @@ AM_CXXFLAGS = -I$(top_srcdir)/lib $(NETLINK_CFLAGS) $(KTF_CXXFLAGS) \
 		-D__FILENAME__=\"`basename $<`\"
 LDADD =	-L$(top_builddir)/lib -lktf $(NETLINK_LIBS) $(KTF_LIBS)
 
-bin_PROGRAMS = ktfrun ktfcov hybrun
+bin_PROGRAMS = ktfrun ktfcov ktftest
 
 ## Simple kernel test runner sample program:
 ktfrun_SOURCES = ktfrun.cpp
 ktfcov_SOURCES = ktfcov.cpp
 
-## A mixed kernel and user level test program:
-hybrun_SOURCES = ktfrun.cpp hybrid.cpp
+## Configure and run the KTF selftests:
+ktftest_SOURCES = ktfrun.cpp hybrid.cpp context.cpp
