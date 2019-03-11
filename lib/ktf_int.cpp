@@ -706,6 +706,37 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
   nl_cb_action stat;
   std::string setname,testname,ctx;
 
+  /* Version 0.1.0.0 did not report version back from the kernel */
+  uint64_t kernel_version = (KTF_VERSION_SET(MAJOR, 0ULL) | KTF_VERSION_SET(MINOR, 1ULL));
+
+  if (attrs[KTF_A_VERSION])
+    kernel_version = nla_get_u64(attrs[KTF_A_VERSION]);
+
+  /* We only got here if we were compatible enough, log that we had differences */
+  if (kernel_version != KTF_VERSION_LATEST)
+  {
+    const char* note = "Note";
+    bool is_compatible =
+      KTF_VERSION(MAJOR, KTF_VERSION_LATEST) == KTF_VERSION(MAJOR, kernel_version) &&
+      KTF_VERSION(MINOR, KTF_VERSION_LATEST) == KTF_VERSION(MINOR, kernel_version);
+    if (!is_compatible)
+      note = "Error";
+
+    fprintf(stderr,
+	    "%s: KTF version difference - user lib %llu.%llu.%llu.%llu, kernel has %llu.%llu.%llu.%llu\n",
+	    note,
+	    KTF_VERSION(MAJOR, KTF_VERSION_LATEST),
+	    KTF_VERSION(MINOR, KTF_VERSION_LATEST),
+	    KTF_VERSION(MICRO, KTF_VERSION_LATEST),
+	    KTF_VERSION(BUILD, KTF_VERSION_LATEST),
+	    KTF_VERSION(MAJOR, kernel_version),
+	    KTF_VERSION(MINOR, kernel_version),
+	    KTF_VERSION(MICRO, kernel_version),
+	    KTF_VERSION(BUILD, kernel_version));
+    if (!is_compatible)
+      return NL_SKIP;
+  }
+
   if (attrs[KTF_A_HLIST]) {
     struct nlattr *nla, *nla2;
     stringvec contexts;

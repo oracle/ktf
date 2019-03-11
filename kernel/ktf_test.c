@@ -20,9 +20,20 @@
 
 #define MAX_PRINTF 4096
 
+/* Versioning check:
+ * For MAJOR or MINOR changes, both sides are required to
+ * have the same version.
+ * If MICRO has changed, some new functionality may have been added, but the
+ * old functionality should work as before.
+ * With only BUILD changes, the two versions are still compatible,
+ * but one might have bug fixes or minor enhancements.
+ */
 int ktf_version_check(u64 version)
 {
 	if (version != KTF_VERSION_LATEST) {
+		if (KTF_VERSION(MAJOR, version) == KTF_VERSION(MAJOR, KTF_VERSION_LATEST) &&
+		    KTF_VERSION(MINOR, version) == KTF_VERSION(MINOR, KTF_VERSION_LATEST))
+			return 0;
 		terr("KTF version mismatch - expected %llu.%llu.%llu.%llu, got %llu.%llu.%llu.%llu",
 		     KTF_VERSION(MAJOR, KTF_VERSION_LATEST),
 		     KTF_VERSION(MINOR, KTF_VERSION_LATEST),

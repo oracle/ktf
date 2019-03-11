@@ -92,7 +92,7 @@ enum ktf_vshift {
 	((__v & 0xffffULL) << KTF_VSHIFT_##__field)
 
 #define	KTF_VERSION_LATEST	\
-	(KTF_VERSION_SET(MAJOR, 0ULL) | KTF_VERSION_SET(MINOR, 2ULL))
+	(KTF_VERSION_SET(MAJOR, 0ULL) | KTF_VERSION_SET(MINOR, 2ULL) | KTF_VERSION_SET(MICRO, 1ULL))
 
 /* Coverage options */
 #define	KTF_COV_OPT_MEM		0x1

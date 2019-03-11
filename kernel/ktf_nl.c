@@ -15,6 +15,10 @@
 #include "ktf.h"
 #include "ktf_cov.h"
 
+#if (KERNEL_VERSION(4, 6, 0) > LINUX_VERSION_CODE)
+#define nla_put_u64_64bit(m, c, v, x) nla_put_u64(m, c, v)
+#endif
+
 /* Generic netlink support to communicate with user level
  * test framework.
  */
@@ -27,6 +31,7 @@ static int ktf_resp(struct sk_buff *skb, struct genl_info *info);
 static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 		       struct genl_info *info);
 static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info);
+static int send_version_only(struct sk_buff *skb, struct genl_info *info);
 
 /* operation definition */
 static struct genl_ops ktf_ops[] = {
@@ -82,8 +87,14 @@ static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 	}
 
 	version = nla_get_u64(info->attrs[KTF_A_VERSION]);
-	if (ktf_version_check(version))
+	if (ktf_version_check(version)) {
+		/* a query is the first call for any reasonable application:
+		 * Respond to it with a version only:
+		 */
+		if (nla_get_u32(info->attrs[KTF_A_TYPE]) == KTF_CT_QUERY)
+			return send_version_only(skb, info);
 		return -EINVAL;
+	}
 
 	type = nla_get_u32(info->attrs[KTF_A_TYPE]);
 	switch (type) {
@@ -100,6 +111,35 @@ static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 		terr("received netlink msg with invalid type (%d)", type);
 	}
 	return -EINVAL;
+}
+
+/* Reply with just version information to let user space report the issue: */
+static int send_version_only(struct sk_buff *skb, struct genl_info *info)
+{
+	struct sk_buff *resp_skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
+	void *data;
+	int retval = 0;
+
+	if (!resp_skb)
+		return -ENOMEM;
+	data = genlmsg_put_reply(resp_skb, info, &ktf_gnl_family,
+				 0, KTF_C_RESP);
+	if (!data) {
+		retval = -ENOMEM;
+		goto resp_failure;
+	}
+	nla_put_u32(resp_skb, KTF_A_TYPE, KTF_CT_QUERY);
+	nla_put_u64_64bit(resp_skb, KTF_A_VERSION, KTF_VERSION_LATEST, 0);
+
+	/* Recompute message header */
+	genlmsg_end(resp_skb, data);
+
+	retval = genlmsg_reply(resp_skb, info);
+resp_failure:
+	/* Free buffer if failure */
+	if (retval)
+		nlmsg_free(resp_skb);
+	return retval;
 }
 
 /* Send data about one testcase */
@@ -181,6 +221,9 @@ static int ktf_query(struct sk_buff *skb, struct genl_info *info)
 		retval = -ENOMEM;
 		goto resp_failure;
 	}
+
+	nla_put_u64_64bit(resp_skb, KTF_A_VERSION, KTF_VERSION_LATEST, 0);
+
 	/* Add all test sets to the report
 	 *  We send test info as follows:
 	 *    KTF_CT_QUERY hid1 [context1 [context2 ...]] hid2 [context1 [context2 ...]]
