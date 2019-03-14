@@ -169,7 +169,7 @@ void gtest_handle_test(int result,  const char* file, int line, const char* repo
 #if HAVE_ASSERT_COUNT
       ::testing::UnitTest::GetInstance()->increment_success_assert_count(result);
 #else
-      for (int i = 0; i < result; i++) GTEST_SUCCEED();
+      GTEST_SUCCEED();
 #endif
     } else {
       ::testing::internal::AssertHelper(::testing::TestPartResult::kNonFatalFailure,

@@ -150,6 +150,7 @@ cat <<EOT > $dummy.c
 #include <gtest/gtest.h>
 int main(int argc, char** argv) {
   size_t x = ::testing::UnitTest::GetInstance()->increment_success_assert_count();
+  (void)x;
   return 0;
 }
 EOT
@@ -161,6 +162,7 @@ if test $? = 0; then
 fi
 rm -f $dummy.o $dummy.c
 AC_SUBST([HAVE_ASSERT_COUNT],[$have_assert_count])
+AC_DEFINE_UNQUOTED([HAVE_ASSERT_COUNT],$have_assert_count)
 AC_MSG_RESULT([$assert_count_result])
 ])
 
