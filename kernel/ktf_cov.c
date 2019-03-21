@@ -371,8 +371,13 @@ static int ktf_cov_kmalloc_handler(struct kretprobe_instance *ri,
 static int ktf_cov_kmem_cache_alloc_handler(struct kretprobe_instance *ri,
 					    struct pt_regs *regs)
 {
+	struct kmem_cache *cache =
+		(struct kmem_cache *)KTF_ENTRY_PROBE_ARG0;
 	struct ktf_cov_mem *m = (struct ktf_cov_mem *)ri->data;
 	unsigned long ret = regs_return_value(regs);
+
+	if (cache == cov_mem_cache)
+		return 0;
 
 	if (m->stack.nr_entries)
 		return ktf_cov_kmem_alloc_return(m, ret);

@@ -446,6 +446,15 @@ noinline void *doalloc(struct kmem_cache *c, size_t sz)
 	return kmalloc(sz, GFP_KERNEL);
 }
 
+TEST(selftest, cov0)
+{
+	/* A very basic test just to enable and disable the coverage support,
+	 * without the memory tracking option and without making use of it:
+	 */
+	ASSERT_INT_EQ(0, ktf_cov_enable((THIS_MODULE)->name, 0));
+	ktf_cov_disable((THIS_MODULE)->name);
+}
+
 TEST(selftest, cov)
 {
 	int foundp1 = 0, foundp2 = 0, foundp3 = 0, foundp4 = 0;
@@ -535,6 +544,7 @@ done:
 
 static void add_cov_tests(void)
 {
+	ADD_TEST(cov0);
 	ADD_TEST(cov);
 }
 
