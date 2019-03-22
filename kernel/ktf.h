@@ -329,6 +329,56 @@ u32 ktf_get_assertion_count(void);
 }
 
 /**
+ * ASSERT_TRUE_RETVAL() - fail and return @V if @C evaluates to false
+ * @C: Boolean expression to evaluate
+ * @V: Value to return on failure
+ */
+#define ASSERT_TRUE_RETVAL(C, V) do { \
+	if (!fail_unless((C))) return V;	\
+} while (0)
+
+/**
+ * ASSERT_FALSE() - fail and return @V if @C evaluates to true
+ * @C: Boolean expression to evaluate
+ * @V: Value to return on failure
+ */
+#define ASSERT_FALSE_RETVAL(C, V) do { \
+	if (!fail_unless(!(C))) return V;	\
+} while (0)
+
+/**
+ * ASSERT_TRUE_CONT() - fail and continue if @C evaluates to false
+ * @C: Boolean expression to evaluate
+ */
+#define ASSERT_TRUE_CONT(C) { \
+	if (!fail_unless((C))) continue; \
+}
+
+/**
+ * ASSERT_FALSE_CONT() - fail and continue if @C evaluates to true
+ * @C: Boolean expression to evaluate
+ */
+#define ASSERT_FALSE_CONT(C) { \
+	if (!fail_unless(!(C))) continue; \
+}
+
+/**
+ * ASSERT_TRUE_BREAK() - fail and break if @C evaluates to false
+ * @C: Boolean expression to evaluate
+ */
+#define ASSERT_TRUE_BREAK(C) { \
+	if (!fail_unless((C))) break; \
+}
+
+/**
+ * ASSERT_FALSE_BREAK() - fail and break if @C evaluates to true
+ * @C: Boolean expression to evaluate
+ */
+#define ASSERT_FALSE_BREAK(C) { \
+	if (!fail_unless(!(C))) break; \
+}
+
+/**
  * ASSERT_LONG_EQ() - compare two longs, fail and return if @X != @Y
  * @X: Expected value
  * @Y: Actual value
