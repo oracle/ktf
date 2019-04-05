@@ -299,7 +299,7 @@ u32 ktf_get_assertion_count(void);
  *
  */
 #define ASSERT_TRUE(C) do { \
-		if (!fail_unless((C))) return;	\
+		if (!ktf_assert((C))) return;	\
 	} while (0)
 
 /**
@@ -307,7 +307,7 @@ u32 ktf_get_assertion_count(void);
  * @C: Boolean expression to evaluate
  */
 #define ASSERT_FALSE(C) do { \
-		if (!fail_unless(!(C))) return;	\
+		if (!ktf_assert(!(C))) return;	\
 	} while (0)
 
 /**
@@ -316,7 +316,7 @@ u32 ktf_get_assertion_count(void);
  * @_lbl: Label to jump to in case of failure
  */
 #define ASSERT_TRUE_GOTO(C,_lbl) {		\
-	if (!fail_unless((C))) goto _lbl;\
+	if (!ktf_assert((C))) goto _lbl;\
 }
 
 /**
@@ -325,7 +325,7 @@ u32 ktf_get_assertion_count(void);
  * @_lbl: Label to jump to in case of failure
  */
 #define ASSERT_FALSE_GOTO(C,_lbl) {		\
-	if (!fail_unless(!(C))) goto _lbl;\
+	if (!ktf_assert(!(C))) goto _lbl;\
 }
 
 /**
@@ -334,7 +334,7 @@ u32 ktf_get_assertion_count(void);
  * @V: Value to return on failure
  */
 #define ASSERT_TRUE_RETVAL(C, V) do { \
-	if (!fail_unless((C))) return V;	\
+	if (!ktf_assert((C))) return V;	\
 } while (0)
 
 /**
@@ -343,7 +343,7 @@ u32 ktf_get_assertion_count(void);
  * @V: Value to return on failure
  */
 #define ASSERT_FALSE_RETVAL(C, V) do { \
-	if (!fail_unless(!(C))) return V;	\
+	if (!ktf_assert(!(C))) return V;	\
 } while (0)
 
 /**
@@ -351,7 +351,7 @@ u32 ktf_get_assertion_count(void);
  * @C: Boolean expression to evaluate
  */
 #define ASSERT_TRUE_CONT(C) { \
-	if (!fail_unless((C))) continue; \
+	if (!ktf_assert((C))) continue; \
 }
 
 /**
@@ -359,7 +359,7 @@ u32 ktf_get_assertion_count(void);
  * @C: Boolean expression to evaluate
  */
 #define ASSERT_FALSE_CONT(C) { \
-	if (!fail_unless(!(C))) continue; \
+	if (!ktf_assert(!(C))) continue; \
 }
 
 /**
@@ -367,7 +367,7 @@ u32 ktf_get_assertion_count(void);
  * @C: Boolean expression to evaluate
  */
 #define ASSERT_TRUE_BREAK(C) { \
-	if (!fail_unless((C))) break; \
+	if (!ktf_assert((C))) break; \
 }
 
 /**
@@ -375,7 +375,7 @@ u32 ktf_get_assertion_count(void);
  * @C: Boolean expression to evaluate
  */
 #define ASSERT_FALSE_BREAK(C) { \
-	if (!fail_unless(!(C))) break; \
+	if (!ktf_assert(!(C))) break; \
 }
 
 /**
@@ -384,22 +384,22 @@ u32 ktf_get_assertion_count(void);
  * @Y: Actual value
  */
 #define ASSERT_LONG_EQ(X, Y) \
-	_ck_assert_long_ret(X, ==, Y);
+	ktf_assert_long_ret(X, ==, Y);
 
 #define ASSERT_LONG_NE(X, Y) \
-	_ck_assert_long_ret(X, !=, Y);
+	ktf_assert_long_ret(X, !=, Y);
 
 #define ASSERT_ADDR_EQ(X, Y) \
-	_ck_assert_long_ret((u64)(X), ==, (u64)(Y));
+	ktf_assert_long_ret((u64)(X), ==, (u64)(Y));
 
 #define ASSERT_ADDR_NE(X, Y) \
-	_ck_assert_long_ret((u64)(X), !=, (u64)(Y));
+	ktf_assert_long_ret((u64)(X), !=, (u64)(Y));
 
 #define ASSERT_INT_EQ(X, Y) \
-	_ck_assert_int_ret(X, ==, Y);
+	ktf_assert_int_ret(X, ==, Y);
 
 #define ASSERT_INT_GT(X, Y) \
-	_ck_assert_int_ret(X, >, Y);
+	ktf_assert_int_ret(X, >, Y);
 
 /**
  * ASSERT_LONG_EQ() - compare two longs, jump to @_lbl if @X != @Y
@@ -408,81 +408,81 @@ u32 ktf_get_assertion_count(void);
  * @_lbl: Label to jump to in case of failure
  */
 #define ASSERT_LONG_EQ_GOTO(X, Y, _lbl) \
-	_ck_assert_long_goto(X, ==, Y, _lbl)
+	ktf_assert_long_goto(X, ==, Y, _lbl)
 
 #define ASSERT_LONG_NE_GOTO(X, Y, _lbl) \
-	_ck_assert_long_goto(X, !=, Y, _lbl)
+	ktf_assert_long_goto(X, !=, Y, _lbl)
 
 #define ASSERT_ADDR_EQ_GOTO(X, Y, _lbl) \
-	_ck_assert_long_goto((u64)(X), ==, (u64)(Y), _lbl)
+	ktf_assert_long_goto((u64)(X), ==, (u64)(Y), _lbl)
 
 #define ASSERT_ADDR_NE_GOTO(X, Y, _lbl) \
-	_ck_assert_long_goto((u64)(X), !=, (u64)(Y), _lbl)
+	ktf_assert_long_goto((u64)(X), !=, (u64)(Y), _lbl)
 
 #define ASSERT_INT_EQ_GOTO(X, Y, _lbl) \
-	_ck_assert_int_goto(X, ==, Y, _lbl)
+	ktf_assert_int_goto(X, ==, Y, _lbl)
 
 #define ASSERT_INT_GE_GOTO(X, Y, _lbl) \
-	_ck_assert_int_goto(X, >=, Y, _lbl)
+	ktf_assert_int_goto(X, >=, Y, _lbl)
 
 #define ASSERT_INT_GT_GOTO(X, Y, _lbl) \
-	_ck_assert_int_goto(X, >, Y, _lbl)
+	ktf_assert_int_goto(X, >, Y, _lbl)
 
 #define ASSERT_INT_LT_GOTO(X, Y, _lbl) \
-	_ck_assert_int_goto(X, <, Y, _lbl)
+	ktf_assert_int_goto(X, <, Y, _lbl)
 
 #define ASSERT_INT_NE(X,Y) \
-	_ck_assert_int_ret(X, !=, Y);
+	ktf_assert_int_ret(X, !=, Y);
 
 #define ASSERT_INT_NE_GOTO(X,Y,_lbl) \
-	_ck_assert_int_goto(X, !=, Y, _lbl);
+	ktf_assert_int_goto(X, !=, Y, _lbl);
 
 /**
  * EXPECT_TRUE() - fail if @C evaluates to false but allow test to continue
  * @C: Boolean expression to evaluate
  *
  */
-#define EXPECT_TRUE(C) fail_unless(C)
-#define EXPECT_FALSE(C) fail_unless(!(C))
+#define EXPECT_TRUE(C) ktf_assert(C)
+#define EXPECT_FALSE(C) ktf_assert(!(C))
 
 #define OK_ADDR(X) (X && !IS_ERR(X))
 
 /* Valid kernel address check */
 #define EXPECT_OK_ADDR(X) \
-	ck_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - was 0x%Lx", (X))
+	ktf_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - was 0x%Lx", (X))
 
 #define ASSERT_OK_ADDR(X) do { \
-		if (!ck_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - value 0x%Lx", (X))) \
+		if (!ktf_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - value 0x%Lx", (X))) \
 			return;						\
 	} while (0)
 #define ASSERT_OK_ADDR_GOTO(X,_lbl) do { \
-		if (!ck_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - was 0x%Lx", (X))) \
+		if (!ktf_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - was 0x%Lx", (X))) \
 			goto _lbl;					\
 	} while (0)
 
 #define ASSERT_OK_ADDR_BREAK(X) do { \
-	if (!ck_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - was 0x%Lx", (X))) \
+	if (!ktf_assert_msg(OK_ADDR(X), "Invalid pointer '"#X"' - was 0x%Lx", (X))) \
 		break; \
 	} while (0)
 
-#define EXPECT_INT_EQ(X,Y) _ck_assert_int(X, ==, Y)
-#define EXPECT_INT_GT(X,Y) _ck_assert_int(X, >, Y)
-#define EXPECT_INT_GE(X,Y) _ck_assert_int(X, >=, Y)
-#define EXPECT_INT_LE(X,Y) _ck_assert_int(X, <=, Y)
-#define EXPECT_INT_LT(X,Y) _ck_assert_int(X, <, Y)
-#define EXPECT_INT_NE(X,Y) _ck_assert_int(X, !=, Y)
+#define EXPECT_INT_EQ(X,Y) ktf_assert_int(X, ==, Y)
+#define EXPECT_INT_GT(X,Y) ktf_assert_int(X, >, Y)
+#define EXPECT_INT_GE(X,Y) ktf_assert_int(X, >=, Y)
+#define EXPECT_INT_LE(X,Y) ktf_assert_int(X, <=, Y)
+#define EXPECT_INT_LT(X,Y) ktf_assert_int(X, <, Y)
+#define EXPECT_INT_NE(X,Y) ktf_assert_int(X, !=, Y)
 
-#define EXPECT_LONG_EQ(X, Y) _ck_assert_long(X, ==, Y)
-#define EXPECT_LONG_NE(X, Y) _ck_assert_long(X, !=, Y)
-#define EXPECT_ADDR_EQ(X, Y) _ck_assert_long((u64)(X), ==, (u64)(Y))
-#define EXPECT_ADDR_NE(X, Y) _ck_assert_long((u64)(X), !=, (u64)(Y))
-#define EXPECT_LONG_GT(X, Y) _ck_assert_long(X, >, Y)
-#define EXPECT_LONG_GE(X, Y) _ck_assert_long(X, >=, Y)
-#define EXPECT_LONG_LE(X, Y) _ck_assert_long(X, <=, Y)
-#define EXPECT_LONG_LT(X, Y) _ck_assert_long(X, <, Y)
+#define EXPECT_LONG_EQ(X, Y) ktf_assert_long(X, ==, Y)
+#define EXPECT_LONG_NE(X, Y) ktf_assert_long(X, !=, Y)
+#define EXPECT_ADDR_EQ(X, Y) ktf_assert_long((u64)(X), ==, (u64)(Y))
+#define EXPECT_ADDR_NE(X, Y) ktf_assert_long((u64)(X), !=, (u64)(Y))
+#define EXPECT_LONG_GT(X, Y) ktf_assert_long(X, >, Y)
+#define EXPECT_LONG_GE(X, Y) ktf_assert_long(X, >=, Y)
+#define EXPECT_LONG_LE(X, Y) ktf_assert_long(X, <=, Y)
+#define EXPECT_LONG_LT(X, Y) ktf_assert_long(X, <, Y)
 
-#define EXPECT_STREQ(X, Y) _ck_assert_str_eq(X, Y)
-#define EXPECT_STRNE(X, Y) _ck_assert_str_ne(X, Y)
+#define EXPECT_STREQ(X, Y) ktf_assert_str_eq(X, Y)
+#define EXPECT_STRNE(X, Y) ktf_assert_str_ne(X, Y)
 
 extern ulong ktf_debug_mask;
 

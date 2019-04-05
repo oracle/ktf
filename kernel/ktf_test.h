@@ -289,94 +289,77 @@ void ktf_cleanup_check(void);
 /* The space before the comma sign before ## is essential to be compatible
    with gcc 2.95.3 and earlier.
 */
-#define fail_unless_msg(expr, format, ...)			\
-        _fail_unless(self, expr, __FILE__, __LINE__,		\
+#define ktf_assert_msg(expr, format, ...)			\
+	_ktf_assert(self, expr, __FILE__, __LINE__,		\
         format , ## __VA_ARGS__, NULL)
 
-#define fail_unless(expr, ...)\
-        _fail_unless(self, expr, __FILE__, __LINE__,		\
-        "Failure '"#expr"' occurred " , ## __VA_ARGS__, NULL)
-
-/* Fail the test case if expr is true */
-/* The space before the comma sign before ## is essential to be compatible
-   with gcc 2.95.3 and earlier.
-*/
-
-/* FIXME: these macros may conflict with C89 if expr is
-   FIXME:   strcmp (str1, str2) due to excessive string length. */
-#define fail_if(expr, ...)\
-        _fail_unless(self, !(expr), __FILE__, __LINE__,		\
+#define ktf_assert(expr, ...)\
+	_ktf_assert(self, expr, __FILE__, __LINE__,		\
         "Failure '"#expr"' occurred " , ## __VA_ARGS__, NULL)
 
 /* Always fail */
-#define fail(...) _fail_unless(self, 0, __FILE__, __LINE__, "Failed" , ## __VA_ARGS__, NULL)
+#define ktf_fail(...) _ktf_assert(self, 0, __FILE__, __LINE__, "Failed" , ## __VA_ARGS__, NULL)
 
-/* Non macro version of #fail_unless, with more complicated interface
+/* Non-macro version of ktf_assert, with more complicated interface
  * returns nonzero if ok, 0 otherwise
  */
-long _fail_unless (struct ktf_test *self, int result, const char *file,
+long _ktf_assert (struct ktf_test *self, int result, const char *file,
 		int line, const char *expr, ...);
 
-/* New check fail API. */
-#define ck_abort() ck_abort_msg(NULL)
-#define ck_abort_msg fail
-#define ck_assert(C) fail_unless(C)
-#define ck_assert_msg fail_unless_msg
-
-/* Integer comparsion macros with improved output compared to fail_unless(). */
+/* Integer comparsion macros with improved output compared to ktf_assert(). */
 /* O may be any comparion operator. */
-#define _ck_assert_int_goto(X, O, Y, _lbl)		\
+#define ktf_assert_int_goto(X, O, Y, _lbl)		\
 	do { int x = (X); int y = (Y);\
-		if (!ck_assert_msg(x O y,					\
+		if (!ktf_assert_msg(x O y,					\
 			"Assertion '"#X#O#Y"' failed: "#X"==0x%x, "#Y"==0x%x", x, y)) \
 			goto _lbl;\
 	} while (0)
 
-#define _ck_assert_int(X, O, Y) \
+#define ktf_assert_int(X, O, Y) \
 	do { int x = (X); int y = (Y);\
-		ck_assert_msg(x O y,\
+		ktf_assert_msg(x O y,\
 		  "Assertion '"#X#O#Y"' failed: "#X"==0x%x, "#Y"==0x%x", x, y);\
 	} while (0)
 
-#define _ck_assert_int_ret(X, O, Y)\
+#define ktf_assert_int_ret(X, O, Y)\
 	do { int x = (X); int y = (Y);\
-		if (!ck_assert_msg(x O y,					\
+		if (!ktf_assert_msg(x O y,					\
 			"Assertion '"#X#O#Y"' failed: "#X"==0x%lx, "#Y"==0x%lx", x, y))	\
 			 return;\
 	} while (0)
 
-#define _ck_assert_long_goto(X, O, Y, _lbl)		\
+#define ktf_assert_long_goto(X, O, Y, _lbl)		\
 	do { long x = (X); long y = (Y);\
-		if (!ck_assert_msg(x O y,					\
+		if (!ktf_assert_msg(x O y,					\
 			"Assertion '"#X#O#Y"' failed: "#X"==0x%lx, "#Y"==0x%lx", x, y))	\
 			 goto _lbl;\
 	} while (0)
 
-#define _ck_assert_long_ret(X, O, Y)\
+#define ktf_assert_long_ret(X, O, Y)\
 	do { long x = (X); long y = (Y);\
-		if (!ck_assert_msg(x O y,					\
+		if (!ktf_assert_msg(x O y,					\
 			"Assertion '"#X#O#Y"' failed: "#X"==0x%lx, "#Y"==0x%lx", x, y))	\
 			 return;\
 	} while (0)
 
 /* O may be any comparion operator. */
-#define _ck_assert_long(X, O, Y) \
+#define ktf_assert_long(X, O, Y) \
 	do { long x = (X); long y = (Y);\
-		ck_assert_msg(x O y,\
+		ktf_assert_msg(x O y,\
 		  "Assertion '"#X#O#Y"' failed: "#X"==0x%lx, "#Y"==0x%lx", x, y);\
 	} while (0)
 
-/* String comparsion macros with improved output compared to fail_unless() */
-#define _ck_assert_str_eq(X, Y)	\
+/* String comparsion macros with improved output compared to ktf_assert() */
+#define ktf_assert_str_eq(X, Y)	\
 	do { const char* x = (X); const char* y = (Y);\
-		ck_assert_msg(strcmp(x,y) == 0,\
+		ktf_assert_msg(strcmp(x,y) == 0,\
 		  "Assertion '"#X"=="#Y"' failed: "#X"==\"%s\", "#Y"==\"%s\"",\
 		  x, y);\
 	} while (0)
 
-#define _ck_assert_str_ne(X, Y)				\
+#define ktf_assert_str_ne(X, Y)				\
 	do { const char* x = (X); const char* y = (Y);\
-		ck_assert_msg(strcmp(x,y) != 0,\
+		ktf_assert_msg(strcmp(x,y) != 0,\
 		  "Assertion '"#X"!="#Y"' failed: "#X"==\"%s\", "#Y"==\"%s\"",\
 		  x, y);\
 	} while (0)

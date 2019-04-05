@@ -166,8 +166,8 @@ EXPORT_SYMBOL(ktf_get_assertion_count);
 
 static DEFINE_SPINLOCK(assert_lock);
 
-long _fail_unless(struct ktf_test *self, int result, const char *file,
-		  int line, const char *fmt, ...)
+long _ktf_assert(struct ktf_test *self, int result, const char *file,
+		 int line, const char *fmt, ...)
 {
 	int len;
 	va_list ap;
@@ -210,7 +210,7 @@ long _fail_unless(struct ktf_test *self, int result, const char *file,
 out:
 	return result;
 }
-EXPORT_SYMBOL(_fail_unless);
+EXPORT_SYMBOL(_ktf_assert);
 
 /* Add a test to a testcase:
  * Tests are represented by ktf_test objects that are linked into
