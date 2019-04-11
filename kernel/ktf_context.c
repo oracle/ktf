@@ -67,8 +67,8 @@ int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx,
 }
 EXPORT_SYMBOL(ktf_context_add);
 
-static struct ktf_context *ktf_context_add_from(struct ktf_handle *handle, const char *name,
-						struct ktf_context_type *ct)
+struct ktf_context *ktf_context_add_from(struct ktf_handle *handle, const char *name,
+					 struct ktf_context_type *ct)
 {
 	struct ktf_context *ctx;
 	int ret;
@@ -90,6 +90,7 @@ fail:
 	kfree(ctx);
 	return NULL;
 }
+EXPORT_SYMBOL(ktf_context_add_from);
 
 int ktf_context_set_config(struct ktf_context *ctx, const void *data, size_t data_sz)
 {
@@ -101,6 +102,7 @@ int ktf_context_set_config(struct ktf_context *ctx, const void *data, size_t dat
 	}
 	return ctx->config_errno;
 }
+EXPORT_SYMBOL(ktf_context_set_config);
 
 const char *ktf_context_name(struct ktf_context *ctx)
 {
@@ -213,24 +215,21 @@ struct ktf_handle *ktf_handle_find(int hid)
 
 /* Allow user space to create new contexts of certain types
  * based on configuration type ids. This stores a new such ID
- * to enable it for user space usage.
+ * to enable it for user space usage. Caller must allocate and populate
+ * @ct with appropriate callbacks and value for the context ID.
  */
 
 int ktf_handle_add_ctx_type(struct ktf_handle *handle,
-			    struct ktf_context_type *ct,
-			    ktf_context_alloc alloc,
-			    ktf_config_cb cfg_cb,
-			    ktf_context_cb cleanup,
-			    unsigned int cfg_typeid)
+			    struct ktf_context_type *ct)
 {
 	unsigned long flags;
 	int ret;
 
-	ktf_map_elem_init(&ct->elem, (const char *)&cfg_typeid);
-	ct->alloc = alloc;
-	ct->config_cb = cfg_cb;
-	ct->cleanup = cleanup;
-	ct->config_type = cfg_typeid;
+	if (!(ct->alloc && ct->config_cb && ct->config_type)) {
+		terr("Mandatory configuration callbacks or values missing!");
+		return -EINVAL;
+	}
+	ktf_map_elem_init(&ct->elem, (const char *)&ct->config_type);
 
 	spin_lock_irqsave(&context_lock, flags);
 	ret = ktf_map_insert(&handle->ctx_type_map, &ct->elem);

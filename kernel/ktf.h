@@ -49,6 +49,8 @@ struct ktf_context_type {
 	unsigned config_type;	   /* Parameter type info id */
 };
 
+#include "ktf_netctx.h"
+
 /* type for a test function */
 struct ktf_test;
 
@@ -70,6 +72,8 @@ typedef void (*ktf_test_adder)(void);
 void ktf_add_tests(ktf_test_adder f);
 int ktf_context_add(struct ktf_handle *handle, struct ktf_context* ctx,
 		    const char* name, ktf_config_cb cfg_cb, unsigned int cfg_type_id);
+struct ktf_context *ktf_context_add_from(struct ktf_handle *handle, const char *name,
+					 struct ktf_context_type *ct);
 const char *ktf_context_name(struct ktf_context *ctx);
 struct ktf_context* ktf_find_context(struct ktf_handle *handle, const char* name);
 struct ktf_context *ktf_find_first_context(struct ktf_handle *handle);
@@ -85,9 +89,7 @@ int ktf_context_set_config(struct ktf_context *ctx, const void* data, size_t dat
 
 struct ktf_context *ktf_find_create_context(struct ktf_handle *handle, const char *name,
 					    unsigned int type_id);
-int ktf_handle_add_ctx_type(struct ktf_handle *handle, struct ktf_context_type *ct,
-			    ktf_context_alloc alloc, ktf_config_cb cfg_cb,
-			    ktf_context_cb cleanup, unsigned int cfg_typeid);
+int ktf_handle_add_ctx_type(struct ktf_handle *handle, struct ktf_context_type *ct);
 struct ktf_context_type *ktf_handle_get_ctx_type(struct ktf_handle *handle,
 						 unsigned int cfg_typeid);
 

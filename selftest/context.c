@@ -116,9 +116,11 @@ void add_context_tests(void)
 		return;
 
 	ctx_type3.myvalue = MYVALUE;
-	ret = ktf_handle_add_ctx_type(&ct_handle, &ctx_type3.kt,
-				      type3_alloc, param_ctx_cb, type3_cleanup,
-				      CONTEXT3_TYPE_ID);
+	ctx_type3.kt.alloc = type3_alloc;
+	ctx_type3.kt.config_cb = param_ctx_cb;
+	ctx_type3.kt.cleanup = type3_cleanup;
+	ctx_type3.kt.config_type = CONTEXT3_TYPE_ID;
+	ret = ktf_handle_add_ctx_type(&ct_handle, &ctx_type3.kt);
 
 	ADD_TEST_TO(ct_handle, param);
 }
