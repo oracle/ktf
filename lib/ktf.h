@@ -28,6 +28,13 @@ namespace ktf
   /* Function for enabling/disabling coverage for module */
   int set_coverage(std::string module, unsigned int opts, bool enabled);
 
+  typedef void (*configurator)(void);
+
+  // Initialize KTF:
+  // If necessary, supply a callback that uses the KTF_CONTEXT_CFG* macros below
+  // to configure any necessary contexts:
+  void setup(configurator c = NULL);
+
 } // end namespace ktf
 
 /* HTEST: Define user part of a hybrid test.
@@ -96,10 +103,6 @@ namespace ktf {
 
   /* Get the size of the existing priv data */
   size_t get_priv_sz(KernelTest *kt);
-
-  // Initialize KTF - should normally be called as part of static
-  // initialization, but some compilers may decide to optimize it away:
-  int setup(void);
 
   // Configure ktf context - to be used via KTF_CONTEXT_CFG*():
   void configure_context(const std::string context, unsigned int type_id,

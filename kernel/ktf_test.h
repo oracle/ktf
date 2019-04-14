@@ -168,6 +168,8 @@ void tcase_fn_start (const char *fname, const char *file, int line);
 #define ktf_testcase_for_each_test(pos, tc)	\
 	ktf_map_for_each_entry(pos, &tc->tests, kmap)
 
+#define KTF_GEN_TYPEID_MAX 3
+
 /* A test_handle identifies the calling module:
  * Declare one in the module global scope using
  *  KTF_INIT() or KTF_HANDLE_INIT()
@@ -176,6 +178,7 @@ void tcase_fn_start (const char *fname, const char *file, int line);
 
 struct ktf_handle {
 	struct list_head handle_list; /* Linkage for the global list of all handles with context */
+	struct ktf_map ctx_type_map; /* a map from type_id to ktf_context_type (see ktf_context.c) */
 	struct ktf_map ctx_map;     /* a (possibly empty) map from name to context for this handle */
 	unsigned int id; 	      /* A unique nonzero ID for this handle, set iff contexts */
 	bool require_context;	      /* If set, tests are only valid if a context is provided */
@@ -190,6 +193,7 @@ void ktf_cleanup_check(void);
 #define KTF_HANDLE_INIT_VERSION(__test_handle, __version, __need_ctx)	\
 	struct ktf_handle __test_handle = { \
 		.handle_list = LIST_HEAD_INIT(__test_handle.handle_list), \
+		.ctx_type_map = __KTF_MAP_INITIALIZER(__test_handle, ktf_uint_compare, NULL), \
 		.ctx_map = __KTF_MAP_INITIALIZER(__test_handle, NULL, NULL), \
 		.id = 0, \
 		.require_context = __need_ctx, \

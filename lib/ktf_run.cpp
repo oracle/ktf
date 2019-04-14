@@ -58,9 +58,10 @@ public:
 private:
   ktf::KernelTest* ukt;
   std::string ctx;
-  friend int setup(void);
+  friend void setup(configurator c);
   static int AddToRegistry();
   static int gtest_registering_dummy_;
+  static configurator configurator_;
 };
 
 
@@ -129,24 +130,10 @@ int Kernel::AddToRegistry()
   return 0;
 }
 
-/* This is where the magic registration of kernel test happens:
- * The statement will include all the kernel tests in the
- * test set registered by gtest in such a way that they are
- * transparently visible as normal gtest tests.
- *
- * Note that to avoid being dependent on compiler specific order
- * of initialization, we have to initially store a lot of the
- * information in the Kernel class object before it later can
- * be handed over to the gtest framework as part of instantiation.
- *
- */
-int Kernel::gtest_registering_dummy_ = Kernel::AddToRegistry();
-
-
-int setup(void)
+void setup(configurator c)
 {
-  /* Just refer this variable, that forces it to have to be initialized.. */
-  return Kernel::gtest_registering_dummy_;
+  ktf::set_configurator(c);
+  Kernel::AddToRegistry();
 }
 
 

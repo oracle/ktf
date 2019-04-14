@@ -66,71 +66,22 @@ public:
   int setnum;
 };
 
-/* Keeps track of a ktf_context that requires configuration.
- * Context names are unique within a handle, so handle ID is
- * necessary to identify the context.
- * The actual configuration data must be agreed upon between
- * user mode and kernel mode on a per context basis.
- * They can use type_id to identify which type of parameter a
- * context needs.
+/* ConfigurableContext keeps track of a ktf_context that requires configuration.
+ * Context names are unique within a handle, so a handle ID is necessary to
+ * identify the context. The actual configuration data must be agreed upon between
+ * user mode and kernel mode on a per context basis. They can use type_id
+ * to identify which type of parameter a context needs.
+ * The type_id is also used to create new contexts in the kernel.
+ * The kernel implementation must enable such dynamically extensible context sets
+ * on a per type_id basis.
  */
 class ConfigurableContext
 {
 public:
-  ConfigurableContext(std::string& name_, unsigned type_id_, unsigned int hid, int cfg_stat_)
-    : name(name_),
-      handle_id(hid),
-      type_id(type_id_),
-      cfg_stat(cfg_stat_)
-  {
-    log(KTF_INFO, "%s[%u] (hid %d): state: %s\n",
-	name.c_str(), type_id, hid, str_state().c_str());
-  }
+  ConfigurableContext(const std::string& name, unsigned type_id, unsigned int hid, int cfg_stat);
 
-  std::string str_state()
-  {
-    switch (cfg_stat) {
-    case 0:
-      return std::string("READY");
-    case ENOENT:
-      return std::string("UNCONFIGURED");
-    default:
-      char tmp[100];
-      sprintf(tmp, "ERROR(%d)", cfg_stat);
-      return std::string(tmp);
-    }
-  }
-
-  int Configure(void *data, size_t data_sz)
-  {
-    struct nl_msg *msg = nlmsg_alloc();
-    int err;
-
-    log(KTF_INFO, "%s, data_sz %lu\n", name.c_str(), data_sz);
-    genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
-		KTF_C_REQ, 1);
-    nla_put_u32(msg, KTF_A_TYPE, KTF_CT_CTX_CFG);
-    nla_put_u64(msg, KTF_A_VERSION, KTF_VERSION_LATEST);
-    nla_put_string(msg, KTF_A_STR, name.c_str());
-    nla_put_u32(msg, KTF_A_HID, handle_id);
-    nla_put(msg, KTF_A_DATA, data_sz, data);
-
-    // Send message over netlink socket
-    nl_send_auto_complete(sock, msg);
-
-    // Free message
-    nlmsg_free(msg);
-
-    // Wait for acknowledgement:
-    // This function also returns error status if the message
-    // was not deemed ok by the kernel, but the error status
-    // does not resemble what the netlink recipient returned.
-    //
-    // This message receives no response beyond the error code.
-    //
-    err = nl_wait_for_ack(sock);
-    return err;
-  }
+  std::string str_state();
+  int Configure(void *data, size_t data_sz);
 
   unsigned int Type()
   {
@@ -153,6 +104,18 @@ struct name_iter
   std::string setname;
 };
 
+class ContextType
+{
+public:
+  ContextType(int handle_id, int type_id);
+  int handle_id;
+  int type_id;
+};
+
+ContextType::ContextType(int hid, int tid)
+  : handle_id(hid),
+    type_id(tid)
+{}
 
 /* We trick the gtest template framework
  * to get a new set of test names as a side effect of
@@ -195,9 +158,18 @@ public:
   }
 
   void add_cset(unsigned int hid, stringvec& ctxs);
-  void add_configurable_context(std::string& ctx, unsigned int type_id,
-				unsigned int hid, int cfg_stat);
-  std::vector<ConfigurableContext*> find_contexts(const std::string& ctx);
+  void add_ctype(unsigned int hid, unsigned int type_id);
+  std::vector<ConfigurableContext*> add_configurable_context(const std::string& ctx, unsigned int type_id,
+							     unsigned int hid, int cfg_stat);
+  std::vector<ConfigurableContext*> add_configurable_contexts(const std::string& ctx,
+							      std::vector<ContextType*> type_vec);
+  std::vector<ConfigurableContext*> find_contexts(const std::string& ctx, unsigned int type_id);
+
+  /* Contexts may be created on the fly if the kernel supports it for this type_id: */
+  std::vector<ConfigurableContext*> maybe_create_context(const std::string& ctx, unsigned int type_id);
+
+  /* Update the list of contexts returned from the kernel with a newly created one */
+  void add_context(unsigned int hid, const std::string& ctx);
 private:
   setmap sets;
   stringvec test_names;
@@ -205,6 +177,9 @@ private:
   stringset kernelsets;
   std::map<unsigned int, stringvec> handle_to_ctxvec;
   std::map<std::string, context_vector> cfg_contexts;
+
+  // Context types that allows dynamically created contexts:
+  std::map<unsigned int, std::vector<ContextType*> > ctx_types;
   int next_set;
   name_iter* cur;
 };
@@ -218,17 +193,41 @@ KernelTestMgr::~KernelTestMgr()
     for (vit = it->second.begin(); vit != it->second.end(); ++vit)
       delete *vit;
   }
+
+  std::map<unsigned int, std::vector<ContextType*> >::iterator tit;
+  for (tit = ctx_types.begin(); tit != ctx_types.end(); ++tit)
+  {
+    std::vector<ContextType*>::iterator ttit;
+    for (ttit = tit->second.begin(); ttit != tit->second.end(); ++ttit)
+      delete *ttit;
+  }
 }
 
-context_vector KernelTestMgr::find_contexts(const std::string& ctx)
+context_vector KernelTestMgr::find_contexts(const std::string& ctx, unsigned int type_id)
 {
   std::map<std::string,context_vector>::iterator it;
   it = cfg_contexts.find(ctx);
   if (it == cfg_contexts.end())
-    return context_vector();
+    return maybe_create_context(ctx, type_id);
   else
     return it->second;
 }
+
+context_vector KernelTestMgr::maybe_create_context(const std::string& ctx, unsigned int type_id)
+{
+  std::map<unsigned int, std::vector<ContextType*> >::iterator it;
+  it = ctx_types.find(type_id);
+  if (it == ctx_types.end())
+    return context_vector();
+  else
+    return add_configurable_contexts(ctx, it->second);
+}
+
+void KernelTestMgr::add_context(unsigned int hid, const std::string& ctx)
+{
+  handle_to_ctxvec[hid].push_back(ctx);
+}
+
 
 KernelTestMgr& kmgr()
 {
@@ -324,10 +323,18 @@ void KernelTestMgr::add_cset(unsigned int hid, stringvec& ctxs)
   handle_to_ctxvec[hid] = ctxs;
 }
 
-void KernelTestMgr::add_configurable_context(std::string& ctx, unsigned int type_id,
-					     unsigned int hid, int cfg_stat)
+void KernelTestMgr::add_ctype(unsigned int hid, unsigned int type_id)
+{
+  log(KTF_INFO, "hid %d: dynamical type id: 0x%x\n", hid, type_id);
+  ctx_types[type_id].push_back(new ContextType(hid, type_id));
+}
+
+std::vector<ConfigurableContext*> KernelTestMgr::add_configurable_context(const std::string& ctx,
+									  unsigned int type_id,
+									  unsigned int hid, int cfg_stat)
 {
   cfg_contexts[ctx].push_back(new ConfigurableContext(ctx, type_id, hid, cfg_stat));
+  return cfg_contexts[ctx];
 }
 
 /* Function for adding a wrapper user level test */
@@ -351,6 +358,20 @@ void KernelTestMgr::add_wrapper(const std::string setname, const std::string tes
 	setname.c_str(), testname.c_str());
     ts.wrapper[testname] = tcb;
   }
+}
+
+std::vector<ConfigurableContext*> KernelTestMgr::add_configurable_contexts(const std::string& ctx,
+									   std::vector<ContextType*> type_vec)
+{
+  std::vector<ContextType*>::iterator it = type_vec.begin();
+  for (; it != type_vec.end(); ++it) {
+    /* We use ENODEV (instead of the kernel's ENOENT to indicate to ConfigurableContext that
+     * this context was not reported in the query, and thus need to be added locally upon a
+     * successful configuration:
+     */
+    cfg_contexts[ctx].push_back(new ConfigurableContext(ctx, (*it)->type_id, (*it)->handle_id, ENODEV));
+  }
+  return cfg_contexts[ctx];
 }
 
 
@@ -382,6 +403,71 @@ stringvec KernelTestMgr::get_test_names()
   return v;
 }
 
+ConfigurableContext::ConfigurableContext(const std::string& name_, unsigned type_id_,
+                                         unsigned int hid, int cfg_stat_)
+  : name(name_),
+    handle_id(hid),
+    type_id(type_id_),
+    cfg_stat(cfg_stat_)
+{
+  log(KTF_INFO, "%s[0x%x] (hid %d): state: %s\n",
+      name.c_str(), type_id, hid, str_state().c_str());
+}
+
+std::string ConfigurableContext::str_state()
+{
+  switch (cfg_stat) {
+  case 0:
+    return std::string("READY");
+  case ENOENT:
+    return std::string("UNCONFIGURED");
+  case ENODEV:
+    return std::string("UNCREATED");
+  default:
+    char tmp[100];
+    sprintf(tmp, "ERROR(%d)", cfg_stat);
+    return std::string(tmp);
+  }
+}
+
+int ConfigurableContext::Configure(void *data, size_t data_sz)
+{
+  struct nl_msg *msg = nlmsg_alloc();
+  int err;
+
+  log(KTF_INFO, "%s, data_sz %lu\n", name.c_str(), data_sz);
+  genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
+              KTF_C_REQ, 1);
+  nla_put_u32(msg, KTF_A_TYPE, KTF_CT_CTX_CFG);
+  nla_put_u64(msg, KTF_A_VERSION, KTF_VERSION_LATEST);
+  nla_put_string(msg, KTF_A_STR, name.c_str());
+  nla_put_u32(msg, KTF_A_HID, handle_id);
+  nla_put_u32(msg, KTF_A_NUM, type_id);
+  nla_put(msg, KTF_A_DATA, data_sz, data);
+
+  // Send message over netlink socket
+  nl_send_auto_complete(sock, msg);
+
+  // Free message
+  nlmsg_free(msg);
+
+  // Wait for acknowledgement:
+  // This function also returns error status if the message
+  // was not deemed ok by the kernel, but the error status
+  // does not resemble what the netlink recipient returned.
+  //
+  // This message receives no response beyond the error code.
+  //
+  err = nl_wait_for_ack(sock);
+
+  if (!err && cfg_stat == ENODEV) {
+    // Successfully added a new context, update it's state and
+    // tell kmgr() about it:
+    kmgr().add_context(handle_id, name);
+    cfg_stat = 0;
+  }
+  return err;
+}
 
 void *get_priv(KernelTest *kt, size_t sz)
 {
@@ -536,6 +622,13 @@ bool setup(test_handler ht)
 }
 
 
+configurator do_context_configure = NULL;
+
+void set_configurator(configurator c)
+{
+  do_context_configure = c;
+}
+
 /* Query kernel for available tests in index order */
 stringvec& query_testsets()
 {
@@ -643,7 +736,7 @@ void run(KernelTest* kt, std::string context)
 
 void configure_context(const std::string context, unsigned type_id, void *data, size_t data_sz)
 {
-  context_vector ct = kmgr().find_contexts(context);
+  context_vector ct = kmgr().find_contexts(context, type_id);
   ASSERT_GE(ct.size(), 1UL) << " - no context found named " << context;
   ASSERT_EQ(ct.size(), 1UL) << " - More than one context named " << context
 			  << " - use KTF_CONTEXT_CFG_FOR_TEST to uniquely identify context.";
@@ -656,7 +749,7 @@ void configure_context_for_test(const std::string& setname, const std::string& t
 {
   std::string context;
   KernelTest *kt = kmgr().find_test(setname, testname, &context);
-  context_vector ct = kmgr().find_contexts(context);
+  context_vector ct = kmgr().find_contexts(context, type_id);
   ASSERT_TRUE(kt) << " Could not find test " << setname << "." << testname;
   int handle_id = kt->handle_id;
   ASSERT_NE(handle_id, 0) << " test " << setname << "." << testname << " does not have a context";
@@ -743,7 +836,10 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
     unsigned int handle_id = 0;
     unsigned int type_id = 0;
 
-    /* Parse info on handle IDs and associated contexts: */
+    /* Parse info on handle IDs and associated contexts and/or
+     * types that allows dynamical creation of new contexts
+     * (defined here via KTF_A_TYPE):
+     */
     nla_for_each_nested(nla, attrs[KTF_A_HLIST], rem) {
       switch (nla->nla_type) {
       case KTF_A_HID:
@@ -752,6 +848,10 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
       case KTF_A_LIST:
 	nla_for_each_nested(nla2, nla, rem2) {
 	  switch (nla2->nla_type) {
+	  case KTF_A_TYPE:
+	    type_id = nla_get_u32(nla2);
+	    kmgr().add_ctype(handle_id, type_id);
+	    break;
 	  case KTF_A_STR:
 	    ctx = nla_get_string(nla2);
 	    contexts.push_back(ctx);
@@ -776,6 +876,14 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
       }
     }
   }
+
+  // Now we know enough about contexts and type_ids to actually configure
+  // any contexts that needs to be configured, and this must be
+  // done before the list of tests gets spanned out because addition
+  // of new contexts can lead to more tests being "generated":
+  //
+  if (do_context_configure)
+    do_context_configure();
 
   if (attrs[KTF_A_NUM]) {
     alloc = nla_get_u32(attrs[KTF_A_NUM]);

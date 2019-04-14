@@ -20,4 +20,4 @@ ktfrun_SOURCES = ktfrun.cpp
 ktfcov_SOURCES = ktfcov.cpp
 
 ## Configure and run the KTF selftests:
-ktftest_SOURCES = ktfrun.cpp hybrid.cpp context.cpp
+ktftest_SOURCES = ktftest.cpp hybrid.cpp

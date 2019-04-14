@@ -29,11 +29,23 @@ typedef int (*ktf_config_cb)(struct ktf_context *ctx, const void* data, size_t d
 typedef void (*ktf_context_cb)(struct ktf_context *ctx);
 
 struct ktf_context {
-	struct ktf_map_elem elem;  /* Linkage for ktf_map */
+	struct ktf_map_elem elem;  /* Linkage for ctx_map in handle */
 	struct ktf_handle *handle; /* Owner of this context */
 	ktf_config_cb config_cb;   /* Optional configuration callback */
 	ktf_context_cb cleanup;	   /* Optional callback upon context release */
 	int config_errno;	   /* If config_cb set: state of configuration */
+	unsigned config_type;	   /* Parameter type info id */
+};
+
+struct ktf_context_type;
+typedef struct ktf_context* (*ktf_context_alloc)(struct ktf_context_type *ct);
+
+struct ktf_context_type {
+	struct ktf_map_elem elem;  /* Linkage for map in handle */
+	struct ktf_handle *handle; /* Owner of this context type */
+	ktf_context_alloc alloc;   /* Allocate a new context of this type */
+	ktf_config_cb config_cb;   /* Configuration callback */
+	ktf_context_cb cleanup;	   /* Optional callback upon context release */
 	unsigned config_type;	   /* Parameter type info id */
 };
 
@@ -70,6 +82,14 @@ void ktf_context_remove_all(struct ktf_handle *handle);
  * returns the return value of the configuration callback.
  */
 int ktf_context_set_config(struct ktf_context *ctx, const void* data, size_t data_sz);
+
+struct ktf_context *ktf_find_create_context(struct ktf_handle *handle, const char *name,
+					    unsigned int type_id);
+int ktf_handle_add_ctx_type(struct ktf_handle *handle, struct ktf_context_type *ct,
+			    ktf_context_alloc alloc, ktf_config_cb cfg_cb,
+			    ktf_context_cb cleanup, unsigned int cfg_typeid);
+struct ktf_context_type *ktf_handle_get_ctx_type(struct ktf_handle *handle,
+						 unsigned int cfg_typeid);
 
 /* Declare the implicit __test_handle as extern for .c files that use it
  * when adding tests with ADD_TEST but where definition is in another .c file:
@@ -108,7 +128,6 @@ extern struct ktf_handle __test_handle;
 	struct __priv_datatype *__priv_data = (struct __priv_datatype *)__kt_ptr->data; \
 	if (!__priv_data) return; \
 	ASSERT_LONG_EQ(__kt_ptr->data_sz, sizeof(struct __priv_datatype))
-
 
 /* KTF support for entry/return probes (via kprobes kretprobes).  We use
  * kretprobes as they support entry/return and do not induce panics when

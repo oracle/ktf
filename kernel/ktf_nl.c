@@ -172,6 +172,7 @@ static int send_test_data(struct sk_buff *resp_skb, struct ktf_case *tc)
 
 static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
 {
+	struct ktf_context_type *ct;
 	struct nlattr *nest_attr;
 	struct ktf_context *ctx;
 	int stat;
@@ -187,6 +188,11 @@ static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
 	nest_attr = nla_nest_start(resp_skb, KTF_A_LIST);
 	if (!nest_attr)
 		return -ENOMEM;
+
+	/* Send any context types that user space are allowed to create contexts for */
+	ktf_map_for_each_entry(ct, &handle->ctx_type_map, elem) {
+		nla_put_u32(resp_skb, KTF_A_TYPE, ct->config_type);
+	}
 
 	ctx = ktf_find_first_context(handle);
 	while (ctx) {
@@ -447,8 +453,8 @@ put_fail:
 }
 
 /* Process request to configure a configurable context:
- * Expected format:  KTF_CT_CTX_CFG hid context_name data
- * placed in A_HID, A_STR and A_DATA respectively.
+ * Expected format:  KTF_CT_CTX_CFG hid type_id context_name data
+ * placed in A_HID, A_NUM, A_STR and A_DATA respectively.
  */
 static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info)
 {
@@ -460,6 +466,7 @@ static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info)
 	struct ktf_handle *handle;
 	struct ktf_context *ctx;
 	int ret;
+	unsigned int type_id = 0;
 
 	if (!info->attrs[KTF_A_STR] || !info->attrs[KTF_A_HID])
 		return -EINVAL;
@@ -470,8 +477,14 @@ static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info)
 	handle = ktf_handle_find(hid);
 	if (!handle)
 		return -EINVAL;
+	if (info->attrs[KTF_A_TYPE])
+		type_id = nla_get_u32(info->attrs[KTF_A_NUM]);
 	nla_strlcpy(ctxname, info->attrs[KTF_A_STR], KTF_MAX_NAME);
-	ctx = ktf_find_context(handle, ctxname);
+	tlog(T_DEBUG, "Trying to find/create context %s\n", ctxname);
+	ctx = ktf_find_create_context(handle, ctxname, type_id);
+	if (!ctx)
+		return -ENODEV;
+
 	tlog(T_DEBUG, "Received context configuration for context %s, handle %d\n",
 	     ctxname, hid);
 

@@ -32,7 +32,8 @@ LIST_HEAD(context_handles);
 module_param_named(debug_mask, ktf_debug_mask, ulong, 0644);
 
 int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx,
-		    const char *name, ktf_config_cb cfg_cb, unsigned int cfg_type_id)
+		    const char *name, ktf_config_cb cfg_cb,
+		    unsigned int cfg_type_id)
 {
 	unsigned long flags;
 	int ret;
@@ -59,6 +60,30 @@ int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx,
 	return ret;
 }
 EXPORT_SYMBOL(ktf_context_add);
+
+static struct ktf_context *ktf_context_add_from(struct ktf_handle *handle, const char *name,
+						struct ktf_context_type *ct)
+{
+	struct ktf_context *ctx;
+	int ret;
+
+	if (!ct->alloc) {
+		terr("No alloc function supplied!");
+		return NULL;
+	}
+	ctx = ct->alloc(ct);
+	if (!ctx)
+		return NULL;
+	ret = ktf_context_add(handle, ctx, name, ct->config_cb, ct->config_type);
+	if (ret)
+		goto fail;
+
+	ctx->cleanup = ct->cleanup;
+	return ctx;
+fail:
+	kfree(ctx);
+	return NULL;
+}
 
 int ktf_context_set_config(struct ktf_context *ctx, const void *data, size_t data_sz)
 {
@@ -87,8 +112,6 @@ static void __ktf_context_remove(struct ktf_context *ctx, bool locked)
 		return;
 	}
 	handle = ctx->handle;
-	if (ctx->cleanup)
-		ctx->cleanup(ctx);
 
 	/* ktf_find_context might be called from interrupt level */
 	if (!locked)
@@ -100,7 +123,12 @@ static void __ktf_context_remove(struct ktf_context *ctx, bool locked)
 
 	if (!locked)
 		spin_unlock_irqrestore(&context_lock, flags);
+
 	tlog(T_DEBUG, "removed context %s at %p", ctx->elem.key, ctx);
+
+	if (ctx->cleanup)
+		ctx->cleanup(ctx);
+	/* Note: ctx may be freed here! */
 }
 
 void ktf_context_remove(struct ktf_context *ctx)
@@ -125,9 +153,26 @@ struct ktf_context *ktf_find_context(struct ktf_handle *handle, const char *name
 	if (!name)
 		return NULL;
 	elem = ktf_map_find(&handle->ctx_map, name);
+	if (!elem)
+		return NULL;
 	return container_of(elem, struct ktf_context, elem);
 }
 EXPORT_SYMBOL(ktf_find_context);
+
+struct ktf_context *ktf_find_create_context(struct ktf_handle *handle, const char *name,
+					    unsigned int type_id)
+{
+	struct ktf_context *ctx = ktf_find_context(handle, name);
+
+	if (!ctx) {
+		struct ktf_context_type *ct = ktf_handle_get_ctx_type(handle, type_id);
+
+		tlog(T_DEBUG, "typeid = %u, ct = %p", type_id, ct);
+		if (ct)
+			ctx = ktf_context_add_from(handle, name, ct);
+	}
+	return ctx;
+}
 
 struct ktf_context *ktf_find_next_context(struct ktf_context *ctx)
 {
@@ -173,6 +218,45 @@ struct ktf_handle *ktf_handle_find(int hid)
 			break;
 	}
 	return handle;
+}
+
+/* Allow user space to create new contexts of certain types
+ * based on configuration type ids. This stores a new such ID
+ * to enable it for user space usage.
+ */
+
+int ktf_handle_add_ctx_type(struct ktf_handle *handle,
+			    struct ktf_context_type *ct,
+			    ktf_context_alloc alloc,
+			    ktf_config_cb cfg_cb,
+			    ktf_context_cb cleanup,
+			    unsigned int cfg_typeid)
+{
+	unsigned long flags;
+	int ret;
+
+	ktf_map_elem_init(&ct->elem, (const char *)&cfg_typeid);
+	ct->alloc = alloc;
+	ct->config_cb = cfg_cb;
+	ct->cleanup = cleanup;
+	ct->config_type = cfg_typeid;
+
+	spin_lock_irqsave(&context_lock, flags);
+	ret = ktf_map_insert(&handle->ctx_type_map, &ct->elem);
+	spin_unlock_irqrestore(&context_lock, flags);
+	return ret;
+}
+EXPORT_SYMBOL(ktf_handle_add_ctx_type);
+
+struct ktf_context_type *ktf_handle_get_ctx_type(struct ktf_handle *handle,
+						 unsigned int cfg_typeid)
+{
+	struct ktf_map_elem *elem = ktf_map_find(&handle->ctx_type_map, (char *)&cfg_typeid);
+
+	tlog(T_DEBUG, "Lookup in map size %lu\n", ktf_map_size(&handle->ctx_type_map));
+	if (!elem)
+		return NULL;
+	return container_of(elem, struct ktf_context_type, elem);
 }
 
 void ktf_handle_cleanup_check(struct ktf_handle *handle)

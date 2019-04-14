@@ -50,7 +50,9 @@ namespace ktf
 
   // Set up connection to the kernel test driver:
   // @handle_test contains the test framework's handling code for test assertions */
-  bool setup(test_handler handle_test = NULL);
+  bool setup(test_handler handle_test);
+
+  void set_configurator(configurator c);
 
   // Parse command line args (call after gtest arg parsing)
   char** parse_opts(int argc, char** argv);

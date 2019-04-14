@@ -14,6 +14,7 @@
 #define CONTEXT_SELF_MAX_TEXT 30
 #define CONTEXT1_TYPE_ID 0xfedbed
 #define CONTEXT2_TYPE_ID 0xbadbad
+#define CONTEXT3_TYPE_ID 0xbadba1
 
 /* A simple example parameter block:
  * For verification purposes it can be useful to have a field
@@ -23,6 +24,7 @@
  */
 struct test_parameter_block {
 	long magic;
+	long myvalue;
 	char s[CONTEXT_SELF_MAX_TEXT+1];
 };
 
@@ -30,5 +32,6 @@ struct test_parameter_block {
 #define CONTEXT_MSG "from user to kernel"
 #define CONTEXT_MAGIC1 0xfaaa1234UL
 #define CONTEXT_MAGIC2 0xaabbccUL
+#define CONTEXT_MAGIC3 0x123456UL
 
 #endif
