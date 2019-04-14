@@ -36,6 +36,18 @@ int ktf_map_elem_init(struct ktf_map_elem *elem, const char *key)
 	return 0;
 }
 
+/* A convenience unsigned int compare function as an alternative
+ * to the string compare:
+ */
+int ktf_uint_compare(const char *ac, const char *bc)
+{
+	unsigned int a = *((unsigned int *)ac);
+	unsigned int b = *((unsigned int *)bc);
+
+	return a > b ? 1 : (a < b ? -1 : 0);
+}
+EXPORT_SYMBOL(ktf_uint_compare);
+
 /* Copy "elem"s key representation into "name".  For cases where no
  * compare function is defined - i.e. string keys - just copy string,
  * otherwise name is hexascii of first 8 bytes of key.
@@ -64,7 +76,7 @@ static void ktf_map_elem_release(struct kref *kref)
 	struct ktf_map *map = elem->map;
 	char name[KTF_MAX_KEY];
 
-	tlog(T_DEBUG, "Releasing %s, %s free function",
+	tlog(T_DEBUG_V, "Releasing %s, %s free function",
 	     ktf_map_elem_name(elem, name),
 	     map && map->elem_freefn ? "calling" : "no");
 	if (map && map->elem_freefn)
@@ -75,7 +87,7 @@ void ktf_map_elem_put(struct ktf_map_elem *elem)
 {
 	char name[KTF_MAX_KEY];
 
-	tlog(T_DEBUG, "Decreasing refcount for %s to %d",
+	tlog(T_DEBUG_V, "Decreasing refcount for %s to %d",
 	     ktf_map_elem_name(elem, name),
 	     refcount_read(&elem->refcount.refcount) - 1);
 	kref_put(&elem->refcount, ktf_map_elem_release);
@@ -85,7 +97,7 @@ void ktf_map_elem_get(struct ktf_map_elem *elem)
 {
 	char name[KTF_MAX_KEY];
 
-	tlog(T_DEBUG, "Increasing refcount for %s to %d",
+	tlog(T_DEBUG_V, "Increasing refcount for %s to %d",
 	     ktf_map_elem_name(elem, name),
 	     refcount_read(&elem->refcount.refcount) + 1);
 	kref_get(&elem->refcount);

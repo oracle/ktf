@@ -26,6 +26,11 @@ struct ktf_map_elem;
  */
 typedef int (*ktf_map_elem_comparefn)(const char *, const char *);
 
+/* A convenience unsigned int compare function as an alternative
+ * to the string compare:
+ */
+int ktf_uint_compare(const char *a, const char *b);
+
 /* Free function called when elem refcnt is 0 - optional and of course for
  * dynamically-allocated elems only.
  */
@@ -46,7 +51,6 @@ struct ktf_map_elem {
 	struct ktf_map *map;  /* owning map */
 	struct kref refcount; /* reference count for element */
 };
-
 
 #define __KTF_MAP_INITIALIZER(_mapname, _elem_comparefn, _elem_freefn) \
         { \
