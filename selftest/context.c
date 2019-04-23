@@ -127,6 +127,5 @@ void add_context_tests(void)
 
 void context_tests_cleanup(void)
 {
-	ktf_context_remove_all(&ct_handle);
 	KTF_HANDLE_CLEANUP(ct_handle);
 }

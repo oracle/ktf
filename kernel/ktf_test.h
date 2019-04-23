@@ -212,7 +212,7 @@ void ktf_cleanup_check(void);
 
 #define KTF_HANDLE_CLEANUP(__test_handle)	\
 	do { \
-		ktf_handle_cleanup_check(&__test_handle); \
+		ktf_context_remove_all(&__test_handle); \
 		_tcase_cleanup(&__test_handle); \
 	} while (0)
 

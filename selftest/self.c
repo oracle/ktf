@@ -646,8 +646,6 @@ static int __init selftest_init(void)
 static void __exit selftest_exit(void)
 {
 	context_tests_cleanup();
-	ktf_context_remove_all(&single_handle);
-	ktf_context_remove_all(&dual_handle);
 	KTF_HANDLE_CLEANUP(single_handle);
 	KTF_HANDLE_CLEANUP(dual_handle);
 	KTF_HANDLE_CLEANUP(no_handle);
