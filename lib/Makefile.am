@@ -25,7 +25,8 @@ KTF_K_HDRS = \
     ktf_override.h \
     ktf_nl.h \
     ktf_unlproto.h \
-    ktf_netctx.h
+    ktf_netctx.h \
+    ktf_compat.h
 
 kernel_headers_src = $(KTF_K_HDRS:%=$(top_srcdir)/kernel/%)
 kernel_headers = $(KTF_K_HDRS:%=$(includedir)/ktf/%)

@@ -10,9 +10,7 @@
 
 #include "ktf_map.h"
 #include "ktf.h"
-#if (KERNEL_VERSION(4, 11, 0) > LINUX_VERSION_CODE)
-#define refcount_read atomic_read
-#endif
+#include "ktf_compat.h"
 
 void ktf_map_init(struct ktf_map *map, ktf_map_elem_comparefn elem_comparefn,
 		  ktf_map_elem_freefn elem_freefn)

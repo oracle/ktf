@@ -14,10 +14,7 @@
 #include "ktf_nl.h"
 #include "ktf.h"
 #include "ktf_cov.h"
-
-#if (KERNEL_VERSION(4, 6, 0) > LINUX_VERSION_CODE)
-#define nla_put_u64_64bit(m, c, v, x) nla_put_u64(m, c, v)
-#endif
+#include "ktf_compat.h"
 
 /* Generic netlink support to communicate with user level
  * test framework.
@@ -302,13 +299,6 @@ static int ktf_run_func(struct sk_buff *skb, const char *ctxname,
 	ktf_case_put(testset);
 	return 0;
 }
-
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0))
-static inline void *nla_memdup(const struct nlattr *src, gfp_t gfp)
-{
-	return kmemdup(nla_data(src), nla_len(src), gfp);
-}
-#endif
 
 static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 {
