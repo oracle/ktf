@@ -211,8 +211,8 @@ failure:
 
 static void __exit ktf_exit(void)
 {
-	ktf_cleanup();
 	ktf_nl_unregister();
+	ktf_cleanup();
 }
 
 /* Generic setup function for client modules */
