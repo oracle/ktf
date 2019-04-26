@@ -227,11 +227,9 @@ EXPORT_SYMBOL(_ktf_assert);
  * Tests are represented by ktf_test objects that are linked into
  * a per-test case map TCase:tests map.
  */
-void  _tcase_add_test(struct __test_desc td,
-		      struct ktf_handle *th,
-				int _signal,
-				int allowed_exit_value,
-				int start, int end)
+void  _ktf_add_test(struct __test_desc td, struct ktf_handle *th,
+		    int _signal, int allowed_exit_value,
+		    int start, int end)
 {
 	struct ktf_case *tc = NULL;
 	struct ktf_test *t;
@@ -285,7 +283,7 @@ void  _tcase_add_test(struct __test_desc td,
 	ktf_case_put(tc);
 	mutex_unlock(&tc_lock);
 }
-EXPORT_SYMBOL(_tcase_add_test);
+EXPORT_SYMBOL(_ktf_add_test);
 
 void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 		  struct ktf_test *t, u32 value,
@@ -323,7 +321,7 @@ void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 
 /* Clean up all tests associated with a ktf_handle */
 
-void _tcase_cleanup(struct ktf_handle *th)
+void ktf_test_cleanup(struct ktf_handle *th)
 {
 	struct ktf_test *t;
 	struct ktf_case *tc;
@@ -374,7 +372,7 @@ void _tcase_cleanup(struct ktf_handle *th)
 	}
 	mutex_unlock(&tc_lock);
 }
-EXPORT_SYMBOL(_tcase_cleanup);
+EXPORT_SYMBOL(ktf_test_cleanup);
 
 int ktf_cleanup(void)
 {

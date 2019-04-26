@@ -117,12 +117,12 @@ void ktf_test_get(struct ktf_test *t);
 void ktf_test_put(struct ktf_test *t);
 
 /* Add a test function to a test case for a given handle (macro version) */
-#define tcase_add_test_to(td, __test_handle)					\
-	_tcase_add_test(td##_setup, &__test_handle, 0, 0, 0, 1)
+#define ktf_add_test_to(td, __test_handle)					\
+	_ktf_add_test(td##_setup, &__test_handle, 0, 0, 0, 1)
 
 /* Add a test function to a test case (macro version) */
-#define tcase_add_test(td) \
-	_tcase_add_test(td##_setup, &__test_handle, 0, 0, 0, 1)
+#define ktf_add_test(td) \
+	_ktf_add_test(td##_setup, &__test_handle, 0, 0, 0, 1)
 
 /* Add a looping test function to a test case (macro version)
 
@@ -130,31 +130,31 @@ void ktf_test_put(struct ktf_test *t);
    iteration being executed in a new context. The loop variable 'i' is
    available in the test.
  */
-#define tcase_add_loop_test(td,s,e)				\
-	_tcase_add_test(td##_setup, &__test_handle, 0,0,(s),(e))
+#define ktf_add_loop_test(td,s,e)				\
+	_ktf_add_test(td##_setup, &__test_handle, 0,0,(s),(e))
 
 /* Add a test function to a test case
   (function version -- use this when the macro won't work
 */
-void _tcase_add_test(struct __test_desc td, struct ktf_handle *th,
+void _ktf_add_test(struct __test_desc td, struct ktf_handle *th,
 		int _signal, int allowed_exit_value, int start, int end);
 
 /* Internal function to mark the start of a test function */
-void tcase_fn_start (const char *fname, const char *file, int line);
+void ktf_fn_start (const char *fname, const char *file, int line);
 
 /* Add a test previously created with TEST() or TEST_F() */
 #define ADD_TEST(__testname)\
-	tcase_add_test(__testname)
+	ktf_add_test(__testname)
 
 #define ADD_TEST_TO(__handle, __testname) \
-	tcase_add_test_to(__testname, __handle)
+	ktf_add_test_to(__testname, __handle)
 
 #define ADD_LOOP_TEST(__testname, from, to)			\
-	tcase_add_loop_test(__testname, from, to)
+	ktf_add_loop_test(__testname, from, to)
 
 /* Remove a test previously added with ADD_TEST */
 #define DEL_TEST(__testname)\
-	tcase_del_test(__testname)
+	ktf_del_test(__testname)
 
 /* Iterate over all test cases.  Implicitly bumps refcount for pos and
  * decreases it after we iterate past it.
@@ -186,7 +186,7 @@ struct ktf_handle {
 	struct ktf_test *current_test;/* Current test running */
 };
 
-void _tcase_cleanup(struct ktf_handle *th);
+void ktf_test_cleanup(struct ktf_handle *th);
 void ktf_handle_cleanup_check(struct ktf_handle *handle);
 void ktf_cleanup_check(void);
 
@@ -213,7 +213,7 @@ void ktf_cleanup_check(void);
 #define KTF_HANDLE_CLEANUP(__test_handle)	\
 	do { \
 		ktf_context_remove_all(&__test_handle); \
-		_tcase_cleanup(&__test_handle); \
+		ktf_test_cleanup(&__test_handle); \
 	} while (0)
 
 #define KTF_CLEANUP() KTF_HANDLE_CLEANUP(__test_handle)
