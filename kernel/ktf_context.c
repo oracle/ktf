@@ -24,6 +24,12 @@ EXPORT_SYMBOL(ktf_debug_mask);
 
 static unsigned int ktf_context_maxid;
 
+/* The role of context_lock is to synchronize modifications to
+ * the global list of context handles (handles that have contexts
+ * associated with them) and the context map.
+ * The map object has it's own locking, but must be kept in sync
+ * with changes to the global context list:
+ */
 static DEFINE_SPINLOCK(context_lock);
 
 /* global linked list of all ktf_handle objects that have contexts */
@@ -102,7 +108,7 @@ const char *ktf_context_name(struct ktf_context *ctx)
 }
 EXPORT_SYMBOL(ktf_context_name);
 
-static void __ktf_context_remove(struct ktf_context *ctx, bool locked)
+void ktf_context_remove(struct ktf_context *ctx)
 {
 	struct ktf_handle *handle;
 	unsigned long flags = 0;
@@ -113,27 +119,17 @@ static void __ktf_context_remove(struct ktf_context *ctx, bool locked)
 	}
 	handle = ctx->handle;
 
-	/* ktf_find_context might be called from interrupt level */
-	if (!locked)
-		spin_lock_irqsave(&context_lock, flags);
-
+	spin_lock_irqsave(&context_lock, flags);
 	ktf_map_remove(&handle->ctx_map, ctx->elem.key);
 	if (!ktf_has_contexts(handle))
 		list_del(&handle->handle_list);
-
-	if (!locked)
-		spin_unlock_irqrestore(&context_lock, flags);
+	spin_unlock_irqrestore(&context_lock, flags);
 
 	tlog(T_DEBUG, "removed context %s at %p", ctx->elem.key, ctx);
 
 	if (ctx->cleanup)
 		ctx->cleanup(ctx);
 	/* Note: ctx may be freed here! */
-}
-
-void ktf_context_remove(struct ktf_context *ctx)
-{
-	__ktf_context_remove(ctx, false);
 }
 EXPORT_SYMBOL(ktf_context_remove);
 
@@ -189,22 +185,17 @@ EXPORT_SYMBOL(ktf_has_contexts);
 
 void ktf_context_remove_all(struct ktf_handle *handle)
 {
-	struct ktf_context *curr, *next;
-	unsigned long flags;
+	struct ktf_context *curr;
 
 	if (!ktf_has_contexts(handle))
 		return;
 
-	spin_lock_irqsave(&context_lock, flags);
-
-	curr = ktf_find_first_context(handle);
-
-	while (curr) {
-		next = ktf_find_next_context(curr);
-		__ktf_context_remove(curr, true);
-		curr = next;
+	for (;;) {
+		curr = ktf_find_first_context(handle);
+		if (!curr)
+			break;
+		ktf_context_remove(curr);
 	}
-	spin_unlock_irqrestore(&context_lock, flags);
 }
 EXPORT_SYMBOL(ktf_context_remove_all);
 
