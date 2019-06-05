@@ -47,6 +47,7 @@ int ktf_context_add(struct ktf_handle *handle, struct ktf_context *ctx,
 	tlog(T_DEBUG, "added %scontext %s (at %p)",
 	     (cfg_cb ? "configurable " : ""), name, ctx);
 	ktf_map_elem_init(&ctx->elem, name);
+	strncpy(ctx->name, name, KTF_MAX_NAME);
 	ctx->config_cb = cfg_cb;
 	ctx->config_errno = ENOENT; /* 0 here means configuration is ok */
 	ctx->config_type = cfg_type_id;

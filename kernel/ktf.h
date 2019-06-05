@@ -30,6 +30,7 @@ typedef void (*ktf_context_cb)(struct ktf_context *ctx);
 
 struct ktf_context {
 	struct ktf_map_elem elem;  /* Linkage for ctx_map in handle */
+	char name[KTF_MAX_KEY];	   /* Context name used in map */
 	struct ktf_handle *handle; /* Owner of this context */
 	ktf_config_cb config_cb;   /* Optional configuration callback */
 	ktf_context_cb cleanup;	   /* Optional callback upon context release */
