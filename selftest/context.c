@@ -100,6 +100,21 @@ static void type3_cleanup(struct ktf_context *ctx)
 	kfree(px);
 }
 
+TEST(selftest, dupltype)
+{
+	/* Verify that we cannot add the same context type twice */
+
+	static struct param_test_type dupltype = {
+		.myvalue = 0,
+		.kt.alloc = type3_alloc,
+		.kt.config_cb = param_ctx_cb,
+		.kt.cleanup = type3_cleanup,
+		.kt.name = "context_type_3"
+	};
+
+	ASSERT_INT_EQ(-EEXIST, ktf_handle_add_ctx_type(&ct_handle, &dupltype.kt));
+}
+
 void add_context_tests(void)
 {
 	int ret = KTF_CONTEXT_ADD_TO_CFG(ct_handle, &param_ctx[0].k, "context1",
@@ -125,6 +140,7 @@ void add_context_tests(void)
 	}
 
 	ADD_TEST_TO(ct_handle, param);
+	ADD_TEST(dupltype);
 }
 
 void context_tests_cleanup(void)
