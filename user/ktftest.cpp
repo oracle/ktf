@@ -23,9 +23,9 @@ void selftest_configure()
 
   /* First configure two contexts provided by the kernel part: */
   p.magic = CONTEXT_MAGIC1;
-  KTF_CONTEXT_CFG("context1", CONTEXT1_TYPE_ID, test_parameter_block, &p);
+  KTF_CONTEXT_CFG("context1", "context_type_1", test_parameter_block, &p);
   p.magic = CONTEXT_MAGIC2;
-  KTF_CONTEXT_CFG("context2", CONTEXT2_TYPE_ID, test_parameter_block, &p);
+  KTF_CONTEXT_CFG("context2", "context_type_2", test_parameter_block, &p);
 
   /* Configure a 3rd, dynamically created context, using CONTEXT3_TYPE_ID
    * which the kernel part has enabled for dynamic creation of contexts
@@ -33,7 +33,7 @@ void selftest_configure()
    * for details of setup)
    */
   p.magic = CONTEXT_MAGIC3;
-  KTF_CONTEXT_CFG("context3", CONTEXT3_TYPE_ID, test_parameter_block, &p);
+  KTF_CONTEXT_CFG("context3", "context_type_3", test_parameter_block, &p);
 }
 
 

@@ -167,10 +167,12 @@ variable ``config_errno``, which will initially be set to ``ENOENT``,
 to indicate unconfigured. The test can use this value
 to decide what to do, such as failing with a message about missing
 configuration or just silently pass and ignore the case if not
-configured. The ``type_id`` parameter can be used as a unique
+configured. The ``type_id`` parameter is used as a unique
 identifier for the kernel side to decide how to interpret the
 parameter, which is useful if different contexts wants to implement
-very different configuration options.
+very different configuration options. It also allows two different
+test modules to use the same context names but with different
+parameters by using different context types.
 
 In the user space part of the test, configuration information
 can be set for a context using::
@@ -218,6 +220,14 @@ deallocations.
 
 KTF itself uses the concept of a *handle* to track tests,
 test suites and contexts associated with a kernel module.
+Contexts are also associated with a handle. Since the availability of
+contexts for a handle determines the availability of tests and the
+naming of them, it can be useful to have separate spaces for tests
+that relies on some context and tests that do not, to avoid
+aggregating up multiple test cases that are identical.
+Handles thus also have a namespace effect in that it is possible to
+have two contexts with the same name, and possibly a different type,
+by putting them in different handles.
 
 The simplest mode of usage is for each module to use KTF_INIT() and
 KTF_CLEANUP() in it's __init and __exit functions. KTF_INIT implicitly declares and

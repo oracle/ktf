@@ -32,8 +32,8 @@ enum ktf_attr {
 	KTF_A_UNSPEC,
 	KTF_A_TYPE,
 	KTF_A_VERSION,
-	KTF_A_SNAM,
-	KTF_A_TNAM,
+	KTF_A_SNAM,   /* Test suite name */
+	KTF_A_TNAM,   /* Test name */
 	KTF_A_NUM,
 	KTF_A_STR,
 	KTF_A_FILE,
@@ -42,7 +42,7 @@ enum ktf_attr {
 	KTF_A_TEST,
 	KTF_A_HID,    /* Test handle ID */
 	KTF_A_HLIST,  /* List of handles repr. as a LIST of contexts for a given HID */
-	KTF_A_MOD,    /* module for coverage analysis */
+	KTF_A_MOD,    /* module for coverage analysis, also used for context type */
 	KTF_A_COVOPT, /* options for coverage analysis */
 	KTF_A_DATA,   /* Binary data used by a.o. hybrid tests */
 	KTF_A_MAX

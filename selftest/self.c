@@ -619,16 +619,17 @@ static int __init selftest_init(void)
 {
 	int ret = KTF_CONTEXT_ADD_TO(dual_handle, &s_mctx[1].k, "map1");
 
+	tlog(T_DEBUG, "map1 gets %d", ret);
 	if (ret)
 		return ret;
 
 	ret = KTF_CONTEXT_ADD_TO(dual_handle, &s_mctx[2].k, "map2");
 	if (ret)
-		return ret;
+		goto fail;
 
 	ret = KTF_CONTEXT_ADD_TO(single_handle, &s_mctx[3].k, "map3");
 	if (ret)
-		return ret;
+		goto fail;
 
 	ktf_resolve_symbols();
 
@@ -641,6 +642,9 @@ static int __init selftest_init(void)
 	add_symbol_tests();
 	tlog(T_INFO, "selftest: loaded");
 	return 0;
+fail:
+	KTF_CLEANUP();
+	return ret;
 }
 
 static void __exit selftest_exit(void)

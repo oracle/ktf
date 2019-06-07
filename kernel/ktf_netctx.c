@@ -84,7 +84,7 @@ int ktf_netctx_enable(struct ktf_handle *handle, struct ktf_netctx_type *nct,
 
 	nct->min_nodes = min_nodes;
 	nct->max_nodes = max_nodes;
-	nct->t.config_type = KTF_NETCTX_TYPE_ID;
+	strcpy(nct->t.name, "netctx");
 
 	for (i = 0; i < 2; i++) {
 		struct sockaddr_in *ai_in = (struct sockaddr_in *)&ai.a[i].addr;

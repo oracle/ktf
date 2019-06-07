@@ -78,19 +78,20 @@ public:
 class ConfigurableContext
 {
 public:
-  ConfigurableContext(const std::string& name, unsigned type_id, unsigned int hid, int cfg_stat);
+  ConfigurableContext(const std::string& name, const std::string& type_name,
+		      unsigned int hid, int cfg_stat);
 
   std::string str_state();
   int Configure(void *data, size_t data_sz);
 
-  unsigned int Type()
+  const std::string& Type()
   {
-    return type_id;
+    return type_name;
   }
 
   std::string name;
   int handle_id;
-  int type_id;
+  std::string type_name;
   int cfg_stat;
 };
 
@@ -107,14 +108,14 @@ struct name_iter
 class ContextType
 {
 public:
-  ContextType(int handle_id, int type_id);
+  ContextType(int handle_id, const std::string& type_name);
   int handle_id;
-  int type_id;
+  std::string type_name;
 };
 
-ContextType::ContextType(int hid, int tid)
+  ContextType::ContextType(int hid, const std::string& tn)
   : handle_id(hid),
-    type_id(tid)
+    type_name(tn)
 {}
 
 /* We trick the gtest template framework
@@ -158,15 +159,17 @@ public:
   }
 
   void add_cset(unsigned int hid, stringvec& ctxs);
-  void add_ctype(unsigned int hid, unsigned int type_id);
-  std::vector<ConfigurableContext*> add_configurable_context(const std::string& ctx, unsigned int type_id,
+  void add_ctype(unsigned int hid, const std::string& type_name);
+  std::vector<ConfigurableContext*> add_configurable_context(const std::string& ctx,
+							     const std::string& type_name,
 							     unsigned int hid, int cfg_stat);
   std::vector<ConfigurableContext*> add_configurable_contexts(const std::string& ctx,
 							      std::vector<ContextType*> type_vec);
-  std::vector<ConfigurableContext*> find_contexts(const std::string& ctx, unsigned int type_id);
+  std::vector<ConfigurableContext*> find_contexts(const std::string& ctx, const std::string& type_name);
 
-  /* Contexts may be created on the fly if the kernel supports it for this type_id: */
-  std::vector<ConfigurableContext*> maybe_create_context(const std::string& ctx, unsigned int type_id);
+  /* Contexts may be created on the fly if the kernel supports it for this type_name: */
+  std::vector<ConfigurableContext*> maybe_create_context(const std::string& ctx,
+							 const std::string& type_name);
 
   /* Update the list of contexts returned from the kernel with a newly created one */
   void add_context(unsigned int hid, const std::string& ctx);
@@ -179,7 +182,7 @@ private:
   std::map<std::string, context_vector> cfg_contexts;
 
   // Context types that allows dynamically created contexts:
-  std::map<unsigned int, std::vector<ContextType*> > ctx_types;
+  std::map<std::string, std::vector<ContextType*> > ctx_types;
   int next_set;
   name_iter* cur;
 };
@@ -194,7 +197,7 @@ KernelTestMgr::~KernelTestMgr()
       delete *vit;
   }
 
-  std::map<unsigned int, std::vector<ContextType*> >::iterator tit;
+  std::map<std::string, std::vector<ContextType*> >::iterator tit;
   for (tit = ctx_types.begin(); tit != ctx_types.end(); ++tit)
   {
     std::vector<ContextType*>::iterator ttit;
@@ -203,20 +206,20 @@ KernelTestMgr::~KernelTestMgr()
   }
 }
 
-context_vector KernelTestMgr::find_contexts(const std::string& ctx, unsigned int type_id)
+context_vector KernelTestMgr::find_contexts(const std::string& ctx, const std::string& type_name)
 {
   std::map<std::string,context_vector>::iterator it;
   it = cfg_contexts.find(ctx);
   if (it == cfg_contexts.end())
-    return maybe_create_context(ctx, type_id);
+    return maybe_create_context(ctx, type_name);
   else
     return it->second;
 }
 
-context_vector KernelTestMgr::maybe_create_context(const std::string& ctx, unsigned int type_id)
+context_vector KernelTestMgr::maybe_create_context(const std::string& ctx, const std::string& type_name)
 {
-  std::map<unsigned int, std::vector<ContextType*> >::iterator it;
-  it = ctx_types.find(type_id);
+  std::map<std::string, std::vector<ContextType*> >::iterator it;
+  it = ctx_types.find(type_name);
   if (it == ctx_types.end())
     return context_vector();
   else
@@ -323,17 +326,17 @@ void KernelTestMgr::add_cset(unsigned int hid, stringvec& ctxs)
   handle_to_ctxvec[hid] = ctxs;
 }
 
-void KernelTestMgr::add_ctype(unsigned int hid, unsigned int type_id)
+void KernelTestMgr::add_ctype(unsigned int hid, const std::string& type_name)
 {
-  log(KTF_INFO, "hid %d: dynamical type id: 0x%x\n", hid, type_id);
-  ctx_types[type_id].push_back(new ContextType(hid, type_id));
+  log(KTF_INFO, "hid %d: dynamical type: %s\n", hid, type_name.c_str());
+  ctx_types[type_name].push_back(new ContextType(hid, type_name));
 }
 
 std::vector<ConfigurableContext*> KernelTestMgr::add_configurable_context(const std::string& ctx,
-									  unsigned int type_id,
+									  const std::string& type_name,
 									  unsigned int hid, int cfg_stat)
 {
-  cfg_contexts[ctx].push_back(new ConfigurableContext(ctx, type_id, hid, cfg_stat));
+  cfg_contexts[ctx].push_back(new ConfigurableContext(ctx, type_name, hid, cfg_stat));
   return cfg_contexts[ctx];
 }
 
@@ -369,7 +372,7 @@ std::vector<ConfigurableContext*> KernelTestMgr::add_configurable_contexts(const
      * this context was not reported in the query, and thus need to be added locally upon a
      * successful configuration:
      */
-    cfg_contexts[ctx].push_back(new ConfigurableContext(ctx, (*it)->type_id, (*it)->handle_id, ENODEV));
+    cfg_contexts[ctx].push_back(new ConfigurableContext(ctx, (*it)->type_name, (*it)->handle_id, ENODEV));
   }
   return cfg_contexts[ctx];
 }
@@ -403,15 +406,15 @@ stringvec KernelTestMgr::get_test_names()
   return v;
 }
 
-ConfigurableContext::ConfigurableContext(const std::string& name_, unsigned type_id_,
+ConfigurableContext::ConfigurableContext(const std::string& name_, const std::string& type_name_,
                                          unsigned int hid, int cfg_stat_)
   : name(name_),
     handle_id(hid),
-    type_id(type_id_),
+    type_name(type_name_),
     cfg_stat(cfg_stat_)
 {
-  log(KTF_INFO, "%s[0x%x] (hid %d): state: %s\n",
-      name.c_str(), type_id, hid, str_state().c_str());
+  log(KTF_INFO, "%s[%s] (hid %d): state: %s\n",
+      name.c_str(), type_name.c_str(), hid, str_state().c_str());
 }
 
 std::string ConfigurableContext::str_state()
@@ -442,7 +445,7 @@ int ConfigurableContext::Configure(void *data, size_t data_sz)
   nla_put_u64(msg, KTF_A_VERSION, KTF_VERSION_LATEST);
   nla_put_string(msg, KTF_A_STR, name.c_str());
   nla_put_u32(msg, KTF_A_HID, handle_id);
-  nla_put_u32(msg, KTF_A_NUM, type_id);
+  nla_put_string(msg, KTF_A_FILE, type_name.c_str());
   nla_put(msg, KTF_A_DATA, data_sz, data);
 
   // Send message over netlink socket
@@ -734,22 +737,22 @@ void run(KernelTest* kt, std::string context)
 }
 
 
-void configure_context(const std::string context, unsigned type_id, void *data, size_t data_sz)
+void configure_context(const std::string context, const std::string type_name, void *data, size_t data_sz)
 {
-  context_vector ct = kmgr().find_contexts(context, type_id);
+  context_vector ct = kmgr().find_contexts(context, type_name);
   ASSERT_GE(ct.size(), 1UL) << " - no context found named " << context;
   ASSERT_EQ(ct.size(), 1UL) << " - More than one context named " << context
 			  << " - use KTF_CONTEXT_CFG_FOR_TEST to uniquely identify context.";
-  ASSERT_EQ(type_id, ct[0]->Type());
+  ASSERT_EQ(type_name, ct[0]->Type());
   ASSERT_EQ(ct[0]->Configure(data, data_sz), 0);
 }
 
 void configure_context_for_test(const std::string& setname, const std::string& testname,
-				unsigned type_id, void *data, size_t data_sz)
+				const std::string& type_name, void *data, size_t data_sz)
 {
   std::string context;
   KernelTest *kt = kmgr().find_test(setname, testname, &context);
-  context_vector ct = kmgr().find_contexts(context, type_id);
+  context_vector ct = kmgr().find_contexts(context, type_name);
   ASSERT_TRUE(kt) << " Could not find test " << setname << "." << testname;
   int handle_id = kt->handle_id;
   ASSERT_NE(handle_id, 0) << " test " << setname << "." << testname << " does not have a context";
@@ -757,7 +760,7 @@ void configure_context_for_test(const std::string& setname, const std::string& t
   for (context_vector::iterator it = ct.begin(); it != ct.end(); ++it)
     if ((*it)->handle_id == handle_id)
     {
-      ASSERT_EQ(type_id, (*it)->Type());
+      ASSERT_EQ(type_name, (*it)->Type());
       ASSERT_EQ((*it)->Configure(data, data_sz), 0);
       return;
     }
@@ -834,11 +837,11 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
     struct nlattr *nla, *nla2;
     stringvec contexts;
     unsigned int handle_id = 0;
-    unsigned int type_id = 0;
+    const char* type_name = NULL;
 
     /* Parse info on handle IDs and associated contexts and/or
      * types that allows dynamical creation of new contexts
-     * (defined here via KTF_A_TYPE):
+     * (defined here via KTF_A_FILE):
      */
     nla_for_each_nested(nla, attrs[KTF_A_HLIST], rem) {
       switch (nla->nla_type) {
@@ -848,20 +851,20 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
       case KTF_A_LIST:
 	nla_for_each_nested(nla2, nla, rem2) {
 	  switch (nla2->nla_type) {
-	  case KTF_A_TYPE:
-	    type_id = nla_get_u32(nla2);
-	    kmgr().add_ctype(handle_id, type_id);
+	  case KTF_A_FILE:
+	    type_name = nla_get_string(nla2);
+	    kmgr().add_ctype(handle_id, type_name);
 	    break;
 	  case KTF_A_STR:
 	    ctx = nla_get_string(nla2);
 	    contexts.push_back(ctx);
 	    break;
-	  case KTF_A_NUM:
-	    type_id = nla_get_u32(nla2);
+	  case KTF_A_MOD:
+	    type_name = nla_get_string(nla2);
 	    break;
 	  case KTF_A_STAT:
 	    cfg_stat = nla_get_u32(nla2);
-	    kmgr().add_configurable_context(ctx, type_id, handle_id, cfg_stat);
+	    kmgr().add_configurable_context(ctx, type_name, handle_id, cfg_stat);
 	    break;
 	  }
 	}

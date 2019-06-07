@@ -59,14 +59,14 @@ TEST(selftest, param)
 	 */
 	EXPECT_INT_EQ(ctx->config_errno, 0);
 	if (KTF_CONTEXT_CFG_OK(ctx)) {
-		switch (ctx->config_type) {
-		case CONTEXT1_TYPE_ID:
+		switch (ctx->type->name[13]) {
+		case '1':
 			EXPECT_LONG_EQ(px->p.magic, CONTEXT_MAGIC1);
 			break;
-		case CONTEXT2_TYPE_ID:
+		case '2':
 			EXPECT_LONG_EQ(px->p.magic, CONTEXT_MAGIC2);
 			break;
-		case CONTEXT3_TYPE_ID:
+		case '3':
 			EXPECT_LONG_EQ(px->p.magic, CONTEXT_MAGIC3);
 			EXPECT_LONG_EQ(px->p.myvalue, MYVALUE);
 			break;
@@ -83,8 +83,6 @@ struct param_test_type {
 	/* space for cfg data (such as constraints) for the context type */
 	long myvalue;
 };
-
-struct param_test_type ctx_type3;
 
 static struct ktf_context *type3_alloc(struct ktf_context_type *ct)
 {
@@ -105,22 +103,26 @@ static void type3_cleanup(struct ktf_context *ctx)
 void add_context_tests(void)
 {
 	int ret = KTF_CONTEXT_ADD_TO_CFG(ct_handle, &param_ctx[0].k, "context1",
-					 param_ctx_cb, CONTEXT1_TYPE_ID);
+					 param_ctx_cb, "context_type_1");
 
 	if (ret)
 		return;
 
 	ret = KTF_CONTEXT_ADD_TO_CFG(ct_handle, &param_ctx[1].k, "context2",
-				     param_ctx_cb, CONTEXT2_TYPE_ID);
+				     param_ctx_cb, "context_type_2");
 	if (ret)
 		return;
 
-	ctx_type3.myvalue = MYVALUE;
-	ctx_type3.kt.alloc = type3_alloc;
-	ctx_type3.kt.config_cb = param_ctx_cb;
-	ctx_type3.kt.cleanup = type3_cleanup;
-	ctx_type3.kt.config_type = CONTEXT3_TYPE_ID;
-	ret = ktf_handle_add_ctx_type(&ct_handle, &ctx_type3.kt);
+	{
+		static struct param_test_type ctx_type3 = {
+			.myvalue = MYVALUE,
+			.kt.alloc = type3_alloc,
+			.kt.config_cb = param_ctx_cb,
+			.kt.cleanup = type3_cleanup,
+			.kt.name = "context_type_3"
+		};
+		ret = ktf_handle_add_ctx_type(&ct_handle, &ctx_type3.kt);
+	}
 
 	ADD_TEST_TO(ct_handle, param);
 }

@@ -193,7 +193,7 @@ void ktf_cleanup_check(void);
 #define KTF_HANDLE_INIT_VERSION(__test_handle, __version, __need_ctx)	\
 	struct ktf_handle __test_handle = { \
 		.handle_list = LIST_HEAD_INIT(__test_handle.handle_list), \
-		.ctx_type_map = __KTF_MAP_INITIALIZER(__test_handle, ktf_uint_compare, NULL), \
+		.ctx_type_map = __KTF_MAP_INITIALIZER(__test_handle, NULL, NULL), \
 		.ctx_map = __KTF_MAP_INITIALIZER(__test_handle, NULL, NULL), \
 		.id = 0, \
 		.require_context = __need_ctx, \

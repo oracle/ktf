@@ -12,9 +12,6 @@
 #define KTF_CONTEXT_SELF_H
 
 #define CONTEXT_SELF_MAX_TEXT 30
-#define CONTEXT1_TYPE_ID 0xfedbed
-#define CONTEXT2_TYPE_ID 0xbadbad
-#define CONTEXT3_TYPE_ID 0xbadba1
 
 /* A simple example parameter block:
  * For verification purposes it can be useful to have a field

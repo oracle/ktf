@@ -67,15 +67,15 @@ namespace ktf
 /* KTF support for configurable contexts:
  * Send a configuation data structure to the given context name.
  */
-#define KTF_CONTEXT_CFG(__context_name, __context_type_id, __priv_datatype, __priv_data) \
-  ktf::configure_context(__context_name, __context_type_id, \
+#define KTF_CONTEXT_CFG(__context_name, __context_type_name, __priv_datatype, __priv_data) \
+  ktf::configure_context(__context_name, __context_type_name, \
   			 (struct __priv_datatype *)__priv_data, \
 			 sizeof(__priv_datatype))
 /* Alternative to KTF_CONTEXT_CFG: If there are multiple contexts with the same name
  * (but with different handles) use a test name to identify the context to be configured
  */
-#define KTF_CONTEXT_CFG_FOR_TEST(__test_name, __context_type_id, __priv_datatype, __priv_data) \
-  ktf::configure_context_for_test(__test_name, __context_type_id, \
+#define KTF_CONTEXT_CFG_FOR_TEST(__test_name, __context_type_name, __priv_datatype, __priv_data) \
+  ktf::configure_context_for_test(__test_name, __context_type_name, \
 				  (struct __priv_datatype *)__priv_data, \
 				  sizeof(__priv_datatype))
 
@@ -105,9 +105,9 @@ namespace ktf {
   size_t get_priv_sz(KernelTest *kt);
 
   // Configure ktf context - to be used via KTF_CONTEXT_CFG*():
-  void configure_context(const std::string context, unsigned int type_id,
+  void configure_context(const std::string context, const std::string type_name,
 			 void *data, size_t data_sz);
-  void configure_context_for_test(const std::string testname, unsigned int type_id,
+  void configure_context_for_test(const std::string testname, const std::string type_name,
 				  void *data, size_t data_sz);
 } // end namespace ktf
 

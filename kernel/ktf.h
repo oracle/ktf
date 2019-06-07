@@ -28,6 +28,8 @@
 typedef int (*ktf_config_cb)(struct ktf_context *ctx, const void* data, size_t data_sz);
 typedef void (*ktf_context_cb)(struct ktf_context *ctx);
 
+struct ktf_context_type;
+
 struct ktf_context {
 	struct ktf_map_elem elem;  /* Linkage for ctx_map in handle */
 	char name[KTF_MAX_KEY];	   /* Context name used in map */
@@ -35,19 +37,18 @@ struct ktf_context {
 	ktf_config_cb config_cb;   /* Optional configuration callback */
 	ktf_context_cb cleanup;	   /* Optional callback upon context release */
 	int config_errno;	   /* If config_cb set: state of configuration */
-	unsigned config_type;	   /* Parameter type info id */
+	struct ktf_context_type *type; /* Associated type, must be set */
 };
 
-struct ktf_context_type;
 typedef struct ktf_context* (*ktf_context_alloc)(struct ktf_context_type *ct);
 
 struct ktf_context_type {
 	struct ktf_map_elem elem;  /* Linkage for map in handle */
+	char name[KTF_MAX_KEY];	   /* Context type name */
 	struct ktf_handle *handle; /* Owner of this context type */
 	ktf_context_alloc alloc;   /* Allocate a new context of this type */
 	ktf_config_cb config_cb;   /* Configuration callback */
 	ktf_context_cb cleanup;	   /* Optional callback upon context release */
-	unsigned config_type;	   /* Parameter type info id */
 };
 
 #include "ktf_netctx.h"
@@ -72,7 +73,7 @@ typedef void (*ktf_test_adder)(void);
 /* Generic setup function for client modules */
 void ktf_add_tests(ktf_test_adder f);
 int ktf_context_add(struct ktf_handle *handle, struct ktf_context* ctx,
-		    const char* name, ktf_config_cb cfg_cb, unsigned int cfg_type_id);
+		    const char* name, ktf_config_cb cfg_cb, const char *type);
 struct ktf_context *ktf_context_add_from(struct ktf_handle *handle, const char *name,
 					 struct ktf_context_type *ct);
 const char *ktf_context_name(struct ktf_context *ctx);
@@ -89,10 +90,10 @@ void ktf_context_remove_all(struct ktf_handle *handle);
 int ktf_context_set_config(struct ktf_context *ctx, const void* data, size_t data_sz);
 
 struct ktf_context *ktf_find_create_context(struct ktf_handle *handle, const char *name,
-					    unsigned int type_id);
+					    const char *type_name);
 int ktf_handle_add_ctx_type(struct ktf_handle *handle, struct ktf_context_type *ct);
 struct ktf_context_type *ktf_handle_get_ctx_type(struct ktf_handle *handle,
-						 unsigned int cfg_typeid);
+						 const char *type_name);
 
 /* Declare the implicit __test_handle as extern for .c files that use it
  * when adding tests with ADD_TEST but where definition is in another .c file:
@@ -100,18 +101,19 @@ struct ktf_context_type *ktf_handle_get_ctx_type(struct ktf_handle *handle,
 extern struct ktf_handle __test_handle;
 
 /* Add/remove/find a context to/from the default handle */
-#define KTF_CONTEXT_ADD(__context, name) ktf_context_add(&__test_handle, __context, name, NULL, 0)
-#define KTF_CONTEXT_ADD_CFG(__context, name, __cb, __type_id)  \
-	ktf_context_add(&__test_handle, __context, name, __cb, __type_id)
+#define KTF_CONTEXT_ADD(__context, name) \
+	ktf_context_add(&__test_handle, __context, name, NULL, "default")
+#define KTF_CONTEXT_ADD_CFG(__context, name, __cb, __type_name)  \
+	ktf_context_add(&__test_handle, __context, name, __cb, __type_name)
 #define KTF_CONTEXT_FIND(name) ktf_find_context(&__test_handle, name)
 #define KTF_CONTEXT_GET(name, type) \
 	container_of(KTF_CONTEXT_FIND(name), type, k)
 
 /* Add/remove/find a context to/from a given handle */
 #define KTF_CONTEXT_ADD_TO(__handle, __context, name)		\
-	ktf_context_add(&__handle, __context, name, NULL, 0)
-#define KTF_CONTEXT_ADD_TO_CFG(__handle, __context, name, __cb, __type_id) \
-	ktf_context_add(&__handle, __context, name, __cb, __type_id)
+	ktf_context_add(&__handle, __context, name, NULL, "default")
+#define KTF_CONTEXT_ADD_TO_CFG(__handle, __context, name, __cb, __type_name) \
+	ktf_context_add(&__handle, __context, name, __cb, __type_name)
 #define KTF_CONTEXT_FIND_IN(__handle, name) ktf_find_context(&__handle, name)
 #define KTF_CONTEXT_GET_IN(__handle, name, type) \
 	container_of(KTF_CONTEXT_FIND_IN(__handle, name), type, k)

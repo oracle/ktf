@@ -188,14 +188,19 @@ static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
 
 	/* Send any context types that user space are allowed to create contexts for */
 	ktf_map_for_each_entry(ct, &handle->ctx_type_map, elem) {
-		nla_put_u32(resp_skb, KTF_A_TYPE, ct->config_type);
+		if (ct->alloc) {
+			stat = nla_put_string(resp_skb, KTF_A_FILE, ct->name);
+			if (stat)
+				return -ENOMEM;
+		}
 	}
 
+	/* Then send all the contexts themselves */
 	ctx = ktf_find_first_context(handle);
 	while (ctx) {
 		nla_put_string(resp_skb, KTF_A_STR, ktf_context_name(ctx));
 		if (ctx->config_cb) {
-			nla_put_u32(resp_skb, KTF_A_NUM, ctx->config_type);
+			nla_put_string(resp_skb, KTF_A_MOD, ctx->type->name);
 			nla_put_u32(resp_skb, KTF_A_STAT, ctx->config_errno);
 		}
 		ctx = ktf_find_next_context(ctx);
@@ -443,12 +448,13 @@ put_fail:
 }
 
 /* Process request to configure a configurable context:
- * Expected format:  KTF_CT_CTX_CFG hid type_id context_name data
- * placed in A_HID, A_NUM, A_STR and A_DATA respectively.
+ * Expected format:  KTF_CT_CTX_CFG hid type_name context_name data
+ * placed in A_HID, A_FILE, A_STR and A_DATA respectively.
  */
 static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info)
 {
 	char ctxname[KTF_MAX_NAME + 1];
+	char type_name[KTF_MAX_NAME + 1];
 	struct nlattr *data_attr;
 	void *ctx_data = NULL;
 	size_t ctx_data_sz = 0;
@@ -456,7 +462,6 @@ static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info)
 	struct ktf_handle *handle;
 	struct ktf_context *ctx;
 	int ret;
-	unsigned int type_id = 0;
 
 	if (!info->attrs[KTF_A_STR] || !info->attrs[KTF_A_HID])
 		return -EINVAL;
@@ -467,11 +472,13 @@ static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info)
 	handle = ktf_handle_find(hid);
 	if (!handle)
 		return -EINVAL;
-	if (info->attrs[KTF_A_TYPE])
-		type_id = nla_get_u32(info->attrs[KTF_A_NUM]);
+	if (info->attrs[KTF_A_FILE])
+		nla_strlcpy(type_name, info->attrs[KTF_A_FILE], KTF_MAX_NAME);
+	else
+		strcpy(type_name, "default");
 	nla_strlcpy(ctxname, info->attrs[KTF_A_STR], KTF_MAX_NAME);
-	tlog(T_DEBUG, "Trying to find/create context %s\n", ctxname);
-	ctx = ktf_find_create_context(handle, ctxname, type_id);
+	tlog(T_DEBUG, "Trying to find/create context %s with type %s\n", ctxname, type_name);
+	ctx = ktf_find_create_context(handle, ctxname, type_name);
 	if (!ctx)
 		return -ENODEV;
 
