@@ -29,7 +29,7 @@ int main (int argc, char** argv)
   std::string modname = std::string();
   bool enable = false;
 
-  testing::GTEST_FLAG(output) = "xml:ktest.xml";
+  ktf::setup();
   testing::InitGoogleTest(&argc,argv);
 
   if (argc < 3) {

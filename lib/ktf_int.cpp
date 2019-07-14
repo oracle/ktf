@@ -911,7 +911,7 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
 	  return stat;
 	break;
       default:
-	fprintf(stderr,"parse_result: Unexpected attribute type %d\n", nla->nla_type);
+	fprintf(stderr,"parse_query: Unexpected attribute type %d\n", nla->nla_type);
 	return NL_SKIP;
       }
       kmgr().find_add_set(setname); /* Just to make sure empty sets are also added */
@@ -979,6 +979,16 @@ static enum nl_cb_action parse_result(struct nl_msg *msg, struct nlattr** attrs)
   return NL_OK;
 }
 
+static enum nl_cb_action parse_cov_endis(struct nl_msg *msg, struct nlattr** attrs)
+{
+  enum ktf_cmd_type type = (ktf_cmd_type)nla_get_u32(attrs[KTF_A_TYPE]);
+  const char *cmd = type == KTF_CT_COV_ENABLE ? "enable" : "disable";
+  int retval = nla_get_u32(attrs[KTF_A_STAT]);
+
+  if (retval)
+    fprintf(stderr, "Coverage %s operation failed with status %d\n", cmd, retval);
+  return NL_OK;
+}
 
 static int parse_cb(struct nl_msg *msg, void *arg)
 {
@@ -1004,6 +1014,9 @@ static int parse_cb(struct nl_msg *msg, void *arg)
     return parse_query(msg, attrs);
   case KTF_CT_RUN:
     return parse_result(msg, attrs);
+  case KTF_CT_COV_ENABLE:
+  case KTF_CT_COV_DISABLE:
+    return parse_cov_endis(msg, attrs);
   default:
     debug_cb(msg, attrs);
   }
