@@ -60,7 +60,6 @@ private:
   std::string ctx;
   friend void setup(configurator c);
   static int AddToRegistry();
-  static int gtest_registering_dummy_;
   static configurator configurator_;
 };
 
