@@ -777,7 +777,7 @@ static nl_cb_action parse_one_set(std::string& setname,
   unsigned int handle_id = 0;
 
   nla_for_each_nested(nla, attr, rem) {
-    switch (nla->nla_type) {
+    switch (nla_type(nla)) {
     case KTF_A_HID:
       handle_id = nla_get_u32(nla);
       break;
@@ -787,7 +787,7 @@ static nl_cb_action parse_one_set(std::string& setname,
       handle_id = 0;
       break;
     default:
-      fprintf(stderr,"parse_result: Unexpected attribute type %d\n", nla->nla_type);
+      fprintf(stderr,"parse_result: Unexpected attribute type %d\n", nla_type(nla));
       return NL_SKIP;
     }
   }
@@ -844,13 +844,13 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
      * (defined here via KTF_A_FILE):
      */
     nla_for_each_nested(nla, attrs[KTF_A_HLIST], rem) {
-      switch (nla->nla_type) {
+      switch (nla_type(nla)) {
       case KTF_A_HID:
 	handle_id = nla_get_u32(nla);
 	break;
       case KTF_A_LIST:
 	nla_for_each_nested(nla2, nla, rem2) {
-	  switch (nla2->nla_type) {
+	  switch (nla_type(nla2)) {
 	  case KTF_A_FILE:
 	    type_name = nla_get_string(nla2);
 	    kmgr().add_ctype(handle_id, type_name);
@@ -874,7 +874,7 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
 	contexts.clear();
 	break;
       default:
-	fprintf(stderr,"parse_query: Unexpected attribute type %d\n", nla->nla_type);
+	fprintf(stderr,"parse_query[HLIST]: Unexpected attribute type %d\n", nla_type(nla));
 	return NL_SKIP;
       }
     }
@@ -901,7 +901,7 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
 
     /* Parse info on test sets */
     nla_for_each_nested(nla, attrs[KTF_A_LIST], rem) {
-      switch (nla->nla_type) {
+      switch (nla_type(nla)) {
       case KTF_A_STR:
 	setname = nla_get_string(nla);
 	break;
@@ -911,7 +911,7 @@ static int parse_query(struct nl_msg *msg, struct nlattr** attrs)
 	  return stat;
 	break;
       default:
-	fprintf(stderr,"parse_query: Unexpected attribute type %d\n", nla->nla_type);
+	fprintf(stderr,"parse_query[LIST]: Unexpected attribute type %d\n", nla_type(nla));
 	return NL_SKIP;
       }
       kmgr().find_add_set(setname); /* Just to make sure empty sets are also added */
@@ -940,7 +940,7 @@ static enum nl_cb_action parse_result(struct nl_msg *msg, struct nlattr** attrs)
     struct nlattr *nla;
     int result = -1, line = 0;
     nla_for_each_nested(nla, attrs[KTF_A_LIST], rem) {
-      switch (nla->nla_type) {
+      switch (nla_type(nla)) {
       case KTF_A_STAT:
 	/* Flush previous test, if any */
 	handle_test(result,file,line,report);
@@ -968,7 +968,7 @@ static enum nl_cb_action parse_result(struct nl_msg *msg, struct nlattr** attrs)
 	  report = "no_report";
 	break;
       default:
-	fprintf(stderr,"parse_result: Unexpected attribute type %d\n", nla->nla_type);
+	fprintf(stderr,"parse_result: Unexpected attribute type %d\n", nla_type(nla));
 	return NL_SKIP;
       }
     }

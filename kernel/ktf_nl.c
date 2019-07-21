@@ -35,14 +35,18 @@ static struct genl_ops ktf_ops[] = {
 	{
 		.cmd = KTF_C_REQ,
 		.flags = 0,
+#if (KERNEL_VERSION(5, 2, 0) > LINUX_VERSION_CODE)
 		.policy = ktf_gnl_policy,
+#endif
 		.doit = ktf_req,
 		.dumpit = NULL,
 	},
 	{
 		.cmd = KTF_C_RESP,
 		.flags = 0,
+#if (KERNEL_VERSION(5, 2, 0) > LINUX_VERSION_CODE)
 		.policy = ktf_gnl_policy,
+#endif
 		.doit = ktf_resp,
 		.dumpit = NULL,
 	}
@@ -59,6 +63,9 @@ static struct genl_family ktf_gnl_family = {
 	.name = "ktf",
 	.version = 1,
 	.maxattr = KTF_A_MAX + 4,
+#if (KERNEL_VERSION(5, 2, 0) <= LINUX_VERSION_CODE)
+	.policy = ktf_gnl_policy,
+#endif
 #if (KERNEL_VERSION(3, 13, 7) < LINUX_VERSION_CODE)
 	.ops = ktf_ops,
 	.n_ops = ARRAY_SIZE(ktf_ops),
