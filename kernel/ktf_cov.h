@@ -6,6 +6,10 @@
  *
  * ktf_cov.h: Code coverage support interface for KTF.
  */
+
+#ifndef KTF_COV_H
+#define KTF_COV_H
+
 #include <linux/debugfs.h>
 #include <linux/module.h>
 #include <linux/kprobes.h>
@@ -87,3 +91,5 @@ void ktf_cov_cleanup(void);
 
 int ktf_cov_enable(const char *, unsigned int);
 void ktf_cov_disable(const char *);
+
+#endif
