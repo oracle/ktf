@@ -13,7 +13,6 @@
 #include <linux/debugfs.h>
 #include <linux/module.h>
 #include <linux/kprobes.h>
-#include <linux/stacktrace.h>
 #include "ktf.h"
 #include "ktf_map.h"
 
@@ -57,8 +56,8 @@ struct ktf_cov_entry {
 struct ktf_cov_mem {
 	struct ktf_map_elem kmap;
 	struct ktf_cov_obj_key key;
-	struct stack_trace stack;
 	unsigned long flags;
+	unsigned int nr_entries;
 	unsigned long stack_entries[KTF_COV_MAX_STACK_DEPTH];
 };
 

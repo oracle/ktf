@@ -6,6 +6,7 @@
  *
  * ktf_nl.c: ktf netlink protocol implementation
  */
+#include <linux/version.h>
 #include <net/netlink.h>
 #include <net/genetlink.h>
 #define NL_INTERNAL 1

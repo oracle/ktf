@@ -11,6 +11,7 @@
 #include <linux/mm.h>
 #include <linux/module.h>
 #include <linux/slab.h>
+#include <linux/stacktrace.h>
 #ifdef CONFIG_SLUB
 #include <linux/slub_def.h>
 #endif /* CONFIG_SLUB */
@@ -23,6 +24,7 @@
 #include "ktf.h"
 #include "ktf_map.h"
 #include "ktf_cov.h"
+#include "ktf_compat.h"
 
 /* It may seem odd that we use a refcnt field in ktf_cov_entry structures
  * in addition to using krefcount management via the ktf_map.  The reasoning
@@ -262,8 +264,6 @@ static int ktf_cov_kmem_alloc_entry(struct ktf_cov_mem *m, unsigned long bytes)
 	struct ktf_cov_entry *entry = NULL;
 	int n;
 
-	m->stack.nr_entries = 0;
-
 	/* We don't care about 0-length allocations. */
 	if (!bytes)
 		return 0;
@@ -271,28 +271,24 @@ static int ktf_cov_kmem_alloc_entry(struct ktf_cov_mem *m, unsigned long bytes)
 	/* Find first cov entry on stack to allow us to attribute traced
 	 * allocation to first coverage entry we come across.
 	 */
-	m->stack.nr_entries = 0;
-	m->stack.entries = m->stack_entries;
-	m->stack.max_entries = KTF_COV_MAX_STACK_DEPTH;
-	m->stack.skip = 1;
-	save_stack_trace(&m->stack);
-	for (n = 0; n < m->stack.nr_entries; n++) {
+	m->nr_entries = stack_trace_save(m->stack_entries, KTF_COV_MAX_STACK_DEPTH, 1);
+	for (n = 0; n < m->nr_entries; n++) {
 		/* avoid recursive enter when allocating cov mem */
-		if (m->stack.entries[n] ==
+		if (m->stack_entries[n] ==
 		    (unsigned long)ktf_cov_kmem_cache_alloc_handler)
 			break;
 		/* ignore allocs as a result of registering probes */
-		if (m->stack.entries[n] >
+		if (m->stack_entries[n] >
 		    (unsigned long)register_kretprobe &&
-		    m->stack.entries[n] < ((unsigned long)register_kretprobe +
+		    m->stack_entries[n] < ((unsigned long)register_kretprobe +
 		    register_kretprobe_size))
 			break;
-		entry = ktf_cov_entry_find(m->stack.entries[n], 0);
+		entry = ktf_cov_entry_find(m->stack_entries[n], 0);
 		if (entry)
 			break;
 	}
 	if (!entry) {
-		m->stack.nr_entries = 0;
+		m->nr_entries = 0;
 		return 0;
 	}
 	ktf_cov_entry_put(entry);
@@ -353,7 +349,7 @@ static int ktf_cov_kmem_alloc_return(struct ktf_cov_mem *m,
 		kmem_cache_free(cov_mem_cache, mm);
 	}
 	tlog(T_DEBUG, "cov_mem: tracking allocation %p", (void *)m->key.address);
-	m->stack.nr_entries = 0;
+	m->nr_entries = 0;
 	return 0;
 }
 
@@ -363,7 +359,7 @@ static int ktf_cov_kmalloc_handler(struct kretprobe_instance *ri,
 	struct ktf_cov_mem *m = (struct ktf_cov_mem *)ri->data;
 	unsigned long ret = regs_return_value(regs);
 
-	if (m->stack.nr_entries)
+	if (m->nr_entries)
 		return ktf_cov_kmem_alloc_return(m, ret);
 	return 0;
 }
@@ -379,7 +375,7 @@ static int ktf_cov_kmem_cache_alloc_handler(struct kretprobe_instance *ri,
 	if (cache == cov_mem_cache)
 		return 0;
 
-	if (m->stack.nr_entries)
+	if (m->nr_entries)
 		return ktf_cov_kmem_alloc_return(m, ret);
 	return 0;
 }
@@ -646,7 +642,7 @@ static void ktf_cov_mem_seq_print(struct seq_file *seq)
 	seq_printf(seq, "%44s %16s %10s\n", "ALLOCATION STACK", "ADDRESS",
 		   "SIZE");
 	ktf_for_each_cov_mem(m) {
-		for (n = 0; n < m->stack.nr_entries; n++) {
+		for (n = 0; n < m->nr_entries; n++) {
 			sprint_symbol(buf, m->stack_entries[n]);
 			seq_printf(seq, "%44s", buf);
 			if (n == 0)

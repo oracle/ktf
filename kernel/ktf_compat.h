@@ -38,4 +38,18 @@ static inline void *nla_memdup(const struct nlattr *src, gfp_t gfp)
 }
 #endif
 
+#if (KERNEL_VERSION(5, 2, 0) > LINUX_VERSION_CODE)
+static inline unsigned int stack_trace_save(unsigned long *store, unsigned int size,
+					    unsigned int skipnr)
+{
+	struct stack_trace trace;
+
+	trace.nr_entries = 0;
+	trace.entries = store;
+	trace.max_entries = size;
+	trace.skip = skipnr;
+	save_stack_trace(&trace);
+	return trace.nr_entries;
+}
+#endif
 #endif
