@@ -12,5 +12,4 @@ libtool
 *.cmd
 *.o
 *.ko
-*.mk
 *.xml
