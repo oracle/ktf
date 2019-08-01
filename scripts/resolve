@@ -32,7 +32,12 @@ class Module:
         self.name = name
         self.symbols = {}  # Input:  headerfile -> symbol list
         self.func_def = []  # FuncInfo list
+        self.debug = False
         all_modules.append(self)
+
+    def log(self, str):
+        if self.debug:
+            print str
 
     def SetHeader(self, header):
         self.cur_header = header
@@ -49,7 +54,7 @@ class Module:
         for p in includepath:
             try:
                 f = os.path.join(p, filename)
-                print "Trying " + f
+                self.log(" -- trying " + f)
                 header = open(f,'r')
                 return header
             except:
@@ -60,7 +65,7 @@ class Module:
     # Parse the relevant header files for function defs:
     def ParseDefs(self):
         for hf in self.symbols.keys():
-            print "** Parsing %s:" % hf
+            self.log(" ** Parsing %s:" % hf)
             header = self.Open(hf)
             if header == None:
                 return
