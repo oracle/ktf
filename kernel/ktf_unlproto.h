@@ -97,6 +97,8 @@ enum ktf_vshift {
 /* Coverage options */
 #define	KTF_COV_OPT_MEM		0x1
 
+struct nla_policy *ktf_get_gnl_policy(void);
+
 #ifdef __cplusplus
 }
 #endif

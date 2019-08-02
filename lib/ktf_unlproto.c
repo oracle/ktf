@@ -15,7 +15,7 @@
 #include "kernel/ktf_unlproto.h"
 
 
-struct nla_policy *get_ktf_gnl_policy()
+struct nla_policy *ktf_get_gnl_policy(void)
 {
   return ktf_gnl_policy;
 }

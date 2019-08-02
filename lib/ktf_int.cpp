@@ -29,12 +29,6 @@
 #define nl_sock nl_handle
 #endif
 
-extern "C"
-{
-  /* From unlproto.c */
-  struct nla_policy *get_ktf_gnl_policy();
-}
-
 int devcnt = 0;
 
 namespace ktf
@@ -1000,7 +994,7 @@ static int parse_cb(struct nl_msg *msg, void *arg)
   //  memset(attrs, 0, sizeof(attrs));
 
   /* Validate message and parse attributes */
-  int err = genlmsg_parse(nlh, 0, attrs, KTF_A_MAX, get_ktf_gnl_policy());
+  int err = genlmsg_parse(nlh, 0, attrs, KTF_A_MAX, ktf_get_gnl_policy());
   if (err < 0) return err;
 
   if (!attrs[KTF_A_TYPE]) {
