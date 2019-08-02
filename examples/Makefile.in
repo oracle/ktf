@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: GPL-2.0
 #
-# Kernel module implementing a test suite for testing KTF itself
+# Kernel module implementing a few simple examples of KTF tests
 #
 
 KVER = @KVER@
