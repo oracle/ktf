@@ -153,26 +153,35 @@ static int send_test_data(struct sk_buff *resp_skb, struct ktf_case *tc)
 	struct nlattr *nest_attr;
 	struct ktf_test *t;
 	int stat;
+	int cnt = 0;
 
 	stat = nla_put_string(resp_skb, KTF_A_STR, ktf_case_name(tc));
 	if (stat)
 		return stat;
+
 	nest_attr = nla_nest_start(resp_skb, KTF_A_TEST);
 	ktf_testcase_for_each_test(t, tc) {
+		cnt++;
 		/* A test is not valid if the handle requires a context and none is present */
-		if (t->handle->id)
-			nla_put_u32(resp_skb, KTF_A_HID, t->handle->id);
-		else if (t->handle->require_context)
+		if (t->handle->id) {
+			stat = nla_put_u32(resp_skb, KTF_A_HID, t->handle->id);
+			if (stat)
+				goto fail;
+		} else if (t->handle->require_context) {
 			continue;
-		stat = nla_put_string(resp_skb, KTF_A_STR, t->name);
-		if (stat) {
-			/* we hold reference to t here - drop it! */
-			ktf_test_put(t);
-			return stat;
 		}
+		stat = nla_put_string(resp_skb, KTF_A_STR, t->name);
+		if (stat)
+			goto fail;
 	}
 	nla_nest_end(resp_skb, nest_attr);
+	tlog(T_DEBUG, "Sent data about %d tests", cnt);
 	return 0;
+fail:
+	twarn("Failed with status %d after sending data about %d tests", stat, cnt);
+	/* we hold reference to t here - drop it! */
+	ktf_test_put(t);
+	return stat;
 }
 
 static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
@@ -182,7 +191,7 @@ static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
 	struct ktf_context *ctx;
 	int stat;
 
-	tlog(T_DEBUG, "Found context handle %d: ", handle->id);
+	tlog(T_DEBUG, "Sending context handle %d: ", handle->id);
 
 	/* Send HID */
 	stat = nla_put_u32(resp_skb, KTF_A_HID, handle->id);
@@ -194,6 +203,7 @@ static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
 	if (!nest_attr)
 		return -ENOMEM;
 
+	tlog(T_DEBUG, "Sending context type list");
 	/* Send any context types that user space are allowed to create contexts for */
 	ktf_map_for_each_entry(ct, &handle->ctx_type_map, elem) {
 		if (ct->alloc) {
@@ -208,8 +218,12 @@ static int send_handle_data(struct sk_buff *resp_skb, struct ktf_handle *handle)
 	while (ctx) {
 		nla_put_string(resp_skb, KTF_A_STR, ktf_context_name(ctx));
 		if (ctx->config_cb) {
-			nla_put_string(resp_skb, KTF_A_MOD, ctx->type->name);
-			nla_put_u32(resp_skb, KTF_A_STAT, ctx->config_errno);
+			stat = nla_put_string(resp_skb, KTF_A_MOD, ctx->type->name);
+			if (stat)
+				return stat;
+			stat = nla_put_u32(resp_skb, KTF_A_STAT, ctx->config_errno);
+			if (stat)
+				return stat;
 		}
 		ctx = ktf_find_next_context(ctx);
 	}
@@ -251,12 +265,15 @@ static int ktf_query(struct sk_buff *skb, struct genl_info *info)
 			/* Traverse list of handles with contexts */
 			nest_attr = nla_nest_start(resp_skb, KTF_A_HLIST);
 			list_for_each_entry(handle, &context_handles, handle_list) {
-				send_handle_data(resp_skb, handle);
+				retval = send_handle_data(resp_skb, handle);
+				if (retval)
+					goto resp_failure;
 			}
 			nla_nest_end(resp_skb, nest_attr);
 		}
 
 		/* Send total number of tests */
+		tlog(T_DEBUG, "Total #of test cases: %ld", ktf_case_count());
 		nla_put_u32(resp_skb, KTF_A_NUM, ktf_case_count());
 		nest_attr = nla_nest_start(resp_skb, KTF_A_LIST);
 		if (!nest_attr) {
@@ -278,6 +295,8 @@ static int ktf_query(struct sk_buff *skb, struct genl_info *info)
 
 	retval = genlmsg_reply(resp_skb, info);
 resp_failure:
+	if (retval)
+		twarn("Message failure (status %d)", retval);
 	/* Free buffer if failure */
 	if (retval)
 		nlmsg_free(resp_skb);
