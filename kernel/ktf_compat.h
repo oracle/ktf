@@ -1,3 +1,4 @@
+#if (KERNEL_VERSION(5, 2, 0) > LINUX_VERSION_CODE)
 /*
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  *    Author: Knut Omang <knut.omang@oracle.com>
@@ -51,5 +52,6 @@ static inline unsigned int stack_trace_save(unsigned long *store, unsigned int s
 	save_stack_trace(&trace);
 	return trace.nr_entries;
 }
+#endif
 #endif
 #endif
