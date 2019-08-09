@@ -36,13 +36,13 @@ static void *ktf_find_current_kprobe_sym(void)
 {
 	return ktf_find_symbol(NULL, "current_kprobe");
 }
-#endif
 
-/* Prior to Linux 4.19, error exit did not clear active kprobe; as a result,
+/* Prior to Linux 4.19, error exit does not clear active kprobe; as a result,
  * every page fault would fail due to logic in page fault handling activated
  * when a kprobe is active.  We clean up by setting per-cpu variable
  * "current_kprobe" to NULL ourselves.
  */
+#endif
 void ktf_override_function_with_return(struct pt_regs *regs)
 {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
@@ -63,15 +63,15 @@ void ktf_override_function_with_return(struct pt_regs *regs)
 EXPORT_SYMBOL(ktf_override_function_with_return);
 NOKPROBE_SYMBOL(ktf_override_function_with_return);
 
-/* We can only support override if we can fix current_kprobe setting in
- * ktf_override_function_with_return().  To do that we need access to
- * the "current_kprobe" symbol address.  If a kernel has been compiled
- * with CONFIG_KALLSYMS_ALL=n this will not be accessible, so fail at
- * registration time.
- */
 int ktf_register_override(struct kprobe *kp)
 {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
+	/* We can only support override if we can fix current_kprobe setting in
+	 * ktf_override_function_with_return().  To do that we need access to
+	 * the "current_kprobe" symbol address.  If a kernel has been compiled
+	 * with CONFIG_KALLSYMS_ALL=n this will not be accessible, so fail at
+	 * registration time.
+	 */
 	if (!ktf_find_current_kprobe_sym())
 		return -ENOTSUPP;
 #endif
