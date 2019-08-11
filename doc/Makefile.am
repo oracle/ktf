@@ -22,7 +22,7 @@ help:
 #
 htmldocs: $(TARGETS)
 
-$(TARGETS): Makefile $(srcdir)/*.txt
+$(TARGETS): Makefile $(srcdir)/*.rst
 	@if test x$V != x1; then export Q="-q"; echo -n "  HTMLDOC $$(pwd)"; fi; \
 	$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $$Q $(SPHINXOPTS) $(O) | \
 	if test x$V != x1; then grep -v 'Build finished'; else cat -; fi; \

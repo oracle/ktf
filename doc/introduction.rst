@@ -79,10 +79,9 @@ impossible. This typically leads to bugs detected "down the road", when some new
 and starts using the API in a new way, or instabilities that go undetected because underlying
 semantics that the implementation implicitly depend upon changes in subtle ways.
 
-KTF can be compiled against existing kernels, and can use mechanisms such as KTF probes in cases
-where calls to other functions needs to be intercepted and/or modified to create the right test
-condition, whether it means waiting for a potential race condition to occur, or return an error
-value, or just collect state to make assertions.
+KTF can use mechanisms such as KTF probes in cases where calls to other functions needs to be
+intercepted and/or modified to create the right test condition, whether it means waiting for a
+potential race condition to occur, or return an error value, or just collect state to make assertions.
 
 Typical classical use cases that lend itself well to unit testing are simple APIs with a relativ
 complex implementation - such as container implementations. Typical kernel examples of these

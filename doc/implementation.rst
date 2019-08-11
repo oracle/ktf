@@ -45,30 +45,26 @@ destination. For such tests you need to tell ktf (from user space) when the kern
 is going to be executed - this can happen multiple times depending on your test needs.
 Apart from that it works mostly like a normal gtest user level test.
 
-KTF as a separate git project
-*****************************
+Kernel integration of KTF or KTF as a separate git project?
+***********************************************************
 
-A lot of test infrastructure and utilities for the Linux kernel is implemented as part
-of the linux kernel git project. This has some obvious benefits, such as
+Yes. A lot of test infrastructure and utilities for the Linux kernel
+is implemented as part of the linux kernel git project.
+This has some obvious benefits, such as
 
 * Always being included
 * When APIs are changed, test code can be updated atomically with the rest of the kernel
-* Possible higher visibility and easier access
+* Higher visibility and easier access
 * Easier integration with internal kernel interfaces useful for testing.
 
-On the other hand keeping KTF as a separate project allows
+On the other hand providing KTF as a separate project allows
 
 * With some use of ``KERNEL_VERSION`` and ``LINUX_VERSION_CODE``, up-to-date KTF code and tests
   can be allowed to work across kernel versions.
-* This in turn allows newly developed tests to be tested on older kernels as well, possibly
+* This in turn allows a single set of newly developed tests to be
+  simultaneously tested against multiple older kernels, possibly
   detecting more bugs, or instances of bugs not backported.
-* User code can be integrated with the kernel code to be built with a single command
-* A smaller kernel git module and a more scalable development process where test related changes
-  does not to the same extent affect the core code history.
 
-Our current belief is that we would want integration of at least the kernel side of KTF,
-maybe just the ktf.ko kernel object, but that being able to maintain and build tests out-of-tree
-is an important feature that also need to be supported.
-
-We are open to suggestions from the community on whether whole or partial
-inclusion in the kernel tree or a separate project (or both...) is the best approach.
+So we will continue to support both, and have work in progress to simplify
+the maintenance and synchronization of the two versions, and allow the
+additional tooling to extend to KTF client test suites as well.

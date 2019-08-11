@@ -48,7 +48,11 @@ KTF and your own test modules. Note that on some distros, cmake version
 2 and 3 comes as different packages, make sure you get version 3, which may
 require you to use ``cmake3`` as command instead of cmake above.
 
-To build KTF, cd to your source tree then clone the ktf project::
+Building the standalone version of KTF
+**************************************
+
+To build KTF from the standalone KTF git project,
+cd to your source tree then clone the ktf project::
 
 	cd ~/src
 	<clone ktf>
