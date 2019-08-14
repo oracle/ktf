@@ -1,6 +1,6 @@
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
-#
 # SPDX-License-Identifier: GPL-2.0
+#
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 #
 # Implementation of the kernel part of Kernel Test Framework (KTF),
 # a framework for running unit test like tests within the kernel.

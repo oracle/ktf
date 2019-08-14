@@ -1,8 +1,7 @@
+// SPDX-License-Identifier: GPL-2.1
 /*
  * Copyright (C) 2001, 2002, Arien Malec
  * Copyright (C) 2011, 2017, Oracle and/or its affiliates.
- *
- * SPDX-License-Identifier: GPL-2.1
  *
  * This file originates from check.h from the Check C unit test
  * framework, adapted by Knut Omang to build with the linux kernel.

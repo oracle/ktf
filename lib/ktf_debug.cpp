@@ -1,6 +1,7 @@
-/* Copyright (c) 2012 Oracle Corporation. All rights reserved
- *
- * SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0
+/*
+ *  Copyright (c) 2012 Oracle Corporation. All rights reserved
+ *    Author: Knut Omang <knut.omang@oracle.com>
  */
 
 #include "ktf_debug.h"

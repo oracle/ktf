@@ -1,8 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  *    Author: Alan Maguire <alan.maguire@oracle.com>
- *
- * SPDX-License-Identifier: GPL-2.0
  *
  * ktf_override.h: Function override support interface for KTF.
  */

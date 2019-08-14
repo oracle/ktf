@@ -1,7 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
- *
- * SPDX-License-Identifier: GPL-2.0
  *
  * self.c: Some simple self tests for KTF
  */

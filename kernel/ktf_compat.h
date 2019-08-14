@@ -1,9 +1,8 @@
 #if (KERNEL_VERSION(5, 2, 0) > LINUX_VERSION_CODE)
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  *    Author: Knut Omang <knut.omang@oracle.com>
- *
- * SPDX-License-Identifier: GPL-2.0
  *
  * ktf_compat.h: Backward compatibility support
  */

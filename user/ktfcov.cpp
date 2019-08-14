@@ -1,8 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  *    Author: Alan Maguire <alan.maguire@oracle.com>
- *
- * SPDX-License-Identifier: GPL-2.0
  *
  * ktfcov.cpp:
  *   User level application to enable/disable coverage of kernel modules.

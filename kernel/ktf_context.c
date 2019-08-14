@@ -1,8 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  *    Author: Knut Omang <knut.omang@oracle.com>
  *
- * SPDX-License-Identifier: GPL-2.0
  *
  * kft_context.c: Main part of ktf kernel module that implements a generic
  *   unit test framework for tests written in kernel code, with support for
@@ -18,7 +18,7 @@
 #include "ktf_nl.h"
 
 MODULE_LICENSE("GPL");
-
+// foo
 ulong ktf_debug_mask = T_INFO;
 EXPORT_SYMBOL(ktf_debug_mask);
 

@@ -1,9 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0
 #
 # Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 #    Author: Knut Omang <knut.omang@oracle.com>
-#
-# SPDX-License-Identifier: GPL-2.0
-#
 #
 # Dependent modules should make this file available in their m4 path
 # and call this from their configure.ac:

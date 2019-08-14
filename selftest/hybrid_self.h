@@ -1,7 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
- *
- * SPDX-License-Identifier: GPL-2.0
  *
  * hybrid_self.h: The data structure passed between user level and kernel for the
  *  hybrid self tests. Included both from user space and kernel space and

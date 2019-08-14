@@ -1,8 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  *    Author: Knut Omang <knut.omang@oracle.com>
- *
- * SPDX-License-Identifier: GPL-2.0
  *
  * unlproto.c: This file is needed because the C struct init
  * used in kernel/unlproto.h is not allowed in C++

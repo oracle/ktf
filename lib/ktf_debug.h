@@ -1,7 +1,7 @@
-/* Copyright (c) 2012 Oracle Corporation. All rights reserved
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (c) 2012 Oracle Corporation. All rights reserved
  *    Author: Knut Omang <knut.omang@oracle.com>
- *
- * SPDX-License-Identifier: GPL-2.0
  *
  * ktf_debug.h: User mode debug function definitions
  * - intended for test debugging.

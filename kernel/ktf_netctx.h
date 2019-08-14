@@ -1,8 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  *    Author: Knut Omang <knut.omang@oracle.com>
- *
- * SPDX-License-Identifier: GPL-2.0
  *
  * ktf_netctx.h: Configurable context setup for multinode network tests
  *

@@ -1,6 +1,6 @@
-/* Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- *
- * SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * context.c: Parameterized context test case, kernel side:
  */
