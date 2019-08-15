@@ -106,9 +106,6 @@ static int ktf_run_test_open(struct inode *inode, struct file *file)
 {
 	struct ktf_test *t;
 
-	if (!try_module_get(THIS_MODULE))
-		return -EIO;
-
 	t = (struct ktf_test *)inode->i_private;
 
 	return single_open(file, ktf_debugfs_run, t);
@@ -116,11 +113,11 @@ static int ktf_run_test_open(struct inode *inode, struct file *file)
 
 static int ktf_debugfs_release(struct inode *inode, struct file *file)
 {
-	module_put(THIS_MODULE);
 	return single_release(inode, file);
 }
 
 static const struct file_operations ktf_run_test_fops = {
+	.owner = THIS_MODULE,
 	.open = ktf_run_test_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
@@ -131,15 +128,13 @@ static int ktf_results_test_open(struct inode *inode, struct file *file)
 {
 	struct ktf_test *t;
 
-	if (!try_module_get(THIS_MODULE))
-		return -EIO;
-
 	t = (struct ktf_test *)inode->i_private;
 
 	return single_open(file, ktf_debugfs_result, t);
 }
 
 static const struct file_operations ktf_results_test_fops = {
+	.owner = THIS_MODULE,
 	.open = ktf_results_test_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
@@ -198,15 +193,13 @@ static int ktf_results_testset_open(struct inode *inode, struct file *file)
 {
 	struct ktf_case *testset;
 
-	if (!try_module_get(THIS_MODULE))
-		return -EIO;
-
 	testset = (struct ktf_case *)inode->i_private;
 
 	return single_open(file, ktf_debugfs_results_all, testset);
 }
 
 static const struct file_operations ktf_results_testset_fops = {
+	.owner = THIS_MODULE,
 	.open = ktf_results_testset_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
@@ -217,15 +210,13 @@ static int ktf_run_testset_open(struct inode *inode, struct file *file)
 {
 	struct ktf_case *testset;
 
-	if (!try_module_get(THIS_MODULE))
-		return -EIO;
-
 	testset = (struct ktf_case *)inode->i_private;
 
 	return single_open(file, ktf_debugfs_run_all, testset);
 }
 
 static const struct file_operations ktf_run_testset_fops = {
+	.owner = THIS_MODULE,
 	.open = ktf_run_testset_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
@@ -306,13 +297,11 @@ static int ktf_debugfs_cov(struct seq_file *seq, void *v)
 
 static int ktf_cov_open(struct inode *inode, struct file *file)
 {
-	if (!try_module_get(THIS_MODULE))
-		return -EIO;
-
 	return single_open(file, ktf_debugfs_cov, NULL);
 }
 
 static const struct file_operations ktf_cov_fops = {
+	.owner = THIS_MODULE,
 	.open = ktf_cov_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
