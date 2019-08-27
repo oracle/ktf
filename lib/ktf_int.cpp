@@ -281,7 +281,7 @@ KernelTest* KernelTestMgr::find_test(const std::string&setname,
 				     const std::string& testname,
 				     std::string* pctx)
 {
-  size_t pos;
+  off_t pos;
   log(KTF_DEBUG, "find test %s.%s\n", setname.c_str(), testname.c_str());
 
   /* Try direct lookup first: */
