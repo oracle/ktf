@@ -144,6 +144,11 @@ int ktf_context_set_config(struct ktf_context *ctx, const void *data, size_t dat
 		ret = ctx->config_cb(ctx, data, data_sz);
 		ctx->config_errno = ret;
 	}
+	/* We don't use the map element refcounts for contexts, as
+	 * the context objects may be allocated statically by client modules,
+	 * just make sure the refcounts make sense from a debugging perspective:
+	 */
+	ktf_map_elem_put(&ctx->elem);
 	return ctx->config_errno;
 }
 EXPORT_SYMBOL(ktf_context_set_config);

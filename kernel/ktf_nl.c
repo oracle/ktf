@@ -504,12 +504,12 @@ static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info)
 	else
 		strcpy(type_name, "default");
 	nla_strlcpy(ctxname, info->attrs[KTF_A_STR], KTF_MAX_NAME);
-	tlog(T_DEBUG, "Trying to find/create context %s with type %s\n", ctxname, type_name);
+	tlog(T_DEBUG, "Trying to find/create context %s with type %s", ctxname, type_name);
 	ctx = ktf_find_create_context(handle, ctxname, type_name);
 	if (!ctx)
 		return -ENODEV;
 
-	tlog(T_DEBUG, "Received context configuration for context %s, handle %d\n",
+	tlog(T_DEBUG, "Received context configuration for context %s, handle %d",
 	     ctxname, hid);
 
 	ctx_data = nla_memdup(data_attr, GFP_KERNEL);
