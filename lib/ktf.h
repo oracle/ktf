@@ -78,7 +78,8 @@ namespace ktf
 				  (struct __priv_datatype *)__priv_data, \
 				  sizeof(__priv_datatype))
 
-
+#define KTF_FIND(__setname, __testname, __context) \
+  ktf::find_test(__setname, __testname, __context)
 
 /* Private interfaces (needed by macro definitions above)
  * ------------------------------------------------------
@@ -108,6 +109,10 @@ namespace ktf {
 			 void *data, size_t data_sz);
   void configure_context_for_test(const std::string testname, const std::string type_name,
 				  void *data, size_t data_sz);
+
+  KernelTest* find_test(const std::string& setname, const std::string& testname,
+			std::string* ctx);
+
 } // end namespace ktf
 
 #endif

@@ -63,9 +63,6 @@ namespace ktf
   std::string get_current_setname();
   stringvec get_test_names();
 
-  KernelTest* find_test(const std::string& setname, const std::string& testname,
-			std::string* ctx);
-
   /* "private" - only run from gtest framework */
   void run_test(KernelTest* test, std::string& ctx);
 } // end namespace ktf
