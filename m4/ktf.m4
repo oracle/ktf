@@ -274,7 +274,7 @@ Makefile: \$(srcdir)/Makefile.in \$(top_builddir)/config.status
 	esac;
 
 ktf_syms.h: \$(srcdir)/ktf_syms.txt \$(ktf_scripts)/resolve
-	\$(ktf_scripts)/resolve \$(ccflags-y) \$< \$[]@
+	\$(ktf_scripts)/resolve -I\$(srcdir) \$(ccflags-y) \$< \$[]@
 
 install: \$(obj-installed)
 

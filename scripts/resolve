@@ -16,6 +16,12 @@ def usage():
     print "Usage: resolve symbolfile outputfile"
     exit(0)
 
+class ResolveError(Exception):
+    def __init__(self, value):
+        self.value = "resolve error: " + value
+    def __str__(self):
+        return repr(self.value)
+
 class FuncInfo:
     def __init__(self, sym, re_sym, re_decl):
         self.symbol = sym
@@ -37,7 +43,7 @@ class Module:
 
     def log(self, str):
         if self.debug:
-            print str
+            sys.stderr.write(str + "\n")
 
     def SetHeader(self, header):
         self.cur_header = header
@@ -106,6 +112,7 @@ usage_h = False
 my_argv = []
 includepath = [""]
 
+#sys.stderr.write("%s\n" % (sys.argv))
 for arg in sys.argv[1:]:
     if arg == "-h":
         usage_h = True
@@ -135,27 +142,30 @@ header = None  # A header directive is required before any symbols
 
 try:
     file = open(symfile, 'r')
+    for line in file:
+        match = re.match(r"^#(\w+) ([\w\.]+)\s*$", line)
+        if match != None:
+            cmd = match.group(1)
+            value = match.group(2)
+            if cmd == "module":
+                module = Module(value, header)
+            elif cmd == "header":
+                header = value
+                module.SetHeader(header)
+            else:
+                raise ResolveError("While parsing %s: Unknown directive \"%s\"" % (symfile, cmd))
+            #print "%s set to %s" % (cmd, value)
+            continue
+        match = re.match(r"\s*(\w+)\s*", line)
+        if match != None:
+            s = match.group(1)
+            module.AddSymbol(s)
+except ResolveError as e:
+    print e.value;
+    exit(1)
 except:
     print "Unable to open config file \"%s\"" % symfile
     exit(1)
-for line in file:
-    match = re.match(r"^#(\w+) ([\w\.]+)\s*$", line)
-    if match != None:
-        cmd = match.group(1)
-        value = match.group(2)
-        if cmd == "module":
-            module = Module(value, header)
-        elif cmd == "header":
-            header = value
-            module.SetHeader(header)
-        else:
-            raise ResolveError("Unknown directive \"%s\"" % cmd)
-        #print "%s set to %s" % (cmd, value)
-        continue
-    match = re.match(r"\s*(\w+)\s*", line)
-    if match != None:
-        s = match.group(1)
-        module.AddSymbol(s)
 
 for m in all_modules:
     m.ParseDefs()
