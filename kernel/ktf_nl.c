@@ -24,32 +24,43 @@
 /* Callback functions defined below */
 static int ktf_run(struct sk_buff *skb, struct genl_info *info);
 static int ktf_query(struct sk_buff *skb, struct genl_info *info);
-static int ktf_req(struct sk_buff *skb, struct genl_info *info);
-static int ktf_resp(struct sk_buff *skb, struct genl_info *info);
-static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
-		       struct genl_info *info);
+static int ktf_cov_cmd(struct sk_buff *skb, struct genl_info *info);
 static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info);
 static int send_version_only(struct sk_buff *skb, struct genl_info *info);
 
-/* operation definition */
+/* operation definitions - see ktf_unlproto.h for definitions */
 static struct genl_ops ktf_ops[] = {
 	{
-		.cmd = KTF_C_REQ,
+		.cmd = KTF_C_QUERY,
 		.flags = 0,
 #if (KERNEL_VERSION(5, 2, 0) > LINUX_VERSION_CODE)
 		.policy = ktf_gnl_policy,
 #endif
-		.doit = ktf_req,
-		.dumpit = NULL,
+		.doit = ktf_query,
 	},
 	{
-		.cmd = KTF_C_RESP,
+		.cmd = KTF_C_RUN,
 		.flags = 0,
 #if (KERNEL_VERSION(5, 2, 0) > LINUX_VERSION_CODE)
 		.policy = ktf_gnl_policy,
 #endif
-		.doit = ktf_resp,
-		.dumpit = NULL,
+		.doit = ktf_run,
+	},
+	{
+		.cmd = KTF_C_COV,
+		.flags = 0,
+#if (KERNEL_VERSION(5, 2, 0) > LINUX_VERSION_CODE)
+		.policy = ktf_gnl_policy,
+#endif
+		.doit = ktf_cov_cmd,
+	},
+	{
+		.cmd = KTF_C_CTX_CFG,
+		.flags = 0,
+#if (KERNEL_VERSION(5, 2, 0) > LINUX_VERSION_CODE)
+		.policy = ktf_gnl_policy,
+#endif
+		.doit = ktf_ctx_cfg,
 	}
 };
 
@@ -73,21 +84,12 @@ static struct genl_family ktf_gnl_family = {
 #endif
 };
 
-/* handler, returns 0 on success, negative
- * values on failure. It doesn't make much difference
- * what error values are used, as they are anyway discarded
- * at the netlink level, but do result in a nonzero return
- * from nl_wait_for_ack() in user space.
- */
-static int ktf_req(struct sk_buff *skb, struct genl_info *info)
+static int check_version(enum ktf_cmd cmd, struct sk_buff *skb, struct genl_info *info)
 {
-	enum ktf_cmd_type type;
 	u64 version;
 
-	/* Dispatch on type of request */
-
-	if (!info->attrs[KTF_A_TYPE] || !info->attrs[KTF_A_VERSION]) {
-		terr("received netlink msg with no type/version!");
+	if (!info->attrs[KTF_A_VERSION]) {
+		terr("received netlink msg with no version!");
 		return -EINVAL;
 	}
 
@@ -96,26 +98,11 @@ static int ktf_req(struct sk_buff *skb, struct genl_info *info)
 		/* a query is the first call for any reasonable application:
 		 * Respond to it with a version only:
 		 */
-		if (nla_get_u32(info->attrs[KTF_A_TYPE]) == KTF_CT_QUERY)
+		if (cmd == KTF_C_QUERY)
 			return send_version_only(skb, info);
 		return -EINVAL;
 	}
-
-	type = nla_get_u32(info->attrs[KTF_A_TYPE]);
-	switch (type) {
-	case KTF_CT_QUERY:
-		return ktf_query(skb, info);
-	case KTF_CT_RUN:
-		return ktf_run(skb, info);
-	case KTF_CT_COV_ENABLE:
-	case KTF_CT_COV_DISABLE:
-		return ktf_cov_cmd(type, skb, info);
-	case KTF_CT_CTX_CFG:
-		return ktf_ctx_cfg(skb, info);
-	default:
-		terr("received netlink msg with invalid type (%d)", type);
-	}
-	return -EINVAL;
+	return 0;
 }
 
 /* Reply with just version information to let user space report the issue: */
@@ -128,12 +115,11 @@ static int send_version_only(struct sk_buff *skb, struct genl_info *info)
 	if (!resp_skb)
 		return -ENOMEM;
 	data = genlmsg_put_reply(resp_skb, info, &ktf_gnl_family,
-				 0, KTF_C_RESP);
+				 0, KTF_C_QUERY);
 	if (!data) {
 		retval = -ENOMEM;
 		goto resp_failure;
 	}
-	nla_put_u32(resp_skb, KTF_A_TYPE, KTF_CT_QUERY);
 	nla_put_u64_64bit(resp_skb, KTF_A_VERSION, KTF_VERSION_LATEST, 0);
 
 	/* Recompute message header */
@@ -240,13 +226,17 @@ static int ktf_query(struct sk_buff *skb, struct genl_info *info)
 	struct ktf_handle *handle;
 	struct ktf_case *tc;
 
+	retval = check_version(KTF_C_QUERY, skb, info);
+	if (retval)
+		return retval;
+
 	/* No options yet, just send a response */
 	resp_skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
 	if (!resp_skb)
 		return -ENOMEM;
 
 	data = genlmsg_put_reply(resp_skb, info, &ktf_gnl_family,
-				 0, KTF_C_RESP);
+				 0, KTF_C_QUERY);
 	if (!data) {
 		retval = -ENOMEM;
 		goto resp_failure;
@@ -260,35 +250,33 @@ static int ktf_query(struct sk_buff *skb, struct genl_info *info)
 	 *                   testset_num [testset1 [name1 name2 ..] testset2 [name1 name2 ..]]
 	 *  Handle IDs without contexts are not present
 	 */
-	if (!nla_put_u32(resp_skb, KTF_A_TYPE, KTF_CT_QUERY)) {
-		if (!list_empty(&context_handles)) {
-			/* Traverse list of handles with contexts */
-			nest_attr = nla_nest_start(resp_skb, KTF_A_HLIST);
-			list_for_each_entry(handle, &context_handles, handle_list) {
-				retval = send_handle_data(resp_skb, handle);
-				if (retval)
-					goto resp_failure;
-			}
-			nla_nest_end(resp_skb, nest_attr);
-		}
-
-		/* Send total number of tests */
-		tlog(T_DEBUG, "Total #of test cases: %ld", ktf_case_count());
-		nla_put_u32(resp_skb, KTF_A_NUM, ktf_case_count());
-		nest_attr = nla_nest_start(resp_skb, KTF_A_LIST);
-		if (!nest_attr) {
-			retval = -ENOMEM;
-			goto resp_failure;
-		}
-		ktf_for_each_testcase(tc) {
-			retval = send_test_data(resp_skb, tc);
-			if (retval) {
-				retval = -ENOMEM;
+	if (!list_empty(&context_handles)) {
+		/* Traverse list of handles with contexts */
+		nest_attr = nla_nest_start(resp_skb, KTF_A_HLIST);
+		list_for_each_entry(handle, &context_handles, handle_list) {
+			retval = send_handle_data(resp_skb, handle);
+			if (retval)
 				goto resp_failure;
-			}
 		}
 		nla_nest_end(resp_skb, nest_attr);
 	}
+
+	/* Send total number of tests */
+	tlog(T_DEBUG, "Total #of test cases: %ld", ktf_case_count());
+	nla_put_u32(resp_skb, KTF_A_NUM, ktf_case_count());
+	nest_attr = nla_nest_start(resp_skb, KTF_A_LIST);
+	if (!nest_attr) {
+		retval = -ENOMEM;
+		goto resp_failure;
+	}
+	ktf_for_each_testcase(tc) {
+		retval = send_test_data(resp_skb, tc);
+		if (retval) {
+			retval = -ENOMEM;
+			goto resp_failure;
+		}
+	}
+	nla_nest_end(resp_skb, nest_attr);
 
 	/* Recompute message header */
 	genlmsg_end(resp_skb, data);
@@ -346,6 +334,10 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 	void *oob_data = NULL;
 	size_t oob_data_sz = 0;
 
+	retval = check_version(KTF_C_RUN, skb, info);
+	if (retval)
+		return retval;
+
 	if (info->attrs[KTF_A_STR])
 		nla_strlcpy(ctxname, info->attrs[KTF_A_STR], KTF_MAX_NAME);
 	else
@@ -383,13 +375,12 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 		return -ENOMEM;
 
 	data = genlmsg_put_reply(resp_skb, info, &ktf_gnl_family,
-				 0, KTF_C_RESP);
+				 0, KTF_C_RUN);
 	if (!data) {
 		retval = -ENOMEM;
 		goto put_fail;
 	}
 
-	nla_put_u32(resp_skb, KTF_A_TYPE, KTF_CT_RUN);
 	nest_attr = nla_nest_start(resp_skb, KTF_A_LIST);
 	retval = ktf_run_func(resp_skb, ctxname, setname, testname, value, oob_data, oob_data_sz);
 	nla_nest_end(resp_skb, nest_attr);
@@ -413,27 +404,32 @@ put_fail:
 	return retval;
 }
 
-static int ktf_resp(struct sk_buff *skb, struct genl_info *info)
-{
-	/* not to expect this message here */
-	terr("unexpected netlink RESP msg received");
-	return 0;
-}
-
-static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
+static int ktf_cov_cmd(struct sk_buff *skb,
 		       struct genl_info *info)
 {
-	char *cmd = type == KTF_CT_COV_ENABLE ? "COV_ENABLE" : "COV_DISABLE";
+	char *cmd;
 	char module[KTF_MAX_NAME + 1];
 	struct sk_buff *resp_skb;
 	int retval = 0;
 	void *data;
 	u32 opts = 0;
+	bool enable = false;
+
+	retval = check_version(KTF_C_COV, skb, info);
+	if (retval)
+		return retval;
 
 	if (!info->attrs[KTF_A_MOD])   {
-		terr("received KTF_CT_%s msg without module name!", cmd);
+		terr("received KTF_CT_COV msg without module name!");
 		return -EINVAL;
 	}
+
+	if (info->attrs[KTF_A_NUM])	{
+		/* Using NUM field as enable == 1 or disable == 0 */
+		enable = nla_get_u32(info->attrs[KTF_A_NUM]);
+	}
+	cmd = enable ? "enable" : "disable";
+
 	nla_strlcpy(module, info->attrs[KTF_A_MOD], KTF_MAX_NAME);
 	if (info->attrs[KTF_A_COVOPT])
 		opts = nla_get_u32(info->attrs[KTF_A_COVOPT]);
@@ -444,18 +440,18 @@ static int ktf_cov_cmd(enum ktf_cmd_type type, struct sk_buff *skb,
 		return -ENOMEM;
 
 	tlog(T_DEBUG, "%s coverage for %s\n", cmd, module);
-	if (type == KTF_CT_COV_ENABLE)
+	if (enable)
 		retval = ktf_cov_enable(module, opts);
 	else
 		ktf_cov_disable(module);
 
 	data = genlmsg_put_reply(resp_skb, info, &ktf_gnl_family,
-				 0, KTF_C_RESP);
+				 0, KTF_C_COV);
 	if (!data) {
 		retval = -ENOMEM;
 		goto put_fail;
 	}
-	nla_put_u32(resp_skb, KTF_A_TYPE, type);
+	nla_put_u32(resp_skb, KTF_A_NUM, enable ? 1 : 0);
 	nla_put_u32(resp_skb, KTF_A_STAT, retval);
 	/* Recompute message header */
 	genlmsg_end(resp_skb, data);
@@ -475,7 +471,7 @@ put_fail:
 }
 
 /* Process request to configure a configurable context:
- * Expected format:  KTF_CT_CTX_CFG hid type_name context_name data
+ * Expected format:  KTF_C_CTX_CFG hid type_name context_name data
  * placed in A_HID, A_FILE, A_STR and A_DATA respectively.
  */
 static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info)
@@ -489,6 +485,10 @@ static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info)
 	struct ktf_handle *handle;
 	struct ktf_context *ctx;
 	int ret;
+
+	ret = check_version(KTF_C_CTX_CFG, skb, info);
+	if (ret)
+		return ret;
 
 	if (!info->attrs[KTF_A_STR] || !info->attrs[KTF_A_HID])
 		return -EINVAL;

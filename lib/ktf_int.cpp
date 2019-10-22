@@ -433,8 +433,7 @@ int ConfigurableContext::Configure(void *data, size_t data_sz)
 
   log(KTF_INFO, "%s, data_sz %lu\n", name.c_str(), data_sz);
   genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
-              KTF_C_REQ, 1);
-  nla_put_u32(msg, KTF_A_TYPE, KTF_CT_CTX_CFG);
+              KTF_C_CTX_CFG, 1);
   nla_put_u64(msg, KTF_A_VERSION, KTF_VERSION_LATEST);
   nla_put_string(msg, KTF_A_STR, name.c_str());
   nla_put_u32(msg, KTF_A_HID, handle_id);
@@ -482,10 +481,9 @@ int set_coverage(std::string module, unsigned int opts, bool enabled)
 
   msg = nlmsg_alloc();
   genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
-              KTF_C_REQ, 1);
-  nla_put_u32(msg, KTF_A_TYPE,
-  	      enabled ? KTF_CT_COV_ENABLE : KTF_CT_COV_DISABLE);
+	      KTF_C_COV, 1);
   nla_put_u32(msg, KTF_A_COVOPT, opts);
+  nla_put_u32(msg, KTF_A_NUM, enabled ? 1 : 0);
   nla_put_u64(msg, KTF_A_VERSION, KTF_VERSION_LATEST);
   nla_put_string(msg, KTF_A_MOD, module.c_str());
 
@@ -633,8 +631,7 @@ stringvec& query_testsets()
 
   msg = nlmsg_alloc();
   genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
-	      KTF_C_REQ, 1);
-  nla_put_u32(msg, KTF_A_TYPE, KTF_CT_QUERY);
+	      KTF_C_QUERY, 1);
   nla_put_u64(msg, KTF_A_VERSION, KTF_VERSION_LATEST);
 
   // Send message over netlink socket
@@ -696,8 +693,7 @@ void run(KernelTest* kt, std::string context)
 
   msg = nlmsg_alloc();
   genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
-	      KTF_C_REQ, 1);
-  nla_put_u32(msg, KTF_A_TYPE, KTF_CT_RUN);
+	      KTF_C_RUN, 1);
   nla_put_u64(msg, KTF_A_VERSION, KTF_VERSION_LATEST);
   nla_put_string(msg, KTF_A_SNAM, kt->setname.c_str());
   nla_put_string(msg, KTF_A_TNAM, kt->testname.c_str());
@@ -733,11 +729,8 @@ void run(KernelTest* kt, std::string context)
 void configure_context(const std::string context, const std::string type_name, void *data, size_t data_sz)
 {
   context_vector ct = kmgr().find_contexts(context, type_name);
-  ASSERT_GE(ct.size(), 1UL) << " - no context found named " << context;
-  ASSERT_EQ(ct.size(), 1UL) << " - More than one context named " << context
-			  << " - use KTF_CONTEXT_CFG_FOR_TEST to uniquely identify context.";
-  ASSERT_EQ(type_name, ct[0]->Type());
-  ASSERT_EQ(ct[0]->Configure(data, data_sz), 0);
+  for (size_t i = 0; i < ct.size(); i++)
+    ASSERT_EQ(ct[i]->Configure(data, data_sz), 0);
 }
 
 void configure_context_for_test(const std::string& setname, const std::string& testname,
@@ -974,8 +967,8 @@ static enum nl_cb_action parse_result(struct nl_msg *msg, struct nlattr** attrs)
 
 static enum nl_cb_action parse_cov_endis(struct nl_msg *msg, struct nlattr** attrs)
 {
-  enum ktf_cmd_type type = (ktf_cmd_type)nla_get_u32(attrs[KTF_A_TYPE]);
-  const char *cmd = type == KTF_CT_COV_ENABLE ? "enable" : "disable";
+  bool enable = (bool)nla_get_u32(attrs[KTF_A_NUM]);
+  const char *cmd = enable ? "enable" : "disable";
   int retval = nla_get_u32(attrs[KTF_A_STAT]);
 
   if (retval)
@@ -985,30 +978,23 @@ static enum nl_cb_action parse_cov_endis(struct nl_msg *msg, struct nlattr** att
 
 static int parse_cb(struct nl_msg *msg, void *arg)
 {
+  ktf_cmd cmd;
   struct nlmsghdr *nlh = nlmsg_hdr(msg);
+  struct genlmsghdr *ghdr = (genlmsghdr*)nlmsg_data(nlh);
   int maxtype = KTF_A_MAX+10;
   struct nlattr *attrs[maxtype];
-  enum ktf_cmd_type type;
-
-  //  memset(attrs, 0, sizeof(attrs));
 
   /* Validate message and parse attributes */
   int err = genlmsg_parse(nlh, 0, attrs, KTF_A_MAX, ktf_get_gnl_policy());
   if (err < 0) return err;
 
-  if (!attrs[KTF_A_TYPE]) {
-    fprintf(stderr, "Received kernel response without a type\n");
-    return NL_SKIP;
-  }
-
-  type = (ktf_cmd_type)nla_get_u32(attrs[KTF_A_TYPE]);
-  switch (type) {
-  case KTF_CT_QUERY:
+  cmd = (ktf_cmd)ghdr->cmd;
+  switch (cmd) {
+  case KTF_C_QUERY:
     return parse_query(msg, attrs);
-  case KTF_CT_RUN:
+  case KTF_C_RUN:
     return parse_result(msg, attrs);
-  case KTF_CT_COV_ENABLE:
-  case KTF_CT_COV_DISABLE:
+  case KTF_C_COV:
     return parse_cov_endis(msg, attrs);
   default:
     debug_cb(msg, attrs);
