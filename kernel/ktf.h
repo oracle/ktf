@@ -122,6 +122,49 @@ extern struct ktf_handle __test_handle;
 	(__context->config_cb && !__context->config_errno)
 #define KTF_CONTEXT_REMOVE(__context) ktf_context_remove(__context)
 
+extern ulong ktf_debug_mask;
+
+/* Defined debug bits - higher values should represent more
+ * verbose categories:
+ */
+#define T_INFO		0x1
+#define T_LIST		0x2
+#define T_INTR	      0x200
+#define T_INFO_V      0x800
+#define T_DEBUG	     0x1000
+#define T_MCAST	     0x2000
+#define T_TRACE	   0x100000
+#define T_DEBUG_V  0x200000
+
+#define tlog(class, format, arg...)	\
+	do { \
+		if (unlikely((ktf_debug_mask) & (class)))	\
+			printk(KERN_INFO \
+				   "ktf pid [%d] " "%s: " format "\n", \
+				   current->pid, __func__, \
+				   ## arg); \
+	} while (0)
+#define twarn(format, arg...)	\
+	do { \
+		printk(KERN_WARNING				       \
+		       "ktf pid [%d] " "%s: " format "\n",	       \
+		       current->pid, __func__,			       \
+		       ## arg);				       \
+	} while (0)
+#define terr(format, arg...)	\
+	do { \
+		printk(KERN_ERR				       \
+		       "ktf pid [%d] " "%s: " format "\n",	       \
+		       current->pid, __func__,			       \
+		       ## arg);				       \
+	} while (0)
+#define tlogs(class, stmt_list) \
+	do { \
+		if (unlikely((ktf_debug_mask) & (class))) { \
+			stmt_list;\
+		} \
+	} while (0)
+
 /* Part of KTF support for hybrid tests: Safe get the out-of-band user data
  * Silently return (ignoring the test) if no data is available.
  * This is to avoid failing if a generic user program without
@@ -145,8 +188,8 @@ extern struct ktf_handle __test_handle;
 #else
 static inline int ktf_no_probe_support(void)
 {
-	twarn("No support for k[ret]probes, or platform not supported.")
-	return -ENOTSUPP);
+	twarn("No support for k[ret]probes, or platform not supported.");
+	return -ENOTSUPP;
 }
 #endif
 
@@ -540,49 +583,6 @@ u32 ktf_get_assertion_count(void);
 
 #define EXPECT_STREQ(X, Y) ktf_assert_str_eq(X, Y)
 #define EXPECT_STRNE(X, Y) ktf_assert_str_ne(X, Y)
-
-extern ulong ktf_debug_mask;
-
-/* Defined debug bits - higher values should represent more
- * verbose categories:
- */
-#define T_INFO		0x1
-#define T_LIST		0x2
-#define T_INTR	      0x200
-#define T_INFO_V      0x800
-#define T_DEBUG	     0x1000
-#define T_MCAST	     0x2000
-#define T_TRACE	   0x100000
-#define T_DEBUG_V  0x200000
-
-#define tlog(class, format, arg...)	\
-	do { \
-		if (unlikely((ktf_debug_mask) & (class)))	\
-			printk(KERN_INFO \
-				   "ktf pid [%d] " "%s: " format "\n", \
-				   current->pid, __func__, \
-				   ## arg); \
-	} while (0)
-#define twarn(format, arg...)	\
-	do { \
-		printk(KERN_WARNING				       \
-		       "ktf pid [%d] " "%s: " format "\n",	       \
-		       current->pid, __func__,			       \
-		       ## arg);				       \
-	} while (0)
-#define terr(format, arg...)	\
-	do { \
-		printk(KERN_ERR				       \
-		       "ktf pid [%d] " "%s: " format "\n",	       \
-		       current->pid, __func__,			       \
-		       ## arg);				       \
-	} while (0)
-#define tlogs(class, stmt_list) \
-	do { \
-		if (unlikely((ktf_debug_mask) & (class))) { \
-			stmt_list;\
-		} \
-	} while (0)
 
 
 /* Look up the current address of a potentially local symbol - to allow testing
