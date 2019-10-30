@@ -18,7 +18,7 @@
 #include "ktf_nl.h"
 
 MODULE_LICENSE("GPL");
-// foo
+
 ulong ktf_debug_mask = T_INFO;
 EXPORT_SYMBOL(ktf_debug_mask);
 
