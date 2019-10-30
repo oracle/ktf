@@ -129,12 +129,14 @@ extern ulong ktf_debug_mask;
  */
 #define T_INFO		0x1
 #define T_LIST		0x2
+#define T_PRINTK	0x4  /* Enable printing of test errors in the kernel log */
 #define T_INTR	      0x200
 #define T_INFO_V      0x800
 #define T_DEBUG	     0x1000
 #define T_MCAST	     0x2000
 #define T_TRACE	   0x100000
 #define T_DEBUG_V  0x200000
+#define T_STACKD  0x1000000  /* logs a stack dump in the system log each time a test fails */
 
 #define tlog(class, format, arg...)	\
 	do { \

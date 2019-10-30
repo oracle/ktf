@@ -208,7 +208,8 @@ long _ktf_assert(struct ktf_test *self, int result, const char *file,
 		(void)snprintf(bufprefix, sizeof(bufprefix) - 1,
 				"file %s line %d: result %d: ", file, line,
 				result);
-		terr("%s%s", bufprefix, buf);
+		tlog(T_PRINTK, "%s%s", bufprefix, buf);
+		tlogs(T_STACKD, dump_stack());
 
 		/* Multiple threads may try to update log */
 		spin_lock_irqsave(&assert_lock, flags);

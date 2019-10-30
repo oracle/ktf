@@ -19,7 +19,7 @@
 
 MODULE_LICENSE("GPL");
 
-ulong ktf_debug_mask = T_INFO;
+ulong ktf_debug_mask = T_INFO | T_PRINTK;
 EXPORT_SYMBOL(ktf_debug_mask);
 
 static unsigned int ktf_context_maxid;
