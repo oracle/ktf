@@ -11,12 +11,6 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/stacktrace.h>
-#ifdef CONFIG_SLUB
-#include <linux/slub_def.h>
-#endif /* CONFIG_SLUB */
-#ifdef CONFIG_SLAB
-#include <linux/slab_def.h>
-#endif
 #include <linux/string.h>
 #include <linux/kprobes.h>
 #include <linux/ptrace.h>
@@ -319,7 +313,7 @@ static int ktf_cov_kmem_cache_alloc_entry_handler(struct kretprobe_instance *ri,
 	if (!cache)
 		return 0;
 
-	bytes = cache->object_size;
+	bytes = kmem_cache_size(cache);
 	if (cache == cov_mem_cache)
 		return 0;
 	return ktf_cov_kmem_alloc_entry(m, bytes);

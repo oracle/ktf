@@ -7,8 +7,6 @@
 #include <linux/module.h>
 #include <linux/mm_types.h>
 #include <linux/slab.h>
-#include <linux/slab_def.h>
-
 #include "ktf.h"
 #include "ktf_map.h"
 #include "ktf_cov.h"
@@ -472,7 +470,7 @@ TEST(selftest, cov)
 
 	ASSERT_ADDR_NE(NULL, c);
 
-	tlog(T_INFO, "Allocated cache %p : %s %u\n", c, c->name, c->object_size);
+	tlog(T_INFO, "Allocated cache %p : w/object size %u\n", c, kmem_cache_size(c));
 	ASSERT_INT_EQ(0, ktf_cov_enable((THIS_MODULE)->name, KTF_COV_OPT_MEM));
 
 	e = ktf_cov_entry_find((unsigned long)cov_counted, 0);
