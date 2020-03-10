@@ -6,7 +6,7 @@
  * ktf_test.c: Kernel side code for tracking and reporting ktf test results
  */
 #include <linux/module.h>
-#include <linux/time.h>
+#include <uapi/linux/time.h>
 #include "ktf_test.h"
 #include <net/netlink.h>
 #include <net/genetlink.h>
