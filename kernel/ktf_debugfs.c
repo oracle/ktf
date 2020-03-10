@@ -6,7 +6,7 @@
  */
 #include <asm/unistd.h>
 #include <linux/module.h>
-#include <linux/time.h>
+#include <uapi/linux/time.h>
 #include "ktf_debugfs.h"
 #include "ktf.h"
 #include "ktf_test.h"
