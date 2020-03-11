@@ -6,7 +6,7 @@
  * ktf_test.c: Kernel side code for tracking and reporting ktf test results
  */
 #include <linux/module.h>
-#include <uapi/linux/time.h>
+#include <linux/timekeeping.h>
 #include "ktf_test.h"
 #include <net/netlink.h>
 #include <net/genetlink.h>
@@ -312,7 +312,7 @@ void ktf_run_hook(struct sk_buff *skb, struct ktf_context *ctx,
 				printk("_%s", ktf_context_name(ctx));
 			printk("[%d:%d]\n", t->start, t->end);
 		);
-		getnstimeofday(&t->lastrun);
+		ktime_get_ts64(&t->lastrun);
 		t->fun(t, ctx, i, value);
 		flush_assert_cnt(t);
 	}

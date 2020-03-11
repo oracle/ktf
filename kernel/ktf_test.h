@@ -43,7 +43,7 @@ struct ktf_test {
 	char *log; /* per-test log */
 	void *data; /* Test specific out-of-band data */
 	size_t data_sz; /* Size of the data element, if set */
-	struct timespec lastrun; /* last time test was run */
+	struct timespec64 lastrun; /* last time test was run */
 	struct ktf_debugfs debugfs; /* debugfs info for test */
 	struct ktf_handle *handle; /* Handler for owning module */
 };

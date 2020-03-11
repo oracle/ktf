@@ -6,7 +6,7 @@
  */
 #include <asm/unistd.h>
 #include <linux/module.h>
-#include <uapi/linux/time.h>
+#include <linux/timekeeping.h>
 #include "ktf_debugfs.h"
 #include "ktf.h"
 #include "ktf_test.h"
@@ -34,13 +34,13 @@ static struct dentry *ktf_debugfs_cov_file;
 
 static void ktf_debugfs_print_result(struct seq_file *seq, struct ktf_test *t)
 {
-	struct timespec now;
+	struct timespec64 now;
 
 	if (t && strlen(t->log) > 0) {
-		getnstimeofday(&now);
-		seq_printf(seq, "[%s/%s, %ld seconds ago] %s\n",
+		ktime_get_ts64(&now);
+		seq_printf(seq, "[%s/%s, %lld seconds ago] %s\n",
 			   t->tclass, t->name,
-			   now.tv_sec - t->lastrun.tv_sec, t->log);
+			   (u64)(now.tv_sec - t->lastrun.tv_sec), t->log);
 	}
 }
 
