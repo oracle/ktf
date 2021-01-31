@@ -10,10 +10,10 @@
 # (See the documentation for KTF for details)
 #
 
-import os, sys, re, shutil, string, ConfigParser
+import os, sys, re, shutil, string
 
 def usage():
-    print "Usage: resolve symbolfile outputfile"
+    print("Usage: resolve symbolfile outputfile")
     exit(0)
 
 class ResolveError(Exception):
@@ -91,9 +91,9 @@ class Module:
                 s_count = s_count + 1
 
             if s_count != len(symbols):
-                print " ** Warning: File %s: Found %d definitions from %d symbols!" % \
-                    (hf, s_count, len(symbols))
-                print " ** - please check/fix output manually!"
+                print(" ** Warning: File %s: Found %d definitions from %d symbols!" % \
+                    (hf, s_count, len(symbols)))
+                print(" ** - please check/fix output manually!")
 
     # Output functions:
     def write_funcs(self, file):
@@ -154,17 +154,17 @@ try:
                 module.SetHeader(header)
             else:
                 raise ResolveError("While parsing %s: Unknown directive \"%s\"" % (symfile, cmd))
-            #print "%s set to %s" % (cmd, value)
+            #print("%s set to %s" % (cmd, value))
             continue
         match = re.match(r"\s*(\w+)\s*", line)
         if match != None:
             s = match.group(1)
             module.AddSymbol(s)
 except ResolveError as e:
-    print e.value;
+    print(e.value)
     exit(1)
 except:
-    print "Unable to open config file \"%s\"" % symfile
+    print("Unable to open config file \"%s\"" % symfile)
     exit(1)
 
 for m in all_modules:
@@ -173,7 +173,7 @@ for m in all_modules:
 try:
     output = open(outputfile, "w")
 except:
-    print "Failed to open output header file \"%s\"" % outputfile
+    print("Failed to open output header file \"%s\"" % outputfile)
 output.write('#ifndef _KTF_RESOLVE_H\n#define _KTF_RESOLVE_H\n')
 output.write('#include "ktf.h"\n\nstruct ktf_syms {\n')
 
