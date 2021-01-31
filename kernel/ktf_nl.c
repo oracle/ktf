@@ -300,7 +300,7 @@ static int ktf_run_func(struct sk_buff *skb, const char *ctxname,
 	int tn = 0;
 
 	if (!testset) {
-		tlog(T_INFO, "No such testset \"%s\"\n", setname);
+		tlog(T_INFO, "No such testset \"%s\"", setname);
 		return -EFAULT;
 	}
 
@@ -367,7 +367,7 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 		oob_data_sz = nla_len(data_attr);
 	}
 
-	tlog(T_DEBUG, "Request for testset %s, test %s\n", setname, testname);
+	tlog(T_DEBUG, "Request for testset %s, test %s", setname, testname);
 
 	/* Start building a response */
 	resp_skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
@@ -391,7 +391,7 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 
 	retval = genlmsg_reply(resp_skb, info);
 	if (!retval)
-		tlog(T_DEBUG, "Sent reply for test %s.%s\n", setname, testname);
+		tlog(T_DEBUG, "Sent reply for test %s.%s", setname, testname);
 	else
 		twarn("Failed to send reply for test %s.%s - value %d",
 		      setname, testname, retval);
@@ -439,7 +439,7 @@ static int ktf_cov_cmd(struct sk_buff *skb,
 	if (!resp_skb)
 		return -ENOMEM;
 
-	tlog(T_DEBUG, "%s coverage for %s\n", cmd, module);
+	tlog(T_DEBUG, "%s coverage for %s", cmd, module);
 	if (enable)
 		retval = ktf_cov_enable(module, opts);
 	else
@@ -458,7 +458,7 @@ static int ktf_cov_cmd(struct sk_buff *skb,
 
 	retval = genlmsg_reply(resp_skb, info);
 	if (!retval)
-		tlog(T_DEBUG, "Sent reply for %s module %s\n",
+		tlog(T_DEBUG, "Sent reply for %s module %s",
 		     cmd, module);
 	else
 		twarn("Failed to send reply for %s module %s - value %d",

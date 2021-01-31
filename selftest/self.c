@@ -291,7 +291,7 @@ TEST(selftest, dummy)
 
 TEST(selftest, wrongversion)
 {
-	tlog(T_INFO, "This test should never have run - wrong version\n!!!");
+	tlog(T_INFO, "This test should never have run - wrong version!!!");
 	EXPECT_TRUE(false);
 }
 
@@ -331,7 +331,7 @@ KTF_ENTRY_PROBE(probeargtest, probeargtesthandler)
 
 noinline void probeargtest(int arg0, int arg1)
 {
-	tlog(T_INFO, "got args %d, %d\n", arg0, arg1);
+	tlog(T_INFO, "got args %d, %d", arg0, arg1);
 }
 
 TEST(selftest, probeentry)
@@ -470,7 +470,7 @@ TEST(selftest, cov)
 
 	ASSERT_ADDR_NE(NULL, c);
 
-	tlog(T_INFO, "Allocated cache %p : w/object size %u\n", c, kmem_cache_size(c));
+	tlog(T_INFO, "Allocated cache %p : w/object size %u", c, kmem_cache_size(c));
 	ASSERT_INT_EQ(0, ktf_cov_enable((THIS_MODULE)->name, KTF_COV_OPT_MEM));
 
 	e = ktf_cov_entry_find((unsigned long)cov_counted, 0);
