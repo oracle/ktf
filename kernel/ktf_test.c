@@ -127,7 +127,7 @@ static struct ktf_case *ktf_case_create(const char *name)
 		return NULL;
 	}
 	ktf_debugfs_create_testset(tc);
-	tlog(T_DEBUG, "ktf: Added test set %s\n", name);
+	tlog(T_DEBUG, "ktf: Added test set %s", name);
 	return tc;
 }
 
@@ -271,7 +271,7 @@ void  _ktf_add_test(struct __test_desc td, struct ktf_handle *th,
 
 	ktf_debugfs_create_test(t);
 
-	tlog(T_LIST, "Added test \"%s.%s\" start = %d, end = %d\n",
+	tlog(T_LIST, "Added test \"%s.%s\" start = %d, end = %d",
 	     td.tclass, td.name, start, end);
 
 	/* Now since we no longer reference tc/t outside of global map of test
