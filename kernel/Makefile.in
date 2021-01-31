@@ -13,7 +13,7 @@ obj-m := ktf.o
 -include ktf_gen.mk
 
 ktf-y := ktf_context.o ktf_nl.o ktf_map.o ktf_test.o ktf_debugfs.o ktf_cov.o \
-	 ktf_override.o ktf_netctx.o
+	 ktf_override.o ktf_netctx.o ktf_kallsyms.o
 
 KDIR   := @KDIR@
 PWD    := $(shell pwd)

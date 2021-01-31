@@ -10,9 +10,9 @@
  */
 
 #include <linux/module.h>
-#include <linux/kallsyms.h>
 #include <rdma/ib_verbs.h>
 #include "ktf.h"
+#include "ktf_kallsyms.h"
 #include "ktf_test.h"
 #include "ktf_debugfs.h"
 #include "ktf_nl.h"
@@ -280,7 +280,7 @@ struct ktf_context_type *ktf_handle_get_ctx_type(struct ktf_handle *handle,
 {
 	struct ktf_map_elem *elem = ktf_map_find(&handle->ctx_type_map, type_name);
 
-	tlog(T_DEBUG, "Lookup %s in map size %lu = %p\n", type_name,
+	tlog(T_DEBUG, "Lookup %s in map size %lu = %p", type_name,
 	     ktf_map_size(&handle->ctx_type_map), elem);
 	if (!elem)
 		return NULL;
@@ -306,39 +306,10 @@ void ktf_handle_cleanup_check(struct ktf_handle *handle)
 }
 EXPORT_SYMBOL(ktf_handle_cleanup_check);
 
-struct ktf_kernel_internals {
-	/* From module.h: Look up a module symbol - supports syntax module:name */
-	unsigned long (*module_kallsyms_lookup_name)(const char *name);
-	/* From kallsyms.h: Look up a symbol w/size and offset */
-	unsigned long (*kallsyms_lookup_size_offset)(unsigned long addr,
-						     unsigned long *symbolsize,
-						     unsigned long *offset);
-};
-
-static struct ktf_kernel_internals ki;
-
 static int __init ktf_init(void)
 {
 	int ret;
-	char *ks = "module_kallsyms_lookup_name";
-
-	/* We rely on being able to resolve this symbol for looking up module
-	 * specific internal symbols (multiple modules may define the same symbol):
-	 */
-	ki.module_kallsyms_lookup_name = (void *)kallsyms_lookup_name(ks);
-	if (!ki.module_kallsyms_lookup_name) {
-		terr("Unable to look up \"%s\" in kallsyms - maybe interface has changed?",
-		     ks);
-		return -EINVAL;
-	}
-	ks = "kallsyms_lookup_size_offset";
-	ki.kallsyms_lookup_size_offset = (void *)kallsyms_lookup_name(ks);
-	if (!ki.kallsyms_lookup_size_offset) {
-		terr("Unable to look up \"%s\" in kallsyms - maybe interface has changed?",
-		     ks);
-		return -EINVAL;
-	}
-
+	ktf_kallsyms_init();
 	ktf_debugfs_init();
 	ret = ktf_nl_register();
 	if (ret) {
@@ -364,51 +335,6 @@ void ktf_add_tests(ktf_test_adder f)
 	f();
 }
 EXPORT_SYMBOL(ktf_add_tests);
-
-/* Support for looking up kernel/module internal symbols to enable testing.
- * A NULL mod means either we want the kernel-internal symbol or don't care
- * which module the symbol is in.
- */
-void *ktf_find_symbol(const char *mod, const char *sym)
-{
-	char sm[200];
-	const char *symref;
-	unsigned long addr = 0;
-
-	if (mod) {
-		sprintf(sm, "%s:%s", mod, sym);
-		symref = sm;
-	} else {
-		/* Try for kernel-internal symbol first; fall back to modules
-		 * if that fails.
-		 */
-		symref = sym;
-		addr = kallsyms_lookup_name(symref);
-	}
-	if (!addr)
-		addr = ki.module_kallsyms_lookup_name(symref);
-	if (addr) {
-		tlog(T_DEBUG, "Found %s at %0lx\n", sym, addr);
-	} else {
-#ifndef CONFIG_KALLSYMS_ALL
-		twarn("CONFIG_KALLSYMS_ALL is not set, so non-exported symbols are not available\n");
-#endif
-		tlog(T_INFO, "Fatal error: %s not found\n", sym);
-		return NULL;
-	}
-	return (void *)addr;
-}
-EXPORT_SYMBOL(ktf_find_symbol);
-
-unsigned long ktf_symbol_size(unsigned long addr)
-{
-	unsigned long size = 0;
-
-	(void)ki.kallsyms_lookup_size_offset(addr, &size, NULL);
-
-	return size;
-}
-EXPORT_SYMBOL(ktf_symbol_size);
 
 module_init(ktf_init);
 module_exit(ktf_exit);

@@ -5,7 +5,6 @@
  *
  * ktf_cov.c: Code coverage support implementation for KTF.
  */
-#include <linux/kallsyms.h>
 #include <linux/debugfs.h>
 #include <linux/mm.h>
 #include <linux/module.h>
@@ -18,6 +17,7 @@
 #include "ktf_map.h"
 #include "ktf_cov.h"
 #include "ktf_compat.h"
+#include "ktf_kallsyms.h"
 
 /* It may seem odd that we use a refcnt field in ktf_cov_entry structures
  * in addition to using krefcount management via the ktf_map.  The reasoning
@@ -566,7 +566,7 @@ int ktf_cov_enable(const char *name, unsigned int opts)
 		register_kretprobe_size =
 			ktf_symbol_size((unsigned long)register_kretprobe);
 		mutex_lock(&module_mutex);
-		kallsyms_on_each_symbol(ktf_cov_init_symbol, cov);
+		ki.kallsyms_on_each_symbol(ktf_cov_init_symbol, cov);
 		mutex_unlock(&module_mutex);
 	} else {
 		ktf_map_for_each_entry(entry, &cov_entry_map, kmap) {
