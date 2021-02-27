@@ -205,7 +205,7 @@ static int ktf_cov_init_symbol(void *data, const char *name,
 		goto out;
 	}
 	entry = kzalloc(sizeof(*entry), GFP_KERNEL);
-	(void)strlcpy(entry->name, name, sizeof(entry->name));
+	(void)strscpy(entry->name, name, sizeof(entry->name));
 	entry->magic = KTF_COV_ENTRY_MAGIC;
 	entry->cov = cov;
 	entry->refcnt = 1;

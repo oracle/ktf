@@ -339,7 +339,7 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 		return retval;
 
 	if (info->attrs[KTF_A_STR])
-		nla_strlcpy(ctxname, info->attrs[KTF_A_STR], KTF_MAX_NAME);
+		nla_strscpy(ctxname, info->attrs[KTF_A_STR], KTF_MAX_NAME);
 	else
 		ctxname = NULL;
 
@@ -347,13 +347,13 @@ static int ktf_run(struct sk_buff *skb, struct genl_info *info)
 		terr("received KTF_CT_RUN msg without testset name!");
 		return -EINVAL;
 	}
-	nla_strlcpy(setname, info->attrs[KTF_A_SNAM], KTF_MAX_NAME);
+	nla_strscpy(setname, info->attrs[KTF_A_SNAM], KTF_MAX_NAME);
 
 	if (!info->attrs[KTF_A_TNAM])	{  /* Test name wo/context */
 		terr("received KTF_CT_RUN msg without test name!");
 		return -EINVAL;
 	}
-	nla_strlcpy(testname, info->attrs[KTF_A_TNAM], KTF_MAX_NAME);
+	nla_strscpy(testname, info->attrs[KTF_A_TNAM], KTF_MAX_NAME);
 
 	if (info->attrs[KTF_A_NUM])	{
 		/* Using NUM field as optional u32 input parameter to test */
@@ -430,7 +430,7 @@ static int ktf_cov_cmd(struct sk_buff *skb,
 	}
 	cmd = enable ? "enable" : "disable";
 
-	nla_strlcpy(module, info->attrs[KTF_A_MOD], KTF_MAX_NAME);
+	nla_strscpy(module, info->attrs[KTF_A_MOD], KTF_MAX_NAME);
 	if (info->attrs[KTF_A_COVOPT])
 		opts = nla_get_u32(info->attrs[KTF_A_COVOPT]);
 
@@ -500,10 +500,10 @@ static int ktf_ctx_cfg(struct sk_buff *skb, struct genl_info *info)
 	if (!handle)
 		return -EINVAL;
 	if (info->attrs[KTF_A_FILE])
-		nla_strlcpy(type_name, info->attrs[KTF_A_FILE], KTF_MAX_NAME);
+		nla_strscpy(type_name, info->attrs[KTF_A_FILE], KTF_MAX_NAME);
 	else
 		strcpy(type_name, "default");
-	nla_strlcpy(ctxname, info->attrs[KTF_A_STR], KTF_MAX_NAME);
+	nla_strscpy(ctxname, info->attrs[KTF_A_STR], KTF_MAX_NAME);
 	tlog(T_DEBUG, "Trying to find/create context %s with type %s", ctxname, type_name);
 	ctx = ktf_find_create_context(handle, ctxname, type_name);
 	if (!ctx)
