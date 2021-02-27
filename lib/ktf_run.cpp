@@ -121,7 +121,11 @@ int Kernel::AddToRegistry()
   for (stringvec::iterator it = t.begin(); it != t.end(); ++it)
   {
     ::testing::internal::TestMetaFactory<Kernel>* mf = new KernelMetaFactory();
+#if HAVE_CODELOC_FOR_ADDTESTPATTERN
+    tci->AddTestPattern(it->c_str(), "", mf, ::testing::internal::CodeLocation("", 0));
+#else
     tci->AddTestPattern(it->c_str(), "", mf);
+#endif
   }
 
   tci->AddTestSuiteInstantiation("", &gtest_query_tests, &gtest_name_from_info, NULL, 0);

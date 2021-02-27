@@ -165,6 +165,46 @@ AC_MSG_RESULT([$assert_count_result])
 ])
 
 
+dnl Check whether ::testing::internal::ParameterizedTestCaseInfo<T>::AddTestPattern
+dnl has got a CodeLocation argument.
+dnl this was introduced to Googletest without any versioning protection after v.1.10.0.
+dnl
+AC_DEFUN([AC_CHECK_CODELOC_ARG_FOR_ADDTESTPATTERN],
+[
+have_codeloc_for_addtestpattern=0
+cl_result="no"
+assert_count_result="no"
+dummy=_codelocargchk$$
+
+AC_MSG_CHECKING([whether gtest ParameterizedTestCaseInfo<T>::AddTestPattern has got a 4th argument])
+cat <<EOT > $dummy.c
+#include <gtest/gtest.h>
+#include <string>
+
+class T
+{
+public:
+  typedef std::string ParamType;
+};
+
+void f(::testing::internal::ParameterizedTestCaseInfo<T>* foo)
+{
+     foo->AddTestPattern("a", "b", NULL, ::testing::internal::CodeLocation("", 0));
+}
+EOT
+
+$CXX -Isrc $CPPFLAGS $GTEST_CFLAGS -c $dummy.c -o $dummy.o > /dev/null 2>&1
+if test $? = 0; then
+    have_codeloc_for_addtestpattern=1
+    cl_result="yes"
+fi
+rm -f $dummy.o $dummy.c
+AC_SUBST([HAVE_CODELOC_FOR_ADDTESTPATTERN],[$have_codeloc_for_addtestpattern])
+AC_DEFINE_UNQUOTED([HAVE_CODELOC_FOR_ADDTESTPATTERN],$have_codeloc_for_addtestpattern)
+AC_MSG_RESULT([$cl_result])
+])
+
+
 AC_DEFUN([AC_CHECK_LIBDIR],
 [
 dnl detect any multilib architecture suffix set with --libdir
@@ -198,6 +238,7 @@ AS_IF([test "x$gtest_prefix" != "x" ],[export PKG_CONFIG_PATH=$gtest_prefix/$lib
 PKG_CHECK_MODULES(GTEST, gtest >= 1.9.0, [HAVE_GTEST="yes"])
 
 AC_CHECK_ASSERT_CNT
+AC_CHECK_CODELOC_ARG_FOR_ADDTESTPATTERN
 
 AS_IF([test "x${ac_confdir%%/*}" = "x." ],
     [srcdir=$(cd $srcdir; pwd)])
