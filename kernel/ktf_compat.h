@@ -52,5 +52,10 @@ static inline unsigned int stack_trace_save(unsigned long *store, unsigned int s
 	return trace.nr_entries;
 }
 #endif
+
+#if (KERNEL_VERSION(5, 11, 0) > LINUX_VERSION_CODE)
+#define nla_strscpy nla_strlcpy
+#endif
+
 #endif
 #endif
