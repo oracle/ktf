@@ -1,4 +1,3 @@
-#if (KERNEL_VERSION(5, 2, 0) > LINUX_VERSION_CODE)
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
@@ -6,7 +5,6 @@
  *
  * ktf_compat.h: Backward compatibility support
  */
-
 
 /*
  * At any time we want to keep KTF code and users
@@ -57,5 +55,4 @@ static inline unsigned int stack_trace_save(unsigned long *store, unsigned int s
 #define nla_strscpy nla_strlcpy
 #endif
 
-#endif
 #endif
