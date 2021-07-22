@@ -26,6 +26,10 @@ EXTRASYMS := KBUILD_EXTRA_SYMBOLS="$(KTF_BDIR)/Module.symvers"
 
 module:
 	$(MAKE) -C $(KDIR) M=$(PWD) $(EXTRASYMS) modules
+
+modules_install:
+	$(MAKE) -C $(KDIR) M=$(PWD) $(EXTRASYMS) modules_install
+	
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
 
