@@ -121,7 +121,7 @@ KDIR   := @KDIR@
 PWD    := $(shell pwd)\n
 EXTRASYMS := KBUILD_EXTRA_SYMBOLS="$(KTF_BDIR)/Module.symvers"\n
 module:
-	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) $(EXTRASYMS) modules\n
+	$(MAKE) -C $(KDIR) M=$(PWD) $(EXTRASYMS) modules\n
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean\n
 check: all
