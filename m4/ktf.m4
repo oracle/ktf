@@ -54,7 +54,7 @@ AC_LANG_POP([C++])
 
 AC_DEFUN([AC_CHECK_NETLINK],
 [
-PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.1, [have_libnl3=yes],[ dnl
+PKG_CHECK_MODULES(LIBNL3, [libnl-3.0 >= 3.1], [have_libnl3=yes],[ dnl
   have_libnl3=no
   PKG_CHECK_MODULES([NETLINK], [libnl-1 >= 1.1])
 ])
@@ -79,7 +79,7 @@ AC_CHECK_LIBDIR
 # Also look for dependencies below --prefix, if set:
 #
 AS_IF([test "x$prefix" != "x" ],[export PKG_CONFIG_PATH=$prefix/$libsuffix/pkgconfig])
-PKG_CHECK_MODULES(GTEST, gtest >= 1.9.0, [HAVE_GTEST="yes"])
+PKG_CHECK_MODULES(GTEST, [gtest >= 1.9.0], [HAVE_GTEST="yes"])
 
 ktf_build="$(pwd)/../ktf"
 ktf_src="$ac_confdir/../ktf"
@@ -235,7 +235,7 @@ AC_DEFUN([AM_CONFIG_KTF],
 AC_CHECK_LIBDIR
 
 AS_IF([test "x$gtest_prefix" != "x" ],[export PKG_CONFIG_PATH=$gtest_prefix/$libsuffix/pkgconfig])
-PKG_CHECK_MODULES(GTEST, gtest >= 1.9.0, [HAVE_GTEST="yes"])
+PKG_CHECK_MODULES(GTEST, [gtest >= 1.9.0], [HAVE_GTEST="yes"])
 
 AC_CHECK_ASSERT_CNT
 AC_CHECK_CODELOC_ARG_FOR_ADDTESTPATTERN
