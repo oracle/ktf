@@ -378,12 +378,16 @@ stringvec KernelTestMgr::get_test_names()
     cur->it = sets.begin();
   }
 
-  /* Filter out any combined tests that do not have a kernel counterpart loaded */
-  while (cur->it->second.wrapper.size() != 0 && cur->it != sets.end()) {
-    if (cur->it->second.test_names.size() == 0)
-      log(KTF_INFO, "Note: Skipping test suite %s which has combined tests with no kernel counterpart\n",
-	  cur->it->first.c_str());
-    ++(cur->it);
+  /* 
+    There could be a mismatch between the defined test in user in kernel 
+    Kernel tests with no user counterparts have a default solution,
+    but user tests with no kernel parts are an error
+  */
+  if (cur->it->second.wrapper.size() != 0 && cur->it != sets.end()) {
+    for (std::pair<const std::__cxx11::string, ktf::test_cb *> it2 : cur->it->second.wrapper) {
+      fprintf(stderr, "Error: Test %s/%s has no kernel counterpart!\n", cur->it->first.c_str(), it2.first.c_str());
+    }
+    exit(1);
   }
 
   if (cur->it == sets.end()) {
